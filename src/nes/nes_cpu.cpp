@@ -1,10 +1,10 @@
 #include "nes_cpu.hpp"
 
 #include <array>
-#include <format>
 #include <functional>
 #include <string_view>
 
+#include <fmt/format.h>
 #include <util/logging.hpp>
 
 #include "nes_bus.hpp"
@@ -94,7 +94,7 @@ namespace nesem
 		switch (instruction)
 		{
 		default:
-			return std::format("Unknown: {:02X}", instruction);
+			return fmt::format("Unknown: {:02X}", instruction);
 
 		// Implied 0 - "INS"
 		case 0x00:
@@ -129,7 +129,7 @@ namespace nesem
 		case 0x4A:
 		case 0x2A:
 		case 0x6A:
-			return std::format("{} A", name);
+			return fmt::format("{} A", name);
 
 		// Relative 1 - "INS *+/-num <$addr>" (normally, you jump to a label, but we'll calculate the absolute address)
 		case 0x90:
@@ -143,7 +143,7 @@ namespace nesem
 		{
 			// relative address is signed
 			int value = int8_t(bus.cpu_read(pc));
-			return std::format("{} *{:+} <${:04X}>", name, value, pc + value + 1);
+			return fmt::format("{} *{:+} <${:04X}>", name, value, pc + value + 1);
 		}
 
 		// Immediate 1 - "INS #dec <$hex>"
@@ -160,7 +160,7 @@ namespace nesem
 		case 0xE9:
 		{
 			int value = bus.cpu_read(pc);
-			return std::format("{0} #{1} <${1:02X}>", name, value);
+			return fmt::format("{0} #{1} <${1:02X}>", name, value);
 		}
 
 		// Zero Page 1 - "INS $hex"
@@ -187,7 +187,7 @@ namespace nesem
 		case 0x84:
 		{
 			int value = bus.cpu_read(pc);
-			return std::format("{} ${:02X}", name, value);
+			return fmt::format("{} ${:02X}", name, value);
 		}
 
 		// Zero Page,X 1 - "INS $hex,X"
@@ -209,7 +209,7 @@ namespace nesem
 		case 0x94:
 		{
 			int value = bus.cpu_read(pc);
-			return std::format("{} ${:02X},X", name, value);
+			return fmt::format("{} ${:02X},X", name, value);
 		}
 
 		// Zero Page,Y 1 - "INS $hex,Y"
@@ -217,7 +217,7 @@ namespace nesem
 		case 0x96:
 		{
 			int value = bus.cpu_read(pc);
-			return std::format("{} ${:02X},Y", name, value);
+			return fmt::format("{} ${:02X},Y", name, value);
 		}
 
 		// Absolute 2 - "INS $addr"
@@ -247,7 +247,7 @@ namespace nesem
 		{
 			int lo = bus.cpu_read(pc);
 			int hi = bus.cpu_read(pc + 1);
-			return std::format("{} ${:04X}", name, hi << 8 | lo);
+			return fmt::format("{} ${:04X}", name, hi << 8 | lo);
 		}
 
 		// Absolute,X 2 - "INS $addr,X"
@@ -269,7 +269,7 @@ namespace nesem
 		{
 			int lo = bus.cpu_read(pc);
 			int hi = bus.cpu_read(pc + 1);
-			return std::format("{} ${:04X},X", name, hi << 8 | lo);
+			return fmt::format("{} ${:04X},X", name, hi << 8 | lo);
 		}
 
 		// Absolute,Y 2 - "INS $addr,Y"
@@ -285,7 +285,7 @@ namespace nesem
 		{
 			int lo = bus.cpu_read(pc);
 			int hi = bus.cpu_read(pc + 1);
-			return std::format("{} ${:04X},Y", name, hi << 8 | lo);
+			return fmt::format("{} ${:04X},Y", name, hi << 8 | lo);
 		}
 
 		// Indirect 2 - "INS ($addr)"
@@ -293,7 +293,7 @@ namespace nesem
 		{
 			int lo = bus.cpu_read(pc);
 			int hi = bus.cpu_read(pc + 1);
-			return std::format("{} (${:04X})", name, hi << 8 | lo);
+			return fmt::format("{} (${:04X})", name, hi << 8 | lo);
 		}
 
 		// (Indirect,X) 1 - "INS ($zp,X)"
@@ -307,7 +307,7 @@ namespace nesem
 		case 0x81:
 		{
 			int value = bus.cpu_read(pc);
-			return std::format("{} (${:02X},X)", name, value);
+			return fmt::format("{} (${:02X},X)", name, value);
 		}
 
 		// (Indirect),Y 1 - INS ($zp),Y
@@ -321,7 +321,7 @@ namespace nesem
 		case 0x91:
 		{
 			int value = bus.cpu_read(pc);
-			return std::format("{} (${:02X}),Y", name, value);
+			return fmt::format("{} (${:02X}),Y", name, value);
 		}
 		}
 	}
@@ -337,7 +337,7 @@ namespace nesem
 		switch (instruction)
 		{
 		default:
-			return std::format("Unknown: {:02X}", instruction);
+			return fmt::format("Unknown: {:02X}", instruction);
 
 		// Implied 0 - "INS"
 		case 0x00:
@@ -365,14 +365,14 @@ namespace nesem
 		case 0x8A:
 		case 0x9A:
 		case 0x98:
-			return std::format(fmt, pc - 1, std::format("{:02X}", instruction), name);
+			return fmt::format(fmt, pc - 1, fmt::format("{:02X}", instruction), name);
 
 		// Accumulator 0 - "INS A"
 		case 0x0A:
 		case 0x4A:
 		case 0x2A:
 		case 0x6A:
-			return std::format(fmt, pc - 1, std::format("{:02X}", instruction), std::format("{} A", name));
+			return fmt::format(fmt, pc - 1, fmt::format("{:02X}", instruction), fmt::format("{} A", name));
 
 		// Relative 1 - "INS *+/-num <$addr>" (normally, you jump to a label, but we'll calculate the absolute address)
 		case 0x90:
@@ -386,7 +386,7 @@ namespace nesem
 		{
 			// relative address is signed
 			int value = int8_t(bus.cpu_read(pc));
-			return std::format(fmt, pc - 1, std::format("{:02X} {:02X}", instruction, value), std::format("{} ${:04X}", name, pc + value + 1));
+			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{} ${:04X}", name, pc + value + 1));
 		}
 
 		// Immediate 1 - "INS #dec <$hex>"
@@ -403,7 +403,7 @@ namespace nesem
 		case 0xE9:
 		{
 			int value = bus.cpu_read(pc);
-			return std::format(fmt, pc - 1, std::format("{:02X} {:02X}", instruction, value), std::format("{0} #${1:02X}", name, value));
+			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{0} #${1:02X}", name, value));
 		}
 
 		// Zero Page 1 - "INS $hex"
@@ -430,7 +430,7 @@ namespace nesem
 		case 0x84:
 		{
 			int value = bus.cpu_read(pc);
-			return std::format(fmt, pc - 1, std::format("{:02X} {:02X}", instruction, value), std::format("{} ${:02X}", name, value));
+			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{} ${:02X}", name, value));
 		}
 
 		// Zero Page,X 1 - "INS $hex,X"
@@ -452,7 +452,7 @@ namespace nesem
 		case 0x94:
 		{
 			int value = bus.cpu_read(pc);
-			return std::format(fmt, pc - 1, std::format("{:02X} {:02X}", instruction, value), std::format("{} ${:02X},X", name, value));
+			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{} ${:02X},X", name, value));
 		}
 
 		// Zero Page,Y 1 - "INS $hex,Y"
@@ -460,7 +460,7 @@ namespace nesem
 		case 0x96:
 		{
 			int value = bus.cpu_read(pc);
-			return std::format(fmt, pc - 1, std::format("{:02X} {:02X}", instruction, value), std::format("{} ${:02X},Y", name, value));
+			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{} ${:02X},Y", name, value));
 		}
 
 		// Absolute 2 - "INS $addr"
@@ -490,7 +490,7 @@ namespace nesem
 		{
 			int lo = bus.cpu_read(pc);
 			int hi = bus.cpu_read(pc + 1);
-			return std::format(fmt, pc - 1, std::format("{:02X} {:02X} {:02X}", instruction, lo, hi), std::format("{} ${:04X}", name, hi << 8 | lo));
+			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X} {:02X}", instruction, lo, hi), fmt::format("{} ${:04X}", name, hi << 8 | lo));
 		}
 
 		// Absolute,X 2 - "INS $addr,X"
@@ -512,7 +512,7 @@ namespace nesem
 		{
 			int lo = bus.cpu_read(pc);
 			int hi = bus.cpu_read(pc + 1);
-			return std::format(fmt, pc - 1, std::format("{:02X} {:02X} {:02X}", instruction, lo, hi), std::format("{} ${:04X},X", name, hi << 8 | lo));
+			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X} {:02X}", instruction, lo, hi), fmt::format("{} ${:04X},X", name, hi << 8 | lo));
 		}
 
 		// Absolute,Y 2 - "INS $addr,Y"
@@ -528,7 +528,7 @@ namespace nesem
 		{
 			int lo = bus.cpu_read(pc);
 			int hi = bus.cpu_read(pc + 1);
-			return std::format(fmt, pc - 1, std::format("{:02X} {:02X} {:02X}", instruction, lo, hi), std::format("{} ${:04X},Y", name, hi << 8 | lo));
+			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X} {:02X}", instruction, lo, hi), fmt::format("{} ${:04X},Y", name, hi << 8 | lo));
 		}
 
 		// Indirect 2 - "INS ($addr)"
@@ -536,7 +536,7 @@ namespace nesem
 		{
 			int lo = bus.cpu_read(pc);
 			int hi = bus.cpu_read(pc + 1);
-			return std::format(fmt, pc - 1, std::format("{:02X} {:02X} {:02X}", instruction, lo, hi), std::format("{} (${:04X})", name, hi << 8 | lo));
+			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X} {:02X}", instruction, lo, hi), fmt::format("{} (${:04X})", name, hi << 8 | lo));
 		}
 
 		// (Indirect,X) 1 - "INS ($zp,X)"
@@ -550,7 +550,7 @@ namespace nesem
 		case 0x81:
 		{
 			int value = bus.cpu_read(pc);
-			return std::format(fmt, pc - 1, std::format("{:02X} {:02X}", instruction, value), std::format("{} (${:02X},X)", name, value));
+			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{} (${:02X},X)", name, value));
 		}
 
 		// (Indirect),Y 1 - INS ($zp),Y
@@ -564,7 +564,7 @@ namespace nesem
 		case 0x91:
 		{
 			int value = bus.cpu_read(pc);
-			return std::format(fmt, pc - 1, std::format("{:02X} {:02X}", instruction, value), std::format("{} (${:02X}),Y", name, value));
+			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{} (${:02X}),Y", name, value));
 		}
 		}
 	}
