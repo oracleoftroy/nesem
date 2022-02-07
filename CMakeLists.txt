@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.22)
 project(nes-project VERSION 0.0.1)
 
+include(cmake/vcpkg.cmake)
 include(cmake/PreventInSourceBuilds.cmake)
 include(cmake/StandardProjectSettings.cmake)
 include(cmake/CompilerWarnings.cmake)
