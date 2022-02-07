@@ -1,0 +1,18 @@
+{
+	"name": "nes",
+	"version-string": "0.0.1",
+	"dependencies": [
+		"catch2",
+		"scottt-debugbreak",
+		{
+			"name": "sdl2",
+			"features": ["x11"],
+			"platform": "!windows"
+		},
+		{
+			"name": "sdl2",
+			"platform": "windows"
+		},
+		"spdlog"
+	]
+}

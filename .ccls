@@ -1,0 +1,3 @@
+%compile_commands.json
+%c -std=c17
+%cpp -std=c++23

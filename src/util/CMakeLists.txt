@@ -1,0 +1,8 @@
+find_package(spdlog CONFIG REQUIRED)
+
+find_path(SCOTTT_DEBUGBREAK_INCLUDE_DIRS "debugbreak.h")
+
+add_library(util INTERFACE "include/util/enum.hpp" "include/util/logging.hpp" "include/util/ptr.hpp" "include/util/rng.hpp")
+target_include_directories(util INTERFACE ${SCOTTT_DEBUGBREAK_INCLUDE_DIRS})
+target_link_libraries(util INTERFACE spdlog::spdlog)
+target_include_directories(util INTERFACE include)
