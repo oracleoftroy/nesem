@@ -6,9 +6,7 @@
 
 namespace nesem
 {
-	class NesCpu;
-	class NesPpu;
-	class NesApu;
+	class Nes;
 
 	struct ClockRate
 	{
@@ -58,7 +56,7 @@ namespace nesem
 	class NesClock final
 	{
 	public:
-		explicit NesClock(NesCpu *cpu, ClockRate clock_rate = ntsc()) noexcept;
+		explicit NesClock(Nes *nes, ClockRate clock_rate = ntsc()) noexcept;
 
 		// run the system at full speed for a timeslice
 		void tick(ClockRate::duration deltatime) noexcept;
@@ -67,13 +65,11 @@ namespace nesem
 		void step(NesClockStep step) noexcept;
 
 	private:
-		U64 tickcount = 0;
-		ClockRate::duration accumulator{0.0};
+		Nes *nes;
 		ClockRate clock_rate;
 
-		NesCpu *cpu;
-		// NesPpu *ppu;
-		// NesApu *apu;
+		U64 tickcount = 0;
+		ClockRate::duration accumulator{0.0};
 	};
 
 }

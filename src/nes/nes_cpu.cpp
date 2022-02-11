@@ -5,9 +5,10 @@
 #include <string_view>
 
 #include <fmt/format.h>
+#include <util/cast.hpp>
 #include <util/logging.hpp>
 
-#include "nes_bus.hpp"
+#include "nes.hpp"
 #include "nes_cpu_ops.hpp"
 
 struct Op
@@ -142,7 +143,7 @@ namespace nesem
 		case 0x70:
 		{
 			// relative address is signed
-			int value = int8_t(bus.cpu_read(pc));
+			int value = int8_t(bus.read(pc));
 			return fmt::format("{} *{:+} <${:04X}>", name, value, pc + value + 1);
 		}
 
@@ -159,7 +160,7 @@ namespace nesem
 		case 0x09:
 		case 0xE9:
 		{
-			int value = bus.cpu_read(pc);
+			int value = bus.read(pc);
 			return fmt::format("{0} #{1} <${1:02X}>", name, value);
 		}
 
@@ -186,7 +187,7 @@ namespace nesem
 		case 0x86:
 		case 0x84:
 		{
-			int value = bus.cpu_read(pc);
+			int value = bus.read(pc);
 			return fmt::format("{} ${:02X}", name, value);
 		}
 
@@ -208,7 +209,7 @@ namespace nesem
 		case 0x95:
 		case 0x94:
 		{
-			int value = bus.cpu_read(pc);
+			int value = bus.read(pc);
 			return fmt::format("{} ${:02X},X", name, value);
 		}
 
@@ -216,7 +217,7 @@ namespace nesem
 		case 0xB6:
 		case 0x96:
 		{
-			int value = bus.cpu_read(pc);
+			int value = bus.read(pc);
 			return fmt::format("{} ${:02X},Y", name, value);
 		}
 
@@ -245,8 +246,8 @@ namespace nesem
 		case 0x8E:
 		case 0x8C:
 		{
-			int lo = bus.cpu_read(pc);
-			int hi = bus.cpu_read(pc + 1);
+			int lo = bus.read(pc);
+			int hi = bus.read(pc + 1);
 			return fmt::format("{} ${:04X}", name, hi << 8 | lo);
 		}
 
@@ -267,8 +268,8 @@ namespace nesem
 		case 0xFD:
 		case 0x9D:
 		{
-			int lo = bus.cpu_read(pc);
-			int hi = bus.cpu_read(pc + 1);
+			int lo = bus.read(pc);
+			int hi = bus.read(pc + 1);
 			return fmt::format("{} ${:04X},X", name, hi << 8 | lo);
 		}
 
@@ -283,16 +284,16 @@ namespace nesem
 		case 0xF9:
 		case 0x99:
 		{
-			int lo = bus.cpu_read(pc);
-			int hi = bus.cpu_read(pc + 1);
+			int lo = bus.read(pc);
+			int hi = bus.read(pc + 1);
 			return fmt::format("{} ${:04X},Y", name, hi << 8 | lo);
 		}
 
 		// Indirect 2 - "INS ($addr)"
 		case 0x6C:
 		{
-			int lo = bus.cpu_read(pc);
-			int hi = bus.cpu_read(pc + 1);
+			int lo = bus.read(pc);
+			int hi = bus.read(pc + 1);
 			return fmt::format("{} (${:04X})", name, hi << 8 | lo);
 		}
 
@@ -306,7 +307,7 @@ namespace nesem
 		case 0xE1:
 		case 0x81:
 		{
-			int value = bus.cpu_read(pc);
+			int value = bus.read(pc);
 			return fmt::format("{} (${:02X},X)", name, value);
 		}
 
@@ -320,7 +321,7 @@ namespace nesem
 		case 0xF1:
 		case 0x91:
 		{
-			int value = bus.cpu_read(pc);
+			int value = bus.read(pc);
 			return fmt::format("{} (${:02X}),Y", name, value);
 		}
 		}
@@ -385,7 +386,7 @@ namespace nesem
 		case 0x70:
 		{
 			// relative address is signed
-			int value = int8_t(bus.cpu_read(pc));
+			int value = int8_t(bus.read(pc));
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{} ${:04X}", name, pc + value + 1));
 		}
 
@@ -402,7 +403,7 @@ namespace nesem
 		case 0x09:
 		case 0xE9:
 		{
-			int value = bus.cpu_read(pc);
+			int value = bus.read(pc);
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{0} #${1:02X}", name, value));
 		}
 
@@ -429,7 +430,7 @@ namespace nesem
 		case 0x86:
 		case 0x84:
 		{
-			int value = bus.cpu_read(pc);
+			int value = bus.read(pc);
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{} ${:02X}", name, value));
 		}
 
@@ -451,7 +452,7 @@ namespace nesem
 		case 0x95:
 		case 0x94:
 		{
-			int value = bus.cpu_read(pc);
+			int value = bus.read(pc);
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{} ${:02X},X", name, value));
 		}
 
@@ -459,7 +460,7 @@ namespace nesem
 		case 0xB6:
 		case 0x96:
 		{
-			int value = bus.cpu_read(pc);
+			int value = bus.read(pc);
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{} ${:02X},Y", name, value));
 		}
 
@@ -488,8 +489,8 @@ namespace nesem
 		case 0x8E:
 		case 0x8C:
 		{
-			int lo = bus.cpu_read(pc);
-			int hi = bus.cpu_read(pc + 1);
+			int lo = bus.read(pc);
+			int hi = bus.read(pc + 1);
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X} {:02X}", instruction, lo, hi), fmt::format("{} ${:04X}", name, hi << 8 | lo));
 		}
 
@@ -510,8 +511,8 @@ namespace nesem
 		case 0xFD:
 		case 0x9D:
 		{
-			int lo = bus.cpu_read(pc);
-			int hi = bus.cpu_read(pc + 1);
+			int lo = bus.read(pc);
+			int hi = bus.read(pc + 1);
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X} {:02X}", instruction, lo, hi), fmt::format("{} ${:04X},X", name, hi << 8 | lo));
 		}
 
@@ -526,16 +527,16 @@ namespace nesem
 		case 0xF9:
 		case 0x99:
 		{
-			int lo = bus.cpu_read(pc);
-			int hi = bus.cpu_read(pc + 1);
+			int lo = bus.read(pc);
+			int hi = bus.read(pc + 1);
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X} {:02X}", instruction, lo, hi), fmt::format("{} ${:04X},Y", name, hi << 8 | lo));
 		}
 
 		// Indirect 2 - "INS ($addr)"
 		case 0x6C:
 		{
-			int lo = bus.cpu_read(pc);
-			int hi = bus.cpu_read(pc + 1);
+			int lo = bus.read(pc);
+			int hi = bus.read(pc + 1);
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X} {:02X}", instruction, lo, hi), fmt::format("{} (${:04X})", name, hi << 8 | lo));
 		}
 
@@ -549,7 +550,7 @@ namespace nesem
 		case 0xE1:
 		case 0x81:
 		{
-			int value = bus.cpu_read(pc);
+			int value = bus.read(pc);
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{} (${:02X},X)", name, value));
 		}
 
@@ -563,7 +564,7 @@ namespace nesem
 		case 0xF1:
 		case 0x91:
 		{
-			int value = bus.cpu_read(pc);
+			int value = bus.read(pc);
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{} (${:02X}),Y", name, value));
 		}
 		}
@@ -586,13 +587,13 @@ namespace nesem
 
 		// designed to be compatible with nestest.log
 		// pc  raw bytes *di
-		cpu_log->info("{} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} PPU: XXX,XXX CYC:{}", format_nestest(instruction, *bus, PC), A, X, Y, U8(P), S, cycles);
+		cpu_log->info("{} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} PPU: XXX,XXX CYC:{}", format_nestest(U8(instruction), nes->bus(), PC), A, X, Y, U8(P), S, cycles);
 	}
 
-	NesCpu::NesCpu(NesBus *bus) noexcept
-		: bus(bus)
+	NesCpu::NesCpu(Nes *nes) noexcept
+		: nes(nes)
 	{
-		CHECK(bus != nullptr, "bus is required");
+		CHECK(nes != nullptr, "nes is required");
 		reset();
 	}
 
@@ -640,9 +641,47 @@ namespace nesem
 		nmi_requested = true;
 	}
 
+	void NesCpu::dma(U8 page) noexcept
+	{
+		in_dma = true;
+		dma_step = -1;
+		dma_page = page;
+	}
+
 	void NesCpu::clock() noexcept
 	{
 		++cycles;
+
+		// dma bypasses normal cpu operation
+		if (in_dma)
+		{
+			CHECK(step == 0, "The write that triggered the DMA should have been the last step");
+
+			// dma has a one tick wait cycle to let the write finish
+			if (dma_step < 0)
+			{
+				++dma_step;
+				return;
+			}
+
+			// dma starts on an even cycle for some reason. skip this tick if we are ready but on an odd cycle
+			if (dma_step == 0 && (cycles & 1) == 1)
+				return;
+
+			// do the dma transfer, read on even steps, write on odd steps
+			if ((dma_step & 1) == 0)
+				scratch = nes->bus().read(dma_page | (dma_step >> 1));
+			else
+				nes->ppu().oamdata(scratch);
+
+			++dma_step;
+
+			// done once we've read and written the full 256 bytes for the page (256 reads + 256 writes == 512 steps)
+			if (dma_step >= 512)
+				in_dma = false;
+
+			return;
+		}
 
 		// TODO: check if interrupt/nmi requested and handle appropriately
 
@@ -653,13 +692,13 @@ namespace nesem
 		if (instruction == -1)
 		{
 			if (step == 6)
-				PC = bus->cpu_read(0xFFFC); // read low byte
+				PC = nes->bus().read(0xFFFC); // read low byte
 
 			if (step == 7)
 			{
 				// read hi byte
-				auto hi = bus->cpu_read(0xFFFD);
-				PC = U16((hi << 8) | PC);
+				auto hi = nes->bus().read(0xFFFD);
+				PC |= hi << 8;
 
 				// reset finished. set instruction to a dummy value (anything except the reset flag)
 				instruction = 0;
@@ -673,7 +712,7 @@ namespace nesem
 		if (step == 1)
 		{
 			instruction = readPC();
-			LOG_INFO("{:>5}: [{:04X}] {:<35} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}", cycles, PC - 1, decompile(U8(instruction), *bus, PC), A, X, Y, U8(P), S);
+			LOG_INFO("{:>5}: [{:04X}] {:<35} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}", cycles, PC - 1, decompile(U8(instruction), nes->bus(), PC), A, X, Y, U8(P), S);
 			log_instruction();
 		}
 		else
@@ -686,19 +725,19 @@ namespace nesem
 
 	void NesCpu::push(U8 value) noexcept
 	{
-		bus->cpu_write(0x0100 | S, value);
+		nes->bus().write(0x0100 | S, value);
 		--S;
 	}
 
 	U8 NesCpu::pop() noexcept
 	{
 		++S;
-		return bus->cpu_read(0x0100 | S);
+		return nes->bus().read(0x0100 | S);
 	}
 
 	U8 NesCpu::readPC() noexcept
 	{
-		return bus->cpu_read(PC++);
+		return nes->bus().read(PC++);
 	}
 
 	bool NesCpu::branch(bool condition) noexcept
@@ -1022,12 +1061,12 @@ namespace nesem
 
 		case 6:
 			// fetch PCL from $FFFE
-			PC = bus->cpu_read(0xFFFE);
+			PC = nes->bus().read(0xFFFE);
 			break;
 
 		case 7:
 			// fetch PCH from $FFFF
-			PC = (bus->cpu_read(0xFFFF) << 8) | PC;
+			PC = (nes->bus().read(0xFFFF) << 8) | PC;
 			return true;
 		}
 		return false;
@@ -1317,7 +1356,7 @@ namespace nesem
 			scratch = readPC();
 
 			// force PC to current page, e.g. 0x02FF + 1 == 0x0200
-			PC = U16(hi | (PC & 0x00FF));
+			PC = hi | (PC & 0x00FF);
 			break;
 		}
 
@@ -1913,12 +1952,12 @@ namespace nesem
 			return AddressStatus::pending;
 
 		case 4:
-			scratch = bus->cpu_read(effective_addr);
+			scratch = nes->bus().read(effective_addr);
 			return AddressStatus::pending;
 
 		case 5:
 		{
-			auto hi = bus->cpu_read((effective_addr + 1) & 255);
+			auto hi = nes->bus().read((effective_addr + 1) & 255);
 			effective_addr = (hi << 8) | scratch;
 
 			if (type == OpType::write)
@@ -1932,11 +1971,11 @@ namespace nesem
 				using enum OpType;
 			case read:
 			case read_modify_write:
-				scratch = bus->cpu_read(effective_addr);
+				scratch = nes->bus().read(effective_addr);
 				return AddressStatus::read_complete;
 
 			case write:
-				bus->cpu_write(effective_addr, scratch);
+				nes->bus().write(effective_addr, scratch);
 				return AddressStatus::complete;
 			}
 
@@ -1947,7 +1986,7 @@ namespace nesem
 			return AddressStatus::write_ready;
 
 		case 8:
-			bus->cpu_write(effective_addr, scratch);
+			nes->bus().write(effective_addr, scratch);
 			return AddressStatus::complete;
 		}
 
@@ -1973,11 +2012,11 @@ namespace nesem
 				using enum OpType;
 			case read:
 			case read_modify_write:
-				scratch = bus->cpu_read(effective_addr);
+				scratch = nes->bus().read(effective_addr);
 				return AddressStatus::read_complete;
 
 			case write:
-				bus->cpu_write(effective_addr, scratch);
+				nes->bus().write(effective_addr, scratch);
 				return AddressStatus::complete;
 			}
 
@@ -1988,7 +2027,7 @@ namespace nesem
 			return AddressStatus::write_ready;
 
 		case 5:
-			bus->cpu_write(effective_addr, scratch);
+			nes->bus().write(effective_addr, scratch);
 			return AddressStatus::complete;
 		}
 
@@ -2029,11 +2068,11 @@ namespace nesem
 				using enum OpType;
 			case read:
 			case read_modify_write:
-				scratch = bus->cpu_read(effective_addr);
+				scratch = nes->bus().read(effective_addr);
 				return AddressStatus::read_complete;
 
 			case write:
-				bus->cpu_write(effective_addr, scratch);
+				nes->bus().write(effective_addr, scratch);
 				return AddressStatus::complete;
 			}
 
@@ -2044,7 +2083,7 @@ namespace nesem
 			return AddressStatus::write_ready;
 
 		case 6:
-			bus->cpu_write(effective_addr, scratch);
+			nes->bus().write(effective_addr, scratch);
 			return AddressStatus::complete;
 		}
 
@@ -2070,12 +2109,12 @@ namespace nesem
 			return AddressStatus::pending;
 
 		case 3:
-			scratch = bus->cpu_read(effective_addr);
+			scratch = nes->bus().read(effective_addr);
 			return AddressStatus::pending;
 
 		case 4:
 		{
-			auto hi = bus->cpu_read((effective_addr + 1) & 255) << 8;
+			auto hi = nes->bus().read((effective_addr + 1) & 255) << 8;
 			effective_addr = hi | scratch;
 			effective_addr += Y;
 			effective_addr &= 0xFFFF;
@@ -2106,11 +2145,11 @@ namespace nesem
 				using enum OpType;
 			case read:
 			case read_modify_write:
-				scratch = bus->cpu_read(effective_addr);
+				scratch = nes->bus().read(effective_addr);
 				return AddressStatus::read_complete;
 
 			case write:
-				bus->cpu_write(effective_addr, scratch);
+				nes->bus().write(effective_addr, scratch);
 				return AddressStatus::complete;
 			}
 
@@ -2121,7 +2160,7 @@ namespace nesem
 			return AddressStatus::write_ready;
 
 		case 8:
-			bus->cpu_write(effective_addr, scratch);
+			nes->bus().write(effective_addr, scratch);
 			return AddressStatus::complete;
 		}
 
@@ -2151,11 +2190,11 @@ namespace nesem
 				using enum OpType;
 			case read:
 			case read_modify_write:
-				scratch = bus->cpu_read(effective_addr);
+				scratch = nes->bus().read(effective_addr);
 				return AddressStatus::read_complete;
 
 			case write:
-				bus->cpu_write(effective_addr, scratch);
+				nes->bus().write(effective_addr, scratch);
 				return AddressStatus::complete;
 			}
 
@@ -2166,7 +2205,7 @@ namespace nesem
 			return AddressStatus::write_ready;
 
 		case 6:
-			bus->cpu_write(effective_addr, scratch);
+			nes->bus().write(effective_addr, scratch);
 			return AddressStatus::complete;
 		}
 
@@ -2196,11 +2235,11 @@ namespace nesem
 				using enum OpType;
 			case read:
 			case read_modify_write:
-				scratch = bus->cpu_read(effective_addr);
+				scratch = nes->bus().read(effective_addr);
 				return AddressStatus::read_complete;
 
 			case write:
-				bus->cpu_write(effective_addr, scratch);
+				nes->bus().write(effective_addr, scratch);
 				return AddressStatus::complete;
 			}
 
@@ -2211,7 +2250,7 @@ namespace nesem
 			return AddressStatus::write_ready;
 
 		case 6:
-			bus->cpu_write(effective_addr, scratch);
+			nes->bus().write(effective_addr, scratch);
 			return AddressStatus::complete;
 		}
 
@@ -2256,11 +2295,11 @@ namespace nesem
 				using enum OpType;
 			case read:
 			case read_modify_write:
-				scratch = bus->cpu_read(effective_addr);
+				scratch = nes->bus().read(effective_addr);
 				return AddressStatus::read_complete;
 
 			case write:
-				bus->cpu_write(effective_addr, scratch);
+				nes->bus().write(effective_addr, scratch);
 				return AddressStatus::complete;
 			}
 
@@ -2271,7 +2310,7 @@ namespace nesem
 			return AddressStatus::write_ready;
 
 		case 7:
-			bus->cpu_write(effective_addr, scratch);
+			nes->bus().write(effective_addr, scratch);
 			return AddressStatus::complete;
 		}
 
@@ -2316,11 +2355,11 @@ namespace nesem
 				using enum OpType;
 			case read:
 			case read_modify_write:
-				scratch = bus->cpu_read(effective_addr);
+				scratch = nes->bus().read(effective_addr);
 				return AddressStatus::read_complete;
 
 			case write:
-				bus->cpu_write(effective_addr, scratch);
+				nes->bus().write(effective_addr, scratch);
 				return AddressStatus::complete;
 			}
 
@@ -2331,7 +2370,7 @@ namespace nesem
 			return AddressStatus::write_ready;
 
 		case 7:
-			bus->cpu_write(effective_addr, scratch);
+			nes->bus().write(effective_addr, scratch);
 			return AddressStatus::complete;
 		}
 

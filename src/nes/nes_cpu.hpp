@@ -4,18 +4,20 @@
 
 namespace nesem
 {
-	class NesBus;
+	class Nes;
 
 	// The NES used a Ricoh 2A03, a custom 6502 CPU with decimal mode disabled and an integrated audio processing unit
 	class NesCpu final
 	{
 	public:
-		explicit NesCpu(NesBus *bus) noexcept;
+		explicit NesCpu(Nes *nes) noexcept;
 
 		// signals
 		void reset(U16 pc_addr = 0) noexcept;
 		void irq() noexcept;
 		void nmi() noexcept;
+		void dma(U8 page) noexcept;
+
 		void clock() noexcept;
 
 	private:
@@ -33,6 +35,8 @@ namespace nesem
 		bool branch(bool condition) noexcept;
 
 	private:
+		Nes *nes;
+
 		// 6502 registers
 		U16 PC = 0; // program counter
 		U8 S = 0; // stack pointer, starts from the top of page 1 and grows downward
@@ -43,7 +47,7 @@ namespace nesem
 
 		// other state
 
-		// cycles since startup
+		// cycles since startup/reset
 		U64 cycles = 0;
 		int instruction = -1; // the current instruction being executed, or -1 for reset
 		U8 step = 0; // the current step for the current instruction
@@ -52,8 +56,9 @@ namespace nesem
 
 		bool interrupt_requested = false;
 		bool nmi_requested = false;
-
-		NesBus *bus;
+		bool in_dma = false;
+		U8 dma_page = 0;
+		int dma_step = -1;
 
 	public:
 		// All CPU instructions

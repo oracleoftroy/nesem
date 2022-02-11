@@ -2,14 +2,14 @@
 
 #include <util/logging.hpp>
 
-#include "nes_cpu.hpp"
+#include "nes.hpp"
 
 namespace nesem
 {
-	NesClock::NesClock(NesCpu *cpu, ClockRate clock_rate) noexcept
-		: cpu(cpu), clock_rate(clock_rate)
+	NesClock::NesClock(Nes *nes, ClockRate clock_rate) noexcept
+		: nes(nes), clock_rate(clock_rate)
 	{
-		CHECK(cpu != nullptr, "CPU is required");
+		CHECK(nes != nullptr, "Nes is required");
 	}
 
 	void NesClock::tick(ClockRate::duration deltatime) noexcept
@@ -23,11 +23,11 @@ namespace nesem
 		{
 			if ((tickcount % clock_rate.ppu_divisor) == 0)
 				// tick the ppu
-				;
+				nes->ppu().clock();
 
 			if ((tickcount % clock_rate.cpu_divisor) == 0)
 				// tick the cpu
-				cpu->clock();
+				nes->cpu().clock();
 
 			// if (tickcount % clock_rate.apu_divisor)
 			// 	// tick the apu
@@ -44,10 +44,10 @@ namespace nesem
 
 		if (tickcount % clock_rate.ppu_divisor)
 			// tick the ppu
-			;
+			nes->ppu().clock();
 
 		if (tickcount % clock_rate.cpu_divisor)
-			cpu->clock();
+			nes->cpu().clock();
 
 		++tickcount;
 	}

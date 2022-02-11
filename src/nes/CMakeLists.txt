@@ -11,6 +11,8 @@ add_library(
 	"nes_cpu.cpp"
 	"nes_cpu.hpp"
 	"nes_cpu_ops.hpp"
+	"nes_ppu.cpp"
+	"nes_ppu.hpp"
 )
 target_link_libraries(nesemlib PRIVATE project_options)
 target_link_libraries(nesemlib PUBLIC util)

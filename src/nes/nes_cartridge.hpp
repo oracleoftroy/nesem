@@ -30,13 +30,18 @@ namespace nesem
 	public:
 		explicit NesCartridge(const NesRom &rom) noexcept;
 
-		// attempt a read of the cartridge.
-		// if the cart handles it, returns byte read, else returns std::nullopt
-		std::optional<U8> cpu_read(U16 addr) noexcept;
+		U8 cpu_read(U16 addr) noexcept;
+		void cpu_write(U16 addr, U8 value) noexcept;
 
-		// attempt a write to the cartridge.
-		// if the cart handles it, returns true, else returns false
-		bool cpu_write(U16 addr, U8 value) noexcept;
+		// read data from chr_rom. The cartridge has a lot of leeway to remap the PPU
+		// if return is not nullopt, the cart handled the request
+		// if return is nullopt, the ppu should handle the request directly. Note that the cartridge may freely modify the address.
+		std::optional<U8> ppu_read(U16 &addr) noexcept;
+
+		// write data from chr_rom. The cartridge has a lot of leeway to remap the PPU
+		// if return is true, the cart handled the request
+		// if return is false, the ppu should handle the request directly. Note that the cartridge may freely modify the address.
+		bool ppu_write(U16 &addr, U8 data) noexcept;
 
 	private:
 		NesRom rom;

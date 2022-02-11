@@ -4,6 +4,7 @@
 #include "nes_cartridge.hpp"
 #include "nes_clock.hpp"
 #include "nes_cpu.hpp"
+#include "nes_ppu.hpp"
 
 namespace nesem
 {
@@ -17,11 +18,16 @@ namespace nesem
 
 		void tick(double deltatime);
 
-	private:
-		NesBus bus;
-		NesCpu cpu;
-		NesClock clock;
+		NesBus &bus() noexcept;
+		NesCpu &cpu() noexcept;
+		NesPpu &ppu() noexcept;
 
-		std::unique_ptr<NesCartridge> cartridge;
+	private:
+		NesBus nes_bus;
+		NesCpu nes_cpu;
+		NesPpu nes_ppu;
+		NesClock nes_clock;
+
+		std::unique_ptr<NesCartridge> nes_cartridge;
 	};
 }

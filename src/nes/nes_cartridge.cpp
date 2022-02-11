@@ -90,12 +90,15 @@ namespace nesem
 		CHECK(rom.mapper == 0, "We only support mapper 0 for now");
 	}
 
-	// attempt a read of the cartridge.
-	// if the cart handles it, returns byte read, else returns std::nullopt
-	std::optional<U8> NesCartridge::cpu_read(U16 addr) noexcept
+	U8 NesCartridge::cpu_read(U16 addr) noexcept
 	{
+		// TODO: handle different mappers
+
 		if (addr < 0x8000)
-			return std::nullopt;
+		{
+			LOG_ERROR("Read from invalid address ${:04X}, ignoring", addr);
+			return 0;
+		}
 
 		U16 addr_mask = 0x7FFF;
 		if (rom.prg_rom_size == 1)
@@ -104,12 +107,27 @@ namespace nesem
 		return rom.prg_rom[addr & addr_mask];
 	}
 
-	// attempt a write to the cartridge.
-	// if the cart handles it, returns true, else returns false
-	bool NesCartridge::cpu_write([[maybe_unused]] U16 addr, [[maybe_unused]] U8 value) noexcept
+	void NesCartridge::cpu_write([[maybe_unused]] U16 addr, [[maybe_unused]] U8 value) noexcept
 	{
+		// TODO: handle different mappers
 		// TODO: support me
-		return false;
+		LOG_WARN("CPU write to cartridge not implemented, ignoring");
 	}
 
+	std::optional<U8> NesCartridge::ppu_read(U16 &addr) noexcept
+	{
+		// TODO: handle different mappers
+		if (addr < 0x2000)
+			return rom.chr_rom[addr];
+
+		return std::nullopt;
+	}
+
+	bool NesCartridge::ppu_write(U16 &addr, U8 data) noexcept
+	{
+		// TODO: handle different mappers
+		// TODO: support me
+		LOG_WARN("PPU write to cartridge not implemented, ignoring");
+		return false;
+	}
 }

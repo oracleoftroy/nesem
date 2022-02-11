@@ -28,5 +28,4 @@ namespace nesem
 		All = C | Z | I | D | B | E | V | N,
 	};
 	MAKE_FLAGS_ENUM(ProcessorStatus);
-
 }
