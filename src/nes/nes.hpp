@@ -11,7 +11,7 @@ namespace nesem
 	class Nes final
 	{
 	public:
-		explicit Nes(DrawFn draw);
+		Nes(DrawFn draw, PollInputFn player1, PollInputFn player2 = {});
 
 		bool load_rom(const std::filesystem::path &filename) noexcept;
 		void unload_rom() noexcept;
@@ -20,6 +20,8 @@ namespace nesem
 		void tick(double deltatime);
 
 		void screen_out(int x, int y, int color_index) noexcept;
+		U8 poll_player1() noexcept;
+		U8 poll_player2() noexcept;
 
 		NesBus &bus() noexcept;
 		NesCpu &cpu() noexcept;
@@ -27,6 +29,9 @@ namespace nesem
 
 	private:
 		DrawFn draw;
+		PollInputFn player1;
+		PollInputFn player2;
+
 		NesBus nes_bus;
 		NesCpu nes_cpu;
 		NesPpu nes_ppu;

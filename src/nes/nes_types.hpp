@@ -31,4 +31,20 @@ namespace nesem
 	MAKE_FLAGS_ENUM(ProcessorStatus);
 
 	using DrawFn = std::function<void(int x, int y, int color_index)>;
+
+	enum class Buttons : U8
+	{
+		None = 0x00,
+		A = 0x01,
+		B = 0x02,
+		Select = 0x04,
+		Start = 0x08,
+		Up = 0x10,
+		Down = 0x20,
+		Left = 0x40,
+		Right = 0x80,
+	};
+	MAKE_FLAGS_ENUM(Buttons);
+
+	using PollInputFn = std::function<Buttons()>;
 }

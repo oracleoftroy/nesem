@@ -6,8 +6,10 @@
 
 namespace nesem
 {
-	Nes::Nes(DrawFn draw)
+	Nes::Nes(DrawFn draw, PollInputFn player1, PollInputFn player2)
 		: draw(std::move(draw)),
+		  player1(std::move(player1)),
+		  player2(std::move(player2)),
 		  nes_bus(this),
 		  nes_cpu(this),
 		  nes_ppu(this),
@@ -55,6 +57,22 @@ namespace nesem
 	{
 		if (draw) [[likely]]
 			draw(x, y, color_index);
+	}
+
+	U8 Nes::poll_player1() noexcept
+	{
+		if (player1)
+			return static_cast<U8>(player1());
+
+		return 0;
+	}
+
+	U8 Nes::poll_player2() noexcept
+	{
+		if (player2)
+			return static_cast<U8>(player2());
+
+		return 0;
 	}
 
 	NesBus &Nes::bus() noexcept

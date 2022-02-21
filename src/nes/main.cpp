@@ -49,9 +49,18 @@ class NesApp
 {
 public:
 	NesApp(ui::App &app)
-		: nes(std::bind_front(&NesApp::on_nes_pixel, this))
+		: nes(std::bind_front(&NesApp::on_nes_pixel, this), std::bind_front(&NesApp::read_controller, this, std::ref(app)))
 	{
 		app.on_update = std::bind_front(&NesApp::tick, this);
+
+		button_a = app.key_from_name("/");
+		button_b = app.key_from_name(".");
+		button_select = app.key_from_name(",");
+		button_start = app.key_from_name("Space");
+		button_up = app.key_from_name("W");
+		button_down = app.key_from_name("S");
+		button_left = app.key_from_name("A");
+		button_right = app.key_from_name("D");
 
 		toggle_fullscreen_key = app.key_from_name("F11");
 		palette_next_key = app.key_from_name("]");
@@ -161,6 +170,40 @@ private:
 	{
 		nes_nametable.draw_point(nes_colors[color_index], {x, y});
 	}
+
+	nesem::Buttons read_controller(ui::App &app)
+	{
+		using enum nesem::Buttons;
+		auto result = None;
+
+		if (app.key_down(button_a))
+			result |= A;
+		if (app.key_down(button_b))
+			result |= B;
+		if (app.key_down(button_select))
+			result |= Select;
+		if (app.key_down(button_start))
+			result |= Start;
+		if (app.key_down(button_up))
+			result |= Up;
+		if (app.key_down(button_down))
+			result |= Down;
+		if (app.key_down(button_left))
+			result |= Left;
+		if (app.key_down(button_right))
+			result |= Right;
+
+		return result;
+	}
+
+	ui::Key button_a;
+	ui::Key button_b;
+	ui::Key button_select;
+	ui::Key button_start;
+	ui::Key button_up;
+	ui::Key button_down;
+	ui::Key button_left;
+	ui::Key button_right;
 
 	std::array<cm::Color, 64> nes_colors{
 		cm::Color{84,  84,  84 },
