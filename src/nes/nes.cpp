@@ -6,8 +6,9 @@
 
 namespace nesem
 {
-	Nes::Nes()
-		: nes_bus(this),
+	Nes::Nes(DrawFn draw)
+		: draw(std::move(draw)),
+		  nes_bus(this),
 		  nes_cpu(this),
 		  nes_ppu(this),
 		  nes_clock(this)
@@ -25,7 +26,7 @@ namespace nesem
 		nes_cartridge = std::make_unique<NesCartridge>(std::move(rom.value()));
 		nes_bus.load_cartridge(nes_cartridge.get());
 		nes_ppu.load_cartridge(nes_cartridge.get());
-		nes_cpu.reset(0xC000);
+		reset();
 
 		return true;
 	}
@@ -38,10 +39,22 @@ namespace nesem
 		nes_cartridge = nullptr;
 	}
 
+	void Nes::reset() noexcept
+	{
+		nes_cpu.reset();
+		nes_ppu.reset();
+	}
+
 	void Nes::tick(double deltatime)
 	{
 		auto dt = std::chrono::duration<double>(deltatime);
 		nes_clock.tick(duration_cast<ClockRate::duration>(dt));
+	}
+
+	void Nes::screen_out(int x, int y, int color_index) noexcept
+	{
+		if (draw) [[likely]]
+			draw(x, y, color_index);
 	}
 
 	NesBus &Nes::bus() noexcept

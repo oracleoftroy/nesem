@@ -734,7 +734,7 @@ namespace ui
 			// no blending and no scaling of the width means we can just memcpy each line to the dst
 			for (int line = start_line_index; line < stop_line_index; ++line)
 			{
-				int dst_x = start_col_index;
+				int dst_x = dst_area.x + start_col_index;
 				int dst_y = dst_area.y + line;
 				int src_y = (line / scale.h) + src_area.y;
 				std::copy_n(src.canvas_ptr + src.to_index({src_area.x, src_y}), src_area.w, canvas_ptr + to_index({dst_x, dst_y}));

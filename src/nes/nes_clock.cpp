@@ -40,15 +40,26 @@ namespace nesem
 
 	void NesClock::step(NesClockStep step) noexcept
 	{
-		LOG_WARN("Not fully implemented, stepping one clock cycle");
+		// TODO: support stepping by frame and CPU instruction
+		bool done = false;
 
-		if (tickcount % clock_rate.ppu_divisor)
-			// tick the ppu
-			nes->ppu().clock();
+		while (!done)
+		{
+			done = step == NesClockStep::OneClockCycle;
 
-		if (tickcount % clock_rate.cpu_divisor)
-			nes->cpu().clock();
+			if (tickcount % clock_rate.ppu_divisor)
+			{ // tick the ppu
+				nes->ppu().clock();
+				done = done || step == NesClockStep::OnePpuCycle;
+			}
 
-		++tickcount;
+			if (tickcount % clock_rate.cpu_divisor)
+			{
+				nes->cpu().clock();
+				done = done || step == NesClockStep::OneCpuCycle;
+			}
+
+			++tickcount;
+		}
 	}
 }

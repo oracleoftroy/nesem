@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 
 #include <util/enum.hpp>
 
@@ -28,4 +29,6 @@ namespace nesem
 		All = C | Z | I | D | B | E | V | N,
 	};
 	MAKE_FLAGS_ENUM(ProcessorStatus);
+
+	using DrawFn = std::function<void(int x, int y, int color_index)>;
 }

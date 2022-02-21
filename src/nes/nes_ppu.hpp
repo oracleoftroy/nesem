@@ -19,6 +19,11 @@ namespace nesem
 		void load_cartridge(NesCartridge *cartridge) noexcept;
 		void clock() noexcept;
 
+		// debugging help
+
+		void draw_pattern_table(int index, U8 palette, const DrawFn &draw_pixel);
+		void draw_name_table(int index, const DrawFn &draw_pixel);
+
 		// PPU bus IO
 
 		U8 read(U16 addr) noexcept;
@@ -56,7 +61,7 @@ namespace nesem
 		// 0x0000-0x1FFF
 		// pattern data on cart
 
-		// 0x2000-0x2FFF
+		// 0x2000-0x2FFF, then mirrored from 0x3000-0x3EFF
 		std::array<U8, 0x0400> nametable[2];
 
 		// 0x3F00-0x3FFF
@@ -86,8 +91,34 @@ namespace nesem
 
 		NesCartridge *cartridge = nullptr;
 
-		U64 framecount = 0;
+		U64 frame = 0;
 		int cycle = 0;
 		int scanline = 0;
+
+		U8 tile_id = 0;
+
+		// buffer for read/write during rendering
+		U8 next_pattern_lo = 0;
+		U8 next_pattern_hi = 0;
+		U8 next_attribute = 0;
+
+		void reload() noexcept;
+		void shift() noexcept;
+		U16 make_chrrom_addr() noexcept;
+		void increment_x() noexcept;
+		void increment_y() noexcept;
+		void transfer_x() noexcept;
+		void transfer_y() noexcept;
+
+		bool rendering_enabled() noexcept;
+		bool background_rendering_enabled() noexcept;
+		bool sprite_rendering_enabled() noexcept;
+
+		// rendering state
+
+		U16 pattern_shifter_lo = 0;
+		U16 pattern_shifter_hi = 0;
+		U16 attribute_lo = 0;
+		U16 attribute_hi = 0;
 	};
 }

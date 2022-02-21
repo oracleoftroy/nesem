@@ -51,6 +51,9 @@ namespace nesem
 
 		int mapper = (header[7] & 0xF0) | (header[6] >> 4);
 
+		NesMirroring mirroring = (header[6] & 0b0001) ? NesMirroring::vertical : NesMirroring::horizontal;
+		bool mirror_override = (header[6] & 0b1000) != 0;
+
 		// size in 16K units
 		int prg_rom_size = header[4];
 
@@ -80,7 +83,7 @@ namespace nesem
 		if (has_inst_rom)
 			LOG_WARN("ROM has INST-ROM data, but we are ignoring it");
 
-		return std::make_optional<NesRom>(version, mapper, prg_rom_size, chr_rom_size, std::move(prg_rom), std::move(chr_rom));
+		return std::make_optional<NesRom>(version, mapper, mirroring, mirror_override, prg_rom_size, chr_rom_size, std::move(prg_rom), std::move(chr_rom));
 	}
 
 	NesCartridge::NesCartridge(const NesRom &rom) noexcept
@@ -120,14 +123,45 @@ namespace nesem
 		if (addr < 0x2000)
 			return rom.chr_rom[addr];
 
+		// reading from the nametable
+		else if (addr < 0x3F00)
+		{
+			if (rom.mirroring == NesMirroring::horizontal)
+			{
+				// exchange the nt_x and nt_y bits
+				// we assume vertical mirroring by default, so this flips the 2400-27ff
+				// range with the 2800-2BFF range to achieve a horizontal mirror
+				addr = (addr & ~0b0'000'11'00000'00000) |
+					((addr & 0b0'000'10'00000'00000) >> 1) |
+					((addr & 0b0'000'01'00000'00000) << 1);
+			}
+		}
+
 		return std::nullopt;
 	}
 
-	bool NesCartridge::ppu_write(U16 &addr, U8 data) noexcept
+	bool NesCartridge::ppu_write(U16 &addr, U8 value) noexcept
 	{
+		if (addr < 0x2000)
+		{
+			LOG_WARN("PPU write to CHR-ROM??");
+			rom.chr_rom[addr] = value;
+			return true;
+		}
+		else if (addr < 0x3F00)
+		{
+			if (rom.mirroring == NesMirroring::horizontal)
+			{
+				// exchange the nt_x and nt_y bits
+				// we assume vertical mirroring by default, so this flips the 2400-27ff
+				// range with the 2800-2BFF range to achieve a horizontal mirror
+				addr = (addr & ~0b0'000'11'00000'00000) |
+					((addr & 0b0'000'10'00000'00000) >> 1) |
+					((addr & 0b0'000'01'00000'00000) << 1);
+			}
+		}
+
 		// TODO: handle different mappers
-		// TODO: support me
-		LOG_WARN("PPU write to cartridge not implemented, ignoring");
 		return false;
 	}
 }

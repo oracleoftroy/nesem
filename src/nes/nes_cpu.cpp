@@ -5,7 +5,6 @@
 #include <string_view>
 
 #include <fmt/format.h>
-#include <util/cast.hpp>
 #include <util/logging.hpp>
 
 #include "nes.hpp"
@@ -18,10 +17,11 @@ struct Op
 	Fn op;
 };
 
-#define OP(ins)                                 \
-	Op                                          \
-	{                                           \
-		.name = #ins, .op = &nesem::NesCpu::ins \
+#define OP(ins)                    \
+	Op                             \
+	{                              \
+		.name = #ins,              \
+		.op = &nesem::NesCpu::ins, \
 	}
 
 //      0     1     2     3     4     5     6     7     8     9     a     b     c     d     e     f
@@ -88,6 +88,11 @@ static_assert(size(ops) == 256);
 
 namespace nesem
 {
+	// Pseudo instructions used to distinguish other events
+	constexpr int startup_sequence = -1;
+	constexpr int nmi_sequence = -2;
+	constexpr int irq_sequence = -3;
+
 	std::string decompile(U8 instruction, NesBus &bus, U16 pc) noexcept
 	{
 		std::string_view name = ops[instruction].name;
@@ -573,21 +578,24 @@ namespace nesem
 	// TODO: Keep this? Give it a "better" home? The static logger is a bit hacky...
 	void NesCpu::log_instruction() noexcept
 	{
-		static std::shared_ptr<spdlog::logger> cpu_log = [] {
-			auto log_filename = std::filesystem::temp_directory_path() / "cpu.log";
+		if constexpr (SPDLOG_ACTIVE_LEVEL <= SPDLOG_LEVEL_DEBUG)
+		{
+			static std::shared_ptr<spdlog::logger> cpu_log = [] {
+				auto log_filename = std::filesystem::temp_directory_path() / "cpu.log";
 
-			LOG_INFO("CPU log created at: {}", log_filename.string());
-			auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(log_filename.string(), true);
+				LOG_INFO("CPU log created at: {}", log_filename.string());
+				auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(log_filename.string(), true);
 
-			// no extra detail, just the log message
-			file_sink->set_pattern("%v");
+				// no extra detail, just the log message
+				file_sink->set_pattern("%v");
 
-			return std::make_shared<spdlog::logger>("CPU log", file_sink);
-		}();
+				return std::make_shared<spdlog::logger>("CPU log", file_sink);
+			}();
 
-		// designed to be compatible with nestest.log
-		// pc  raw bytes *di
-		cpu_log->info("{} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} PPU: XXX,XXX CYC:{}", format_nestest(U8(instruction), nes->bus(), PC), A, X, Y, U8(P), S, cycles);
+			// designed to be compatible with nestest.log
+			// pc  raw bytes *di
+			cpu_log->debug("{} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} PPU: XXX,XXX CYC:{}", format_nestest(U8(instruction), nes->bus(), PC), A, X, Y, U8(P), S, cycles);
+		}
 	}
 
 	NesCpu::NesCpu(Nes *nes) noexcept
@@ -620,7 +628,7 @@ namespace nesem
 		}
 		else
 			// otherwise, emulate the startup sequence
-			instruction = -1;
+			instruction = startup_sequence;
 	}
 
 	void NesCpu::irq() noexcept
@@ -683,36 +691,91 @@ namespace nesem
 			return;
 		}
 
-		// TODO: check if interrupt/nmi requested and handle appropriately
-
 		++step;
 
 		// check for reset sequence
 		// reset takes 7 cycles
-		if (instruction == -1)
+		if (instruction == startup_sequence)
 		{
 			if (step == 6)
-				PC = nes->bus().read(0xFFFC); // read low byte
-
-			if (step == 7)
+				PC = nes->bus().read(0xFFFC);
+			else if (step == 7)
 			{
-				// read hi byte
-				auto hi = nes->bus().read(0xFFFD);
-				PC |= hi << 8;
+				PC |= nes->bus().read(0xFFFD) << 8;
 
-				// reset finished. set instruction to a dummy value (anything except the reset flag)
+				// reset finished. set instruction to a dummy value (BRK in this case)
 				instruction = 0;
 				step = 0;
-				return;
 			}
 
+			return;
+		}
+		else if (instruction == nmi_sequence || instruction == irq_sequence)
+		{
+			using enum ProcessorStatus;
+			switch (step)
+			{
+			case 3:
+				push(U8((PC >> 8) & 0xFF));
+				break;
+			case 4:
+				push(U8(PC & 0xFF));
+				break;
+			case 5:
+				P |= I;
+				push(U8(P));
+				break;
+			case 6:
+				if (instruction == nmi_sequence)
+					PC = nes->bus().read(0xFFFA);
+				else if (instruction == irq_sequence)
+					PC = nes->bus().read(0xFFFE);
+
+				break;
+			case 7:
+				if (instruction == nmi_sequence)
+					PC |= nes->bus().read(0xFFFB) << 8;
+				else if (instruction == irq_sequence)
+					PC |= nes->bus().read(0xFFFF) << 8;
+
+				instruction = 0;
+				step = 0;
+
+				break;
+			}
 			return;
 		}
 
 		if (step == 1)
 		{
+			if (nmi_requested)
+			{
+				nmi_requested = false;
+				instruction = nmi_sequence;
+				return;
+			}
+			else if (interrupt_requested)
+			{
+				interrupt_requested = false;
+
+				using enum ProcessorStatus;
+
+				// If interrupts are disabled, ignore this interrupt, otherwise, go into the interrupt handling sequence
+				// I think this is wrong, but I'm not sure what should happen. There are race conditions with setting and
+				// clearing the 'I' flag that need to be considered, and I get the impression that the irq signal may or
+				// may not stick around for various reasons.
+
+				// TODO: read https://wiki.nesdev.org/w/index.php?title=CPU_interrupts more carefully
+				// TODO: test with https://github.com/christopherpow/nes-test-roms/tree/master/cpu_interrupts_v2
+				if ((P & I) == None)
+				{
+					instruction = nmi_sequence;
+					return;
+				}
+			}
+
 			instruction = readPC();
-			LOG_INFO("{:>5}: [{:04X}] {:<35} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}", cycles, PC - 1, decompile(U8(instruction), nes->bus(), PC), A, X, Y, U8(P), S);
+			LOG_DEBUG("{:>5}: [{:04X}] {:<35} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}", cycles, PC - 1, decompile(U8(instruction), nes->bus(), PC), A, X, Y, U8(P), S);
 			log_instruction();
 		}
 		else
@@ -887,7 +950,6 @@ namespace nesem
 
 	NesCpu::AddressStatus NesCpu::read_modify_write() noexcept
 	{
-		// no exceptions! Yay!
 		switch ((instruction & 0b00011100) >> 2)
 		{
 		case 1:

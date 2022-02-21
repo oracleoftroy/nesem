@@ -15,12 +15,6 @@ namespace nesem
 
 	U8 NesBus::read(U16 addr) noexcept
 	{
-		CHECK(addr < size(ram), "Address out of range");
-
-		// cartridge is 0x4020-0xFFFF, but we always go to the cart first to let mappers possibly adjust the address
-		if (cartridge)
-			return cartridge->cpu_read(addr);
-
 		// the NES has 2k of ram mirrored 4 times between addr 0 - 0x1FFF
 		// thus, reads/writes to 0x0001 are observable at address 0x0801, 0x1001, 0x1801
 		if (addr < 0x2000)
@@ -86,8 +80,6 @@ namespace nesem
 
 	void NesBus::write(U16 addr, U8 value) noexcept
 	{
-		CHECK(addr < size(ram), "Address out of range");
-
 		// the NES has 2k of ram mirrored 4 times between addr 0 - 0x1FFF
 		// thus, reads/writes to 0x0001 are observable at address 0x0801, 0x1001, 0x1801
 		if (addr < 0x2000)

@@ -8,10 +8,25 @@
 
 namespace nesem
 {
+	enum class NesMirroring
+	{
+		horizontal,
+		vertical,
+	};
+
 	struct NesRom
 	{
+		// iNES file version
 		int version;
+
+		// iNES mapper id, see: https://wiki.nesdev.org/w/index.php?title=Mapper
 		int mapper;
+
+		// nametable mirroring mode
+		NesMirroring mirroring;
+
+		// indicates special handling of mirroring, exact handling varies by mapper
+		bool mirror_override;
 
 		// size in 16K units
 		int prg_rom_size;
@@ -41,7 +56,7 @@ namespace nesem
 		// write data from chr_rom. The cartridge has a lot of leeway to remap the PPU
 		// if return is true, the cart handled the request
 		// if return is false, the ppu should handle the request directly. Note that the cartridge may freely modify the address.
-		bool ppu_write(U16 &addr, U8 data) noexcept;
+		bool ppu_write(U16 &addr, U8 value) noexcept;
 
 	private:
 		NesRom rom;

@@ -11,18 +11,22 @@ namespace nesem
 	class Nes final
 	{
 	public:
-		Nes();
+		explicit Nes(DrawFn draw);
 
 		bool load_rom(const std::filesystem::path &filename) noexcept;
 		void unload_rom() noexcept;
+		void reset() noexcept;
 
 		void tick(double deltatime);
+
+		void screen_out(int x, int y, int color_index) noexcept;
 
 		NesBus &bus() noexcept;
 		NesCpu &cpu() noexcept;
 		NesPpu &ppu() noexcept;
 
 	private:
+		DrawFn draw;
 		NesBus nes_bus;
 		NesCpu nes_cpu;
 		NesPpu nes_ppu;
