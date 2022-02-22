@@ -245,7 +245,8 @@ namespace nesem
 
 	U16 NesPpu::make_chrrom_addr() noexcept
 	{
-		return ((reg.ppuctrl & ctrl_pattern_addr) ? 0x1000 : 0) | (tile_id << 4) | ((reg.vram_addr & vram_fine_y_mask) >> vram_fine_y_shift);
+		U16 pattern_start = (reg.ppuctrl & ctrl_pattern_addr) != 0 ? 0x1000 : 0;
+		return pattern_start | (next_tile_id << 4) | ((reg.vram_addr & vram_fine_y_mask) >> vram_fine_y_shift);
 	}
 
 	void NesPpu::clock() noexcept
@@ -273,7 +274,7 @@ namespace nesem
 
 					// load the tile id from the nametable currently addressed at vram_addr. Note the masks takes all but the fine_y position
 					// this is the tile we are pre-fetching data for
-					tile_id = read(0x2000 | (reg.vram_addr & 0x0FFF));
+					next_tile_id = read(0x2000 | (reg.vram_addr & 0x0FFF));
 					break;
 
 				case 2:
@@ -329,9 +330,9 @@ namespace nesem
 				reload();
 			}
 
-			// these reads don't change any state, but some mappers may rely on these fetches for timing purposes
+			// extra reads of the nametable, some mappers may rely on these fetches for timing purposes
 			if (cycle == 337 || cycle == 339)
-				read(0x2000 | (reg.vram_addr & 0x0FFF));
+				next_tile_id = read(0x2000 | (reg.vram_addr & 0x0FFF));
 
 			// the PPU transfers y coords every tick for several cycles in a row for some reason
 			// we could probably just do a single transfer on cycle 304, but whatever
@@ -352,7 +353,7 @@ namespace nesem
 			reg.ppustatus = 0;
 		}
 
-		// TODO: handle "sprites"
+		// TODO: handle foreground
 
 		// All preparation done, determine the value of the current pixel
 		if (scanline < 240 && cycle >= 1 && cycle < 257)
@@ -366,16 +367,16 @@ namespace nesem
 					U8 bit_offset = 0b1000'0000 >> reg.fine_x;
 					U8 value = 0;
 
-					value = (pattern_shifter_hi & bit_offset) > 0;
+					value = (attribute_hi & bit_offset) > 0;
 					bg_palette_index |= U8(value << 3);
 
-					value = (pattern_shifter_lo & bit_offset) > 0;
+					value = (attribute_lo & bit_offset) > 0;
 					bg_palette_index |= U8(value << 2);
 
-					value = (attribute_hi & bit_offset) > 0;
+					value = (pattern_shifter_hi & bit_offset) > 0;
 					bg_palette_index |= U8(value << 1);
 
-					value = (attribute_lo & bit_offset) > 0;
+					value = (pattern_shifter_lo & bit_offset) > 0;
 					bg_palette_index |= U8(value << 0);
 				}
 			}

@@ -95,9 +95,8 @@ namespace nesem
 		int cycle = 0;
 		int scanline = 0;
 
-		U8 tile_id = 0;
-
 		// buffer for read/write during rendering
+		U8 next_tile_id = 0;
 		U8 next_pattern_lo = 0;
 		U8 next_pattern_hi = 0;
 		U8 next_attribute = 0;
