@@ -235,17 +235,37 @@ namespace ui
 			SDL_Event event;
 			while (SDL_PollEvent(&event))
 			{
-				if (event.type == SDL_QUIT)
+				switch (event.type)
+				{
+				case SDL_QUIT:
 					return false;
 
-				if (event.type == SDL_WINDOWEVENT && event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
-				{
-					LOG_INFO("Window size changed, now {}x{}", event.window.data1, event.window.data2);
+				case SDL_WINDOWEVENT:
+					if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+					{
+						LOG_INFO("Window size changed, now {}x{}", event.window.data1, event.window.data2);
 
-					// changing size invalidates the surface, so reacquire
-					if (core->window_surface = SDL_GetWindowSurface(core->window.get());
-						!core->window_surface)
-						LOG_CRITICAL("Error getting window surface: {}", SDL_GetError());
+						// changing size invalidates the surface, so reacquire
+						if (core->window_surface = SDL_GetWindowSurface(core->window.get());
+							!core->window_surface)
+							LOG_CRITICAL("Error getting window surface: {}", SDL_GetError());
+					}
+					break;
+
+				case SDL_DROPFILE:
+					if (on_file_drop)
+						on_file_drop(event.drop.file);
+
+					// these events conveniently allocate memory for your app and leave it up to you to free. And they
+					// are enabled by default. Yay! Free memory leak unless you explicitly handle or disable them! :(
+					SDL_free(event.drop.file);
+					break;
+
+				case SDL_DROPTEXT:
+					// these events conveniently allocate memory for your app and leave it up to you to free. And they
+					// are enabled by default. Yay! Free memory leak unless you explicitly handle or disable them! :(
+					SDL_free(event.drop.file);
+					break;
 				}
 			}
 

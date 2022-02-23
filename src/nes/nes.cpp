@@ -19,12 +19,11 @@ namespace nesem
 
 	bool Nes::load_rom(const std::filesystem::path &filename) noexcept
 	{
-		unload_rom();
-
 		auto rom = read_rom(filename);
 		if (!rom)
 			return false;
 
+		unload_rom();
 		nes_cartridge = std::make_unique<NesCartridge>(std::move(rom.value()));
 		nes_bus.load_cartridge(nes_cartridge.get());
 		nes_ppu.load_cartridge(nes_cartridge.get());

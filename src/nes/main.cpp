@@ -52,6 +52,7 @@ public:
 		: nes(std::bind_front(&NesApp::on_nes_pixel, this), std::bind_front(&NesApp::read_controller, this, std::ref(app)))
 	{
 		app.on_update = std::bind_front(&NesApp::tick, this);
+		app.on_file_drop = std::bind_front(&nesem::Nes::load_rom, std::ref(nes));
 
 		button_a = app.key_from_name("/");
 		button_b = app.key_from_name(".");

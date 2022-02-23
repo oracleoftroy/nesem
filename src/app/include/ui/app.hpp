@@ -29,6 +29,9 @@ namespace ui
 		// callback function, called each tick
 		std::function<void(App &app, Canvas &canvas, float deltatime)> on_update;
 
+		// callback for handling dropped file
+		std::function<void(std::string_view filename)> on_file_drop;
+
 		// run the application. Exits when the window is closed
 		void run();
 
