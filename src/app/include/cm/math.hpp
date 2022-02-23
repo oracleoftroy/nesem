@@ -714,8 +714,8 @@ namespace cm
 		return {
 			.x = std::min(p1.x, p2.x),
 			.y = std::min(p1.y, p2.y),
-			.w = abs(p2.x - p1.x),
-			.h = abs(p2.y - p1.y),
+			.w = abs(p2.x - p1.x) + 1,
+			.h = abs(p2.y - p1.y) + 1,
 		};
 	}
 
@@ -750,19 +750,19 @@ namespace cm
 	template <typename T>
 	constexpr Point2<T> top_right(Rect<T> rect) noexcept
 	{
-		return {rect.x + rect.w, rect.y};
+		return {rect.x + rect.w - 1, rect.y};
 	}
 
 	template <typename T>
 	constexpr Point2<T> bottom_left(Rect<T> rect) noexcept
 	{
-		return {rect.x, rect.y + rect.h};
+		return {rect.x, rect.y + rect.h - 1};
 	}
 
 	template <typename T>
 	constexpr Point2<T> bottom_right(Rect<T> rect) noexcept
 	{
-		return {rect.x + rect.w, rect.y + rect.h};
+		return {rect.x + rect.w - 1, rect.y + rect.h - 1};
 	}
 
 	template <typename T>
@@ -789,35 +789,32 @@ namespace cm
 		auto bounds_br = bottom_right(bounds);
 		auto br = bottom_right(r);
 
-		if (r.x < bounds_br.x && bounds.x < br.x)
+		if (r.x <= bounds_br.x && bounds.x <= br.x &&
+			r.y <= bounds_br.y && bounds.y <= br.y)
 		{
-			if (r.y < bounds_br.y && bounds.y < br.y)
-			{
-				auto p1 = Point2{
-					std::clamp(r.x, bounds.x, bounds_br.x),
-					std::clamp(r.y, bounds.y, bounds_br.y),
-				};
+			auto p1 = Point2{
+				std::clamp(r.x, bounds.x, bounds_br.x),
+				std::clamp(r.y, bounds.y, bounds_br.y),
+			};
 
-				auto p2 = Point2{
-					std::clamp(br.x, bounds.x, bounds_br.x),
-					std::clamp(br.y, bounds.y, bounds_br.y),
-				};
+			auto p2 = Point2{
+				std::clamp(br.x, bounds.x, bounds_br.x),
+				std::clamp(br.y, bounds.y, bounds_br.y),
+			};
 
-				return std::make_optional<Rect<T>>(rect(p1, p2));
-			}
+			return std::make_optional<Rect<T>>(rect(p1, p2));
 		}
+
 		return std::nullopt;
 	}
 
 	template <typename T>
 	constexpr bool contains(Rect<T> rect, Point2<T> point) noexcept
 	{
-		auto br = bottom_right(rect);
-
 		return point.x >= rect.x &&
 			point.y >= rect.y &&
-			point.x < br.x &&
-			point.y < br.y;
+			point.x < rect.x + rect.w &&
+			point.y < rect.y + rect.h;
 	}
 
 	template <typename T>
@@ -1102,8 +1099,6 @@ namespace cm
 
 		auto [minx, miny] = top_left(rect);
 		auto [maxx, maxy] = bottom_right(rect);
-		maxx -= T(0.05);
-		maxy -= T(0.05);
 
 		auto x = std::array{p1.x, p2.x};
 		auto y = std::array{p1.y, p2.y};
@@ -1236,8 +1231,6 @@ namespace cm
 
 		auto [xmin, ymin] = top_left(rect);
 		auto [xmax, ymax] = bottom_right(rect);
-		xmax -= T(0.05);
-		ymax -= T(0.05);
 
 		if (!(p1.x < xmin && p2.x < xmin) && !(p1.x > xmax && p2.x > xmax))
 		{
@@ -1355,14 +1348,13 @@ namespace cm
 			static_assert(BoundedArea<Circlef>);
 
 			constexpr auto p1 = Point2{4, 2};
-			constexpr auto p2 = Point2{14, 14};
+			constexpr auto p2 = Point2{13, 13};
 
 			static_assert(25 == distance_sq(Point2{0, 0}, Point2{3, 4}));
 			// static_assert(5 == distance(Point2{0, 0}, Point2{3, 4}));
 
 			static_assert(p1 == curve(p1, {-1, 5}, p2, 0.0f));
 			static_assert(p2 == curve(p2, {-1, 5}, p2, 1.0f));
-			
 
 			constexpr auto s1 = Size{10, 12};
 			constexpr auto s2 = s1 / 2;
@@ -1375,9 +1367,15 @@ namespace cm
 			static_assert(r2 == r3);
 
 			static_assert(top_left(r1) == p1);
-			static_assert(top_right(r1) == Point2{14, 2});
-			static_assert(bottom_left(r1) == Point2{4, 14});
+			static_assert(top_right(r1) == Point2{13, 2});
+			static_assert(bottom_left(r1) == Point2{4, 13});
 			static_assert(bottom_right(r1) == p2);
+
+			// landmark points should be contained in the rect
+			static_assert(contains(r1, top_left(r1)));
+			static_assert(contains(r1, top_right(r1)));
+			static_assert(contains(r1, bottom_left(r1)));
+			static_assert(contains(r1, bottom_right(r1)));
 
 			constexpr auto format = ColorFormat{};
 
