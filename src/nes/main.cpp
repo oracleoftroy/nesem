@@ -5,6 +5,14 @@
 #include <util/rng.hpp>
 
 #include "nes.hpp"
+#include "text.hpp"
+
+enum class DebugMode
+{
+	none,
+	bg_info,
+	fg_info,
+};
 
 std::filesystem::path find_file(const std::filesystem::path &path)
 {
@@ -67,6 +75,10 @@ public:
 		palette_next_key = app.key_from_name("]");
 		palette_prev_key = app.key_from_name("[");
 
+		debug_mode_none = app.key_from_name("0");
+		debug_mode_bg = app.key_from_name("1");
+		debug_mode_fg = app.key_from_name("2");
+
 		test_rom_loaded = nes.load_rom(find_file(R"(data/nestest.nes)"));
 	}
 
@@ -87,6 +99,24 @@ private:
 			app.fullscreen(fullscreen);
 		}
 
+		if (app.key_pressed(debug_mode_bg))
+		{
+			debug_mode = DebugMode::bg_info;
+			LOG_INFO("Debug mode now: {}", int(debug_mode));
+		}
+
+		if (app.key_pressed(debug_mode_fg))
+		{
+			debug_mode = DebugMode::fg_info;
+			LOG_INFO("Debug mode now: {}", int(debug_mode));
+		}
+
+		if (app.key_pressed(debug_mode_none))
+		{
+			debug_mode = DebugMode::none;
+			LOG_INFO("Debug mode now: {}", int(debug_mode));
+		}
+
 		if (app.key_pressed(palette_next_key))
 			current_palette = nesem::U8(current_palette + 1) % 8;
 		if (app.key_pressed(palette_prev_key))
@@ -104,57 +134,104 @@ private:
 		canvas.fill({});
 
 		auto size = nes_screen.size();
-		auto scale = 2;
+		auto scale = 3;
 
-		nes.ppu().draw_pattern_table(0, current_palette, std::bind_front(&NesApp::on_pattern_pixel, this, 0));
-		nes.ppu().draw_pattern_table(1, current_palette, std::bind_front(&NesApp::on_pattern_pixel, this, 1));
-		nes.ppu().draw_name_table(0, std::bind_front(&NesApp::on_nametable_pixel, this));
+		canvas.blit({0, 0}, nes_screen, std::nullopt, {scale, scale});
 
-		constexpr auto screen_pos = cm::Point2{4, 4};
-		auto pattern_0_pos = cm::Point2{canvas.size().w - (4 * 2 + nes_pattern_1.size().w * 2), 4};
-		auto pattern_1_pos = cm::Point2{canvas.size().w - (4 * 1 + nes_pattern_1.size().w * 1), 4};
-		auto nametable_pos = cm::Point2{pattern_0_pos.x, 4 * 2 + nes_pattern_0.size().h};
+		if (debug_mode == DebugMode::fg_info || debug_mode == DebugMode::bg_info)
+		{
+			auto pattern_0_pos = cm::Point2{canvas.size().w - (nes_pattern_1.size().w * 2), 0};
+			auto pattern_1_pos = cm::Point2{canvas.size().w - (nes_pattern_1.size().w * 1), 0};
+			auto nametable_1_pos = cm::Point2{canvas.size().w - nes_nametable_1.size().w, canvas.size().h - nes_nametable_1.size().h};
+			auto nametable_0_pos = cm::Point2{nametable_1_pos.x, nametable_1_pos.y - nes_nametable_0.size().h};
 
-		canvas.blit(screen_pos, nes_screen, std::nullopt, {scale, scale});
-		canvas.blit(pattern_0_pos, nes_pattern_0, std::nullopt);
-		canvas.blit(pattern_1_pos, nes_pattern_1, std::nullopt);
-		canvas.blit(nametable_pos, nes_nametable, std::nullopt);
+			nes.ppu().draw_pattern_table(0, current_palette, std::bind_front(&NesApp::on_pattern_pixel, this, 0));
+			canvas.blit(pattern_0_pos, nes_pattern_0, std::nullopt);
 
-		canvas.draw_rect({200, 200, 200}, rect(screen_pos, size * scale));
-		canvas.draw_rect({200, 200, 200}, rect(pattern_0_pos, nes_pattern_0.size()));
-		canvas.draw_rect({200, 200, 200}, rect(pattern_1_pos, nes_pattern_1.size()));
-		canvas.draw_rect({200, 200, 200}, rect(nametable_pos, nes_nametable.size()));
+			nes.ppu().draw_pattern_table(1, current_palette, std::bind_front(&NesApp::on_pattern_pixel, this, 1));
+			canvas.blit(pattern_1_pos, nes_pattern_1, std::nullopt);
 
-		draw_palettes(canvas);
+			canvas.draw_line({200, 200, 200}, {size.w * scale, 0}, {size.w * scale, canvas.size().h});
+			canvas.draw_rect({200, 200, 200}, rect(pattern_0_pos, nes_pattern_0.size()));
+			canvas.draw_rect({200, 200, 200}, rect(pattern_1_pos, nes_pattern_1.size()));
+
+			auto palette_end_pos = draw_palettes(canvas);
+
+			if (debug_mode == DebugMode::bg_info)
+			{
+				auto [fine_x, fine_y, coarse_x, coarse_y, nt] = nes.ppu().get_scroll_info();
+
+				auto pos = cm::Point2{nes_screen.size().w * scale + 2, palette_end_pos.y};
+				draw_string(canvas, {255, 255, 255}, fmt::format("fine x,y: {}, {}", fine_x, fine_y), pos);
+				pos.y += 8;
+				draw_string(canvas, {255, 255, 255}, fmt::format("coarse x,y: {:>2}, {:>2}", coarse_x, coarse_y), pos);
+				pos.y += 8;
+				draw_string(canvas, {255, 255, 255}, fmt::format("nametable: {}", nt), pos);
+
+				nes.ppu().draw_name_table(0, std::bind_front(&NesApp::on_nametable_pixel, this, 0));
+				canvas.blit(nametable_0_pos, nes_nametable_0, std::nullopt);
+				nes.ppu().draw_name_table(1, std::bind_front(&NesApp::on_nametable_pixel, this, 1));
+				canvas.blit(nametable_1_pos, nes_nametable_1, std::nullopt);
+				canvas.draw_rect({200, 200, 200}, rect(nametable_0_pos, nes_nametable_0.size()));
+				canvas.draw_rect({200, 200, 200}, rect(nametable_1_pos, nes_nametable_1.size()));
+			}
+
+			if (debug_mode == DebugMode::fg_info)
+			{
+				auto pos = cm::Point2{nes_screen.size().w * scale + 2, palette_end_pos.y};
+				const auto palette_start_pos = cm::Point2{canvas.size().w - 256 + 2, 128 + 2};
+
+				const auto &oam = nes.ppu().get_oam();
+				for (size_t i = 0, end = std::size(oam); i < end; i += 4)
+				{
+					draw_string(canvas, {255, 255, 255}, fmt::format("({:>3} {:>3}) {:02X} {:02X}", oam[i + 3], oam[i + 0], oam[i + 1], oam[i + 2]), pos);
+					pos.y += 8;
+				}
+			}
+		}
 	}
 
-	void draw_palettes(ui::Canvas &canvas) noexcept
+	cm::Point2i draw_palettes(ui::Canvas &canvas) noexcept
 	{
-		auto palette_pos = cm::Point2{8 + nes_screen.size().w * 2, 4};
-		auto color_size = cm::Size{16, 16};
-
-		auto palette_size = cm::Size{color_size.w * 4 + 2 * 5, color_size.h + 2 * 2};
+		const auto palette_start_pos = cm::Point2{canvas.size().w - 256 + 2, 128 + 2};
+		auto palette_pos = palette_start_pos;
+		auto color_size = cm::Size{14, 14};
+		auto palette_size = cm::Size{color_size.w * 4 + 6, color_size.w + 4};
 
 		nesem::U16 palette_base_addr = 0x3F00;
 		for (nesem::U16 p = 0; p < 8; ++p)
 		{
 			for (int i = 0; i < 4; ++i)
 			{
-				auto color_pos = palette_pos + 2;
-				color_pos.x += (color_size.w + 2) * i;
+				auto color_pos = palette_pos + cm::Point2{3, 1};
+				color_pos.x += (color_size.w) * i;
 				auto color_rect = rect(color_pos, color_size);
 
 				auto color_index = nes.ppu().read(palette_base_addr + p * 4 + i);
 
 				canvas.fill_rect(nes_colors[color_index], color_rect);
-				canvas.draw_rect({200, 200, 200}, color_rect);
+				canvas.draw_rect({255, 255, 255}, color_rect);
 			}
 
 			if (p == current_palette)
-				canvas.draw_rect({200, 200, 200}, rect(palette_pos, palette_size));
+			{
+				auto selected_pos = palette_pos + cm::Point2{3, 1};
+				auto selected_size = cm::Sizei{color_size.w * 4, color_size.h};
 
-			palette_pos.y += color_size.h + 2 * 2;
+				canvas.draw_rect({255, 196, 128}, rect(selected_pos, selected_size));
+				canvas.draw_rect({255, 128, 64}, rect(selected_pos - 1, selected_size + 2));
+				canvas.draw_rect({255, 196, 128}, rect(selected_pos - 2, selected_size + 4));
+			}
+			if (((p + 1) % 4) == 0)
+			{
+				palette_pos.x = palette_start_pos.x;
+				palette_pos.y += palette_size.h;
+			}
+			else
+				palette_pos.x += palette_size.w;
 		}
+
+		return palette_pos;
 	}
 
 	void on_nes_pixel(int x, int y, int color_index) noexcept
@@ -167,9 +244,9 @@ private:
 		(index == 0 ? nes_pattern_0 : nes_pattern_1).draw_point(nes_colors[color_index], {x, y});
 	}
 
-	void on_nametable_pixel(int x, int y, int color_index) noexcept
+	void on_nametable_pixel(int index, int x, int y, int color_index) noexcept
 	{
-		nes_nametable.draw_point(nes_colors[color_index], {x, y});
+		(index == 0 ? nes_nametable_0 : nes_nametable_1).draw_point(nes_colors[color_index], {x, y});
 	}
 
 	nesem::Buttons read_controller(ui::App &app)
@@ -276,7 +353,13 @@ private:
 	ui::Canvas nes_screen = ui::Canvas({256, 240});
 	ui::Canvas nes_pattern_0 = ui::Canvas({128, 128});
 	ui::Canvas nes_pattern_1 = ui::Canvas({128, 128});
-	ui::Canvas nes_nametable = ui::Canvas({256, 240});
+	ui::Canvas nes_nametable_0 = ui::Canvas({256, 240});
+	ui::Canvas nes_nametable_1 = ui::Canvas({256, 240});
+
+	DebugMode debug_mode = DebugMode::none;
+	ui::Key debug_mode_none;
+	ui::Key debug_mode_bg;
+	ui::Key debug_mode_fg;
 
 	ui::Key toggle_fullscreen_key;
 	bool fullscreen = false;

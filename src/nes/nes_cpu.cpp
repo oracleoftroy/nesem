@@ -678,7 +678,7 @@ namespace nesem
 
 			// do the dma transfer, read on even steps, write on odd steps
 			if ((dma_step & 1) == 0)
-				scratch = nes->bus().read(dma_page | (dma_step >> 1));
+				scratch = nes->bus().read((dma_page << 8) | (dma_step >> 1));
 			else
 				nes->ppu().oamdata(scratch);
 

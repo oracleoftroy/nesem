@@ -18,7 +18,7 @@ target_link_libraries(nesemlib PRIVATE project_options)
 target_link_libraries(nesemlib PUBLIC util)
 target_include_directories(nesemlib PUBLIC ".")
 
-add_executable(nesem WIN32 "nesem.manifest" "main.cpp")
+add_executable(nesem WIN32 "nesem.manifest" "main.cpp" "text.cpp" "text.hpp")
 target_link_libraries(nesem PRIVATE project_options)
 target_link_libraries(nesem PRIVATE nesemlib)
 target_link_libraries(nesem PRIVATE appui)

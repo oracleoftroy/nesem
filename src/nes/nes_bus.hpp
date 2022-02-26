@@ -21,7 +21,7 @@ namespace nesem
 
 	private:
 		Nes *nes = nullptr;
-		std::array<U8, 0x7FF> ram;
+		std::array<U8, 0x800> ram;
 		NesCartridge *cartridge = nullptr;
 
 		bool poll_input = false;
