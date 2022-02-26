@@ -82,7 +82,7 @@ namespace nesem
 		// NES APU and I/O registers
 		if (addr < 0x4018)
 		{
-			LOG_WARN("APU not implemented, ignoring read from ${:04X}", addr);
+			LOG_WARN_ONCE("APU not implemented, ignoring read from ${:04X}", addr);
 			return 0;
 		}
 
@@ -175,7 +175,7 @@ namespace nesem
 		// NES APU and I/O registers
 		if (addr < 0x4018)
 		{
-			LOG_WARN("APU not implemented, ignoring write to ${:04X}", addr);
+			LOG_WARN_ONCE("APU not implemented, ignoring write to ${:04X}", addr);
 			return;
 		}
 

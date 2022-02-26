@@ -17,6 +17,27 @@
 #define LOG_ERROR SPDLOG_ERROR
 #define LOG_CRITICAL SPDLOG_CRITICAL
 
+#define PP_CONCAT1(X, Y) X##Y
+#define PP_CONCAT(X, Y) PP_CONCAT1(X, Y)
+#define PP_UNIQUE_VAR(name) PP_CONCAT(name, __LINE__)
+
+#define LOG_ONCE(LOG, ...)                               \
+	do                                                   \
+	{                                                    \
+		static bool PP_UNIQUE_VAR(already_ran_) = false; \
+		if (PP_UNIQUE_VAR(already_ran_))                 \
+			break;                                       \
+		PP_UNIQUE_VAR(already_ran_) = true;              \
+		LOG(__VA_ARGS__);                                \
+	} while (false)
+
+#define LOG_TRACE_ONCE(...) LOG_ONCE(LOG_TRACE, __VA_ARGS__)
+#define LOG_DEBUG_ONCE(...) LOG_ONCE(LOG_DEBUG, __VA_ARGS__)
+#define LOG_INFO_ONCE(...) LOG_ONCE(LOG_INFO, __VA_ARGS__)
+#define LOG_WARN_ONCE(...) LOG_ONCE(LOG_WARN, __VA_ARGS__)
+#define LOG_ERROR_ONCE(...) LOG_ONCE(LOG_ERROR, __VA_ARGS__)
+#define LOG_CRITICAL_ONCE(...) LOG_ONCE(LOG_CRITICAL, __VA_ARGS__)
+
 #if defined(NDEBUG)
 #	define VERIFY(condition, reason) condition
 #	define CHECK(condition, reason)
