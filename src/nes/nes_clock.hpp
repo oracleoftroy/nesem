@@ -18,10 +18,14 @@ namespace nesem
 
 	constexpr ClockRate ntsc() noexcept
 	{
-		using clockrate_NTSC = std::ratio<11, 236250000>;
+		// NTSC timings happen to be evenly divisiable by 4 to an even 1 CPU/APU tick per 3 PPU tick
+		// contrast that with the 16 by 5 ratio used for PAL
+		constexpr U64 common_divisor = 4;
+
+		using clockrate_NTSC = std::ratio<11, 236250000 / common_divisor>;
 		using duration_NTSC = std::chrono::duration<double, clockrate_NTSC>;
-		constexpr U64 cpu_divisor_NTSC = 12;
-		constexpr U64 ppu_divisor_NTSC = 4;
+		constexpr U64 cpu_divisor_NTSC = 12 / common_divisor;
+		constexpr U64 ppu_divisor_NTSC = 4 / common_divisor;
 
 		return {
 			.frequency = duration_cast<ClockRate::duration>(duration_NTSC(1)),
