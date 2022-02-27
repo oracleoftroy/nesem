@@ -46,10 +46,16 @@ namespace nesem
 		nes_ppu.reset();
 	}
 
-	void Nes::tick(double deltatime)
+	void Nes::tick(double deltatime) noexcept
 	{
 		auto dt = std::chrono::duration<double>(deltatime);
 		nes_clock.tick(duration_cast<ClockRate::duration>(dt));
+	}
+
+	double Nes::step(NesClockStep step) noexcept
+	{
+		std::chrono::duration<double> dt = nes_clock.step(step);
+		return dt.count();
 	}
 
 	void Nes::screen_out(int x, int y, int color_index) noexcept

@@ -22,11 +22,9 @@ namespace nesem
 		while (accumulator > clock_rate.frequency)
 		{
 			if ((tickcount % clock_rate.ppu_divisor) == 0)
-				// tick the ppu
 				nes->ppu().clock();
 
 			if ((tickcount % clock_rate.cpu_divisor) == 0)
-				// tick the cpu
 				nes->cpu().clock();
 
 			// if (tickcount % clock_rate.apu_divisor)
@@ -38,28 +36,35 @@ namespace nesem
 		}
 	}
 
-	void NesClock::step(NesClockStep step) noexcept
+	ClockRate::duration NesClock::step(NesClockStep step) noexcept
 	{
-		// TODO: support stepping by frame and CPU instruction
+		using namespace std::chrono_literals;
+
 		bool done = false;
+
+		// the total system time the step operation took
+		ClockRate::duration deltatime = 0s;
 
 		while (!done)
 		{
 			done = step == NesClockStep::OneClockCycle;
 
-			if (tickcount % clock_rate.ppu_divisor)
-			{ // tick the ppu
-				nes->ppu().clock();
-				done = done || step == NesClockStep::OnePpuCycle;
+			if ((tickcount % clock_rate.ppu_divisor) == 0)
+			{
+				auto frame_complete = nes->ppu().clock();
+				done = done || step == NesClockStep::OnePpuCycle || (frame_complete && step == NesClockStep::OneFrame);
 			}
 
-			if (tickcount % clock_rate.cpu_divisor)
+			if ((tickcount % clock_rate.cpu_divisor) == 0)
 			{
-				nes->cpu().clock();
-				done = done || step == NesClockStep::OneCpuCycle;
+				auto instruction_complete = nes->cpu().clock();
+				done = done || step == NesClockStep::OneCpuCycle || (instruction_complete && step == NesClockStep::OneCpuInstruction);
 			}
 
 			++tickcount;
+			deltatime += clock_rate.frequency;
 		}
+
+		return deltatime;
 	}
 }

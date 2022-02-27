@@ -131,7 +131,10 @@ private:
 	void update(double deltatime)
 	{
 		if (rom_loaded)
-			nes.tick(deltatime);
+		{
+			// nes.tick(deltatime);
+			nes.step(nesem::NesClockStep::OneFrame);
+		}
 	}
 
 	void render(ui::Canvas &canvas)

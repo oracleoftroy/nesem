@@ -18,7 +18,7 @@ namespace nesem
 
 		void reset() noexcept;
 		void load_cartridge(NesCartridge *cartridge) noexcept;
-		void clock() noexcept;
+		bool clock() noexcept;
 
 		// debugging help
 

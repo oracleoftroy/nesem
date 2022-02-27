@@ -656,8 +656,9 @@ namespace nesem
 		dma_page = page;
 	}
 
-	void NesCpu::clock() noexcept
+	bool NesCpu::clock() noexcept
 	{
+		bool instruction_complete = false;
 		++cycles;
 
 		// dma bypasses normal cpu operation
@@ -669,12 +670,12 @@ namespace nesem
 			if (dma_step < 0)
 			{
 				++dma_step;
-				return;
+				return instruction_complete;
 			}
 
 			// dma starts on an even cycle for some reason. skip this tick if we are ready but on an odd cycle
 			if (dma_step == 0 && (cycles & 1) == 1)
-				return;
+				return instruction_complete;
 
 			// do the dma transfer, read on even steps, write on odd steps
 			if ((dma_step & 1) == 0)
@@ -686,9 +687,12 @@ namespace nesem
 
 			// done once we've read and written the full 256 bytes for the page (256 reads + 256 writes == 512 steps)
 			if (dma_step >= 512)
+			{
 				in_dma = false;
+				instruction_complete = true;
+			}
 
-			return;
+			return instruction_complete;
 		}
 
 		++step;
@@ -706,9 +710,10 @@ namespace nesem
 				// reset finished. set instruction to a dummy value (BRK in this case)
 				instruction = 0;
 				step = 0;
+				instruction_complete = true;
 			}
 
-			return;
+			return instruction_complete;
 		}
 		else if (instruction == nmi_sequence || instruction == irq_sequence)
 		{
@@ -740,10 +745,11 @@ namespace nesem
 
 				instruction = 0;
 				step = 0;
+				instruction_complete = true;
 
 				break;
 			}
-			return;
+			return instruction_complete;
 		}
 
 		if (step == 1)
@@ -752,7 +758,7 @@ namespace nesem
 			{
 				nmi_requested = false;
 				instruction = nmi_sequence;
-				return;
+				return instruction_complete;
 			}
 			else if (interrupt_requested)
 			{
@@ -770,7 +776,7 @@ namespace nesem
 				if ((P & I) == None)
 				{
 					instruction = nmi_sequence;
-					return;
+					return instruction_complete;
 				}
 			}
 
@@ -782,8 +788,13 @@ namespace nesem
 		{
 			// instructions return true when completed, so reset the step counter
 			if (std::invoke(ops[instruction].op, this))
+			{
 				step = 0;
+				instruction_complete = true;
+			}
 		}
+
+		return instruction_complete;
 	}
 
 	void NesCpu::push(U8 value) noexcept

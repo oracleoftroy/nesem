@@ -374,8 +374,10 @@ namespace nesem
 		next_attribute = U8((attr >> shift) & 0b11);
 	}
 
-	void NesPpu::clock() noexcept
+	bool NesPpu::clock() noexcept
 	{
+		bool frame_complete = false;
+
 		// odd frame skip: the very first cycle of an odd frame is skipped if renering is enabled
 		if (scanline == 0 && cycle == 0 && (frame & 1) == 1 && rendering_enabled())
 			cycle = 1;
@@ -388,6 +390,8 @@ namespace nesem
 			reg.ppustatus |= status_vblank;
 			if (reg.ppuctrl & ctrl_nmi_flag)
 				nes->cpu().nmi();
+
+			frame_complete = true;
 		}
 
 		if (scanline == 261 && cycle == 1)
@@ -498,6 +502,8 @@ namespace nesem
 				++frame;
 			}
 		}
+
+		return frame_complete;
 	}
 
 	void NesPpu::prepare_background() noexcept

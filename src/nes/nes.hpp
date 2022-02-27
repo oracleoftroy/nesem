@@ -17,7 +17,11 @@ namespace nesem
 		void unload_rom() noexcept;
 		void reset() noexcept;
 
-		void tick(double deltatime);
+		// run the system at full speed for a timeslice
+		void tick(double deltatime) noexcept;
+
+		// step the system, returns the total system time the operations took
+		double step(NesClockStep step) noexcept;
 
 		void screen_out(int x, int y, int color_index) noexcept;
 		U8 poll_player1() noexcept;

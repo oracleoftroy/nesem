@@ -62,11 +62,8 @@ namespace nesem
 	public:
 		explicit NesClock(Nes *nes, ClockRate clock_rate = ntsc()) noexcept;
 
-		// run the system at full speed for a timeslice
 		void tick(ClockRate::duration deltatime) noexcept;
-
-		// step the system
-		void step(NesClockStep step) noexcept;
+		ClockRate::duration step(NesClockStep step) noexcept;
 
 	private:
 		Nes *nes;

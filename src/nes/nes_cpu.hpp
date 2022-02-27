@@ -18,7 +18,7 @@ namespace nesem
 		void nmi() noexcept;
 		void dma(U8 page) noexcept;
 
-		void clock() noexcept;
+		bool clock() noexcept;
 
 	private:
 		// helper functions
