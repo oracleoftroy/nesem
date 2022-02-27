@@ -60,7 +60,7 @@ public:
 		: nes(std::bind_front(&NesApp::on_nes_pixel, this), std::bind_front(&NesApp::read_controller, this, std::ref(app)))
 	{
 		app.on_update = std::bind_front(&NesApp::tick, this);
-		app.on_file_drop = std::bind_front(&nesem::Nes::load_rom, std::ref(nes));
+		app.on_file_drop = std::bind_front(&NesApp::load_rom, this);
 
 		button_a = app.key_from_name("/");
 		button_b = app.key_from_name(".");
@@ -79,10 +79,15 @@ public:
 		debug_mode_bg = app.key_from_name("1");
 		debug_mode_fg = app.key_from_name("2");
 
-		test_rom_loaded = nes.load_rom(find_file(R"(data/nestest.nes)"));
+		rom_loaded = nes.load_rom(find_file(R"(data/nestest.nes)"));
 	}
 
 private:
+	void load_rom(std::string_view filepath)
+	{
+		rom_loaded = nes.load_rom(filepath);
+	}
+
 	void tick(ui::App &app, ui::Canvas &canvas, float deltatime)
 	{
 		handle_input(app);
@@ -125,7 +130,7 @@ private:
 
 	void update(double deltatime)
 	{
-		if (test_rom_loaded)
+		if (rom_loaded)
 			nes.tick(deltatime);
 	}
 
@@ -367,7 +372,7 @@ private:
 	ui::Key palette_next_key;
 	ui::Key palette_prev_key;
 
-	bool test_rom_loaded = false;
+	bool rom_loaded = false;
 	nesem::Nes nes;
 	util::Random rng;
 
