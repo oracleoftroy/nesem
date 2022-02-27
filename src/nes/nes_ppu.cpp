@@ -448,9 +448,10 @@ namespace nesem
 							// if this sprite is not transparent, we are done
 							// the first entry of each palette is 'transparent'
 							if (fg_palette_index & 3)
+							{
 								fg_id = active_sprite_addr[i];
-
-							break;
+								break;
+							}
 						}
 					}
 				}
