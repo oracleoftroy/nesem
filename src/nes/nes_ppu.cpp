@@ -84,6 +84,22 @@ namespace nesem
 		}
 	}
 
+	void NesPpu::OAMSprite::read_lo(NesPpu &ppu, U8 ppuctrl, int scanline) noexcept
+	{
+		lo = ppu.read(pattern_addr(ppuctrl, scanline) + 0);
+
+		if (flip_x())
+			lo = reverse_bits(lo);
+	}
+
+	void NesPpu::OAMSprite::read_hi(NesPpu &ppu, U8 ppuctrl, int scanline) noexcept
+	{
+		hi = ppu.read(pattern_addr(ppuctrl, scanline) + 8);
+
+		if (flip_x())
+			hi = reverse_bits(hi);
+	}
+
 	bool NesPpu::OAMSprite::flip_x() noexcept
 	{
 		return (attrib & 0b0100'0000) != 0;
@@ -99,11 +115,13 @@ namespace nesem
 		return (attrib & 0b0010'0000) != 0;
 	}
 
-	U8 NesPpu::OAMSprite::palette() noexcept
+	U8 NesPpu::OAMSprite::palette_index() noexcept
 	{
-		// whereas background palettes start at 0 to 3, foreground palettes start at 4-7, hence the bitwise-or with 4
-		// we pre-shift the palette into place so we can just bitwise-or with the entry stored in chrrom
-		return (4 | (attrib & 3)) << 2;
+		U8 bit_lo = (lo & 0x80) > 0;
+		U8 bit_hi = (hi & 0x80) > 0;
+		U8 palette = 4 | (attrib & 3);
+
+		return (palette << 2) | (bit_hi << 1) | bit_lo;
 	}
 
 	NesPpu::NesPpu(Nes *nes) noexcept
@@ -152,6 +170,11 @@ namespace nesem
 	const std::array<U8, 256> &NesPpu::get_oam() const noexcept
 	{
 		return oam;
+	}
+
+	const std::array<NesPpu::OAMSprite, 8> &NesPpu::get_active_sprites() const noexcept
+	{
+		return active_sprites;
 	}
 
 	void NesPpu::draw_pattern_table(int index, U8 palette, const DrawFn &draw_pixel)
@@ -255,8 +278,8 @@ namespace nesem
 					--active_sprites[i].x;
 				else
 				{
-					active_sprite_lo[i] <<= 1;
-					active_sprite_hi[i] <<= 1;
+					active_sprites[i].lo <<= 1;
+					active_sprites[i].hi <<= 1;
 				}
 			}
 		}
@@ -439,19 +462,14 @@ namespace nesem
 					{
 						if (active_sprites[i].x == 0)
 						{
-							uint8_t lo = (active_sprite_lo[i] & 0x80) > 0;
-							uint8_t hi = (active_sprite_hi[i] & 0x80) > 0;
-
-							fg_palette_index = active_sprites[i].palette() | (hi << 1) | lo;
+							fg_palette_index = active_sprites[i].palette_index();
 							bg_priority = active_sprites[i].bg_priority();
+							fg_id = active_sprites[i].addr;
 
 							// if this sprite is not transparent, we are done
 							// the first entry of each palette is 'transparent'
 							if (fg_palette_index & 3)
-							{
-								fg_id = active_sprite_addr[i];
 								break;
-							}
 						}
 					}
 				}
@@ -615,7 +633,7 @@ namespace nesem
 
 			// clear our sprite data
 			if (cycle >= 1 && cycle < 65 && (cycle & 1) == 1)
-				evaluated_sprites_bytes[cycle >> 1] = std::byte(0xFF);
+				evaluated_sprites[cycle >> 1] = 0xFF;
 
 			// sprite evaluation: figure out which sprites (up to 8) should be displayed
 			else if (cycle >= 65 && cycle < 257)
@@ -639,10 +657,10 @@ namespace nesem
 						// 	1. Starting at n = 0, read a sprite's Y-coordinate (OAM[n][0], copying it to the next open slot in secondary OAM (unless 8 sprites have been found, in which case the write is ignored).
 						if (evaluated_sprite_count < 8)
 						{
-							evaluated_sprites[evaluated_sprite_count].y = oam[reg.oamaddr];
+							auto y = evaluated_sprites[evaluated_sprite_count * 4] = oam[reg.oamaddr];
 							evaluated_sprite_addr[evaluated_sprite_count] = U8(reg.oamaddr);
 
-							auto pos = scanline - evaluated_sprites[evaluated_sprite_count].y;
+							auto pos = scanline - y;
 							if (pos >= 0 && pos < sprite_size())
 								sprite_evaluation_step = step1a;
 							else
@@ -652,17 +670,17 @@ namespace nesem
 
 						// 1a. If Y-coordinate is in range, copy remaining bytes of sprite data (OAM[n][1] thru OAM[n][3]) into secondary OAM.
 					case step1a:
-						evaluated_sprites[evaluated_sprite_count].index = oam[reg.oamaddr + 1];
+						evaluated_sprites[evaluated_sprite_count * 4 + 1] = oam[reg.oamaddr + 1];
 						sprite_evaluation_step = step1b;
 						break;
 
 					case step1b:
-						evaluated_sprites[evaluated_sprite_count].attrib = oam[reg.oamaddr + 2];
+						evaluated_sprites[evaluated_sprite_count * 4 + 2] = oam[reg.oamaddr + 2];
 						sprite_evaluation_step = step1c;
 						break;
 
 					case step1c:
-						evaluated_sprites[evaluated_sprite_count].x = oam[reg.oamaddr + 3];
+						evaluated_sprites[evaluated_sprite_count * 4 + 3] = oam[reg.oamaddr + 3];
 						++evaluated_sprite_count;
 						sprite_evaluation_step = step2;
 						break;
@@ -745,42 +763,34 @@ namespace nesem
 				switch (step & 7)
 				{
 				case 0:
-					active_sprite_addr[index] = evaluated_sprite_addr[index];
-					active_sprites[index].y = evaluated_sprites[index].y;
+					active_sprites[index].addr = evaluated_sprite_addr[index];
+					active_sprites[index].y = evaluated_sprites[index * 4 + 0];
 
 					// dummy nametable read, some carts might use this for timing purposes
 					read_nt();
 					break;
 
 				case 1:
-					active_sprites[index].index = evaluated_sprites[index].index;
+					active_sprites[index].index = evaluated_sprites[index * 4 + 1];
 					break;
 
 				case 2:
-					active_sprites[index].attrib = evaluated_sprites[index].attrib;
+					active_sprites[index].attrib = evaluated_sprites[index * 4 + 2];
 
 					// dummy attribute table read, some carts might use this for timing purposes
 					read_at();
 					break;
 
 				case 3:
-					active_sprites[index].x = evaluated_sprites[index].x;
+					active_sprites[index].x = evaluated_sprites[index * 4 + 3];
 					break;
 
 				case 4:
-					active_sprite_lo[index] = read(active_sprites[index].pattern_addr(reg.ppuctrl, scanline));
-
-					if (active_sprites[index].flip_x())
-						active_sprite_lo[index] = reverse_bits(active_sprite_lo[index]);
-
+					active_sprites[index].read_lo(*this, reg.ppuctrl, scanline);
 					break;
 
 				case 6:
-					active_sprite_hi[index] = read(active_sprites[index].pattern_addr(reg.ppuctrl, scanline) + 8);
-
-					if (active_sprites[index].flip_x())
-						active_sprite_hi[index] = reverse_bits(active_sprite_hi[index]);
-
+					active_sprites[index].read_hi(*this, reg.ppuctrl, scanline);
 					break;
 				}
 			}

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <array>
-#include <span>
 
 #include "nes_types.hpp"
 
@@ -19,11 +18,6 @@ namespace nesem
 		void reset() noexcept;
 		void load_cartridge(NesCartridge *cartridge) noexcept;
 		bool clock() noexcept;
-
-		// debugging help
-
-		void draw_pattern_table(int index, U8 palette, const DrawFn &draw_pixel);
-		void draw_name_table(int index, const DrawFn &draw_pixel);
 
 		// PPU bus IO
 
@@ -56,16 +50,32 @@ namespace nesem
 		U8 ppudata() noexcept;
 		void ppudata(U8 value) noexcept;
 
-		struct ScrollInfo
+		struct OAMSprite
 		{
-			int fine_x, fine_y;
-			int coarse_x, coarse_y;
-			int nt;
+			U8 y = 0xFF;
+			U8 index = 0xFF;
+			U8 attrib = 0xFF;
+			U8 x = 0xFF;
+
+			// the oamaddr this sprite started at
+			U8 addr = 0xFF;
+
+			// the low bit chrrom data of the sprite for the next scanline
+			U8 lo = 0xFF;
+
+			// the high bit chrrom data of the sprite for the next scanline
+			U8 hi = 0xFF;
+
+			// address of the low bits, add 8 to get the high bits
+			// NOTE: this presumes the sprite intersects the provided scanline
+			U16 pattern_addr(U8 ppuctrl, int scanline) noexcept;
+			void read_lo(NesPpu &ppu, U8 ppuctrl, int scanline) noexcept;
+			void read_hi(NesPpu &ppu, U8 ppuctrl, int scanline) noexcept;
+			bool flip_x() noexcept;
+			bool flip_y() noexcept;
+			bool bg_priority() noexcept;
+			U8 palette_index() noexcept;
 		};
-
-		ScrollInfo get_scroll_info() const noexcept;
-
-		const std::array<U8, 256> &get_oam() const noexcept;
 
 	private:
 		Nes *nes;
@@ -80,25 +90,8 @@ namespace nesem
 		std::array<U8, 32> palettes;
 		std::array<U8, 256> oam;
 
-		struct OAMSprite
-		{
-			U8 y = 0xFF;
-			U8 index = 0xFF;
-			U8 attrib = 0xFF;
-			U8 x = 0xFF;
-
-			// address of the low bits, add 8 to get the high bits
-			// NOTE: this presumes the sprite intersects the current scanline
-			U16 pattern_addr(U8 ppuctrl, int scanline) noexcept;
-			bool flip_x() noexcept;
-			bool flip_y() noexcept;
-			bool bg_priority() noexcept;
-			U8 palette() noexcept;
-		};
-
-		// working buffers for evaluating sprites for the next scanline
-		std::array<OAMSprite, 8> evaluated_sprites;
-		std::span<std::byte> evaluated_sprites_bytes = std::as_writable_bytes(std::span(evaluated_sprites));
+		// working buffer for evaluating sprites for the next scanline
+		std::array<U8, 8 * 4> evaluated_sprites;
 
 		// the address sprite evaluation started at, usually 0
 		U16 sprite_0_addr = 0xFFFF;
@@ -111,15 +104,6 @@ namespace nesem
 
 		// the sprites that are active for the current scanline
 		std::array<OAMSprite, 8> active_sprites;
-
-		// the oamaddr this sprite started at
-		std::array<U8, 8> active_sprite_addr;
-
-		// the low bit chrrom data of the sprite for the next scanline
-		std::array<U8, 8> active_sprite_lo;
-
-		// the high bit chrrom data of the sprite for the next scanline
-		std::array<U8, 8> active_sprite_hi;
 
 		int sprite_size() noexcept;
 
@@ -201,5 +185,21 @@ namespace nesem
 		U16 pattern_shifter_hi = 0;
 		U16 attribute_lo = 0;
 		U16 attribute_hi = 0;
+
+	public:
+		// debugging help
+
+		struct ScrollInfo
+		{
+			int fine_x, fine_y;
+			int coarse_x, coarse_y;
+			int nt;
+		};
+
+		ScrollInfo get_scroll_info() const noexcept;
+		const std::array<U8, 256> &get_oam() const noexcept;
+		const std::array<OAMSprite, 8> &get_active_sprites() const noexcept;
+		void draw_pattern_table(int index, U8 palette, const DrawFn &draw_pixel);
+		void draw_name_table(int index, const DrawFn &draw_pixel);
 	};
 }
