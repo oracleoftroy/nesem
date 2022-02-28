@@ -19,6 +19,8 @@ add_library(
 	"mapper/nes_mapper_000.hpp"
 	"mapper/nes_mapper_002.cpp"
 	"mapper/nes_mapper_002.hpp"
+	"mapper/nes_mapper_003.cpp"
+	"mapper/nes_mapper_003.hpp"
 )
 target_link_libraries(nesemlib PRIVATE project_options)
 target_link_libraries(nesemlib PUBLIC util)
