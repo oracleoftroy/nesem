@@ -20,6 +20,15 @@ namespace nesem
 			return {};
 		}
 
+		LOG_INFO("iNES file version: {}", rom->version);
+		LOG_INFO("mapper: {}", rom->mapper);
+		LOG_INFO("mirroring: {}",
+			rom->mirror_override                                     ? "dynamic"
+				: rom->mirroring == mapper::NesMirroring::horizontal ? "horizontal"
+																	 : "vertical");
+		LOG_INFO("PRG-ROM banks: {}", rom->prg_rom_size);
+		LOG_INFO("CHR-ROM banks: {}", rom->chr_rom_size);
+
 		switch (rom->mapper)
 		{
 		default:
