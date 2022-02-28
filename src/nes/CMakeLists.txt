@@ -13,6 +13,10 @@ add_library(
 	"nes_cpu_ops.hpp"
 	"nes_ppu.cpp"
 	"nes_ppu.hpp"
+	"mapper/nes_rom.cpp"
+	"mapper/nes_rom.hpp"
+	"mapper/nes_mapper_000.cpp"
+	"mapper/nes_mapper_000.hpp"
 )
 target_link_libraries(nesemlib PRIVATE project_options)
 target_link_libraries(nesemlib PUBLIC util)

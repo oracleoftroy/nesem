@@ -19,14 +19,16 @@ namespace nesem
 
 	bool Nes::load_rom(const std::filesystem::path &filename) noexcept
 	{
-		auto rom = read_rom(filename);
-		if (!rom)
+		auto cart = load_cartridge(filename);
+		if (!cart)
 			return false;
 
 		unload_rom();
-		nes_cartridge = std::make_unique<NesCartridge>(std::move(rom.value()));
+
+		nes_cartridge = std::move(cart);
 		nes_bus.load_cartridge(nes_cartridge.get());
 		nes_ppu.load_cartridge(nes_cartridge.get());
+
 		reset();
 
 		return true;
@@ -42,6 +44,7 @@ namespace nesem
 
 	void Nes::reset() noexcept
 	{
+		nes_cartridge->reset();
 		nes_cpu.reset();
 		nes_ppu.reset();
 	}

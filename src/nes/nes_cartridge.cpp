@@ -1,167 +1,28 @@
 #include "nes_cartridge.hpp"
 
-#include <algorithm>
-#include <array>
-#include <fstream>
-#include <string_view>
-#include <vector>
+#include <utility>
 
 #include <util/logging.hpp>
 
+#include "mapper/nes_mapper_000.hpp"
+#include "mapper/nes_rom.hpp"
+
 namespace nesem
 {
-	std::optional<NesRom> read_rom(const std::filesystem::path &filename) noexcept
+	std::unique_ptr<NesCartridge> load_cartridge(const std::filesystem::path &filename) noexcept
 	{
-		using namespace std::string_view_literals;
+		auto rom = mapper::read_rom(filename);
 
-		auto file = std::ifstream(filename, std::ios::binary);
+		if (!rom)
+			return {};
 
-		if (!file)
+		switch (rom->mapper)
 		{
-			LOG_WARN("Could not open file '{}'", filename.string());
-			return std::nullopt;
+		default:
+			return {};
+
+		case mapper::NesMapper000::ines_mapper:
+			return std::make_unique<mapper::NesMapper000>(std::move(*rom));
 		}
-
-		std::array<uint8_t, 16> header;
-
-		if (!file.read(reinterpret_cast<char *>(data(header)), size(header)))
-		{
-			LOG_WARN("Error reading iNES Rom header, file: '{}'", filename.string());
-			return std::nullopt;
-		}
-
-		// iNES rom files start with "NES" followed by EOF (0x1A)
-		if (std::string_view(reinterpret_cast<char *>(data(header)), 4) != "NES\x1A"sv)
-		{
-			LOG_WARN("Invalid iNES Rom, file: '{}'", filename.string());
-			return std::nullopt;
-		}
-
-		int version = 1;
-
-		// check for version 2. Version 2 has bit 2 clear and bit 3 set
-		if ((header[7] & 0b00001100) == 0b00001000)
-			version = 2;
-
-		// optional trainer, 512 bytes if present
-		bool has_trainer = (header[6] & 0b00000100) > 0;
-
-		// optional INST-ROM, 8192 bytes if present
-		bool has_inst_rom = (header[7] & 0b00000010) > 0;
-
-		int mapper = (header[7] & 0xF0) | (header[6] >> 4);
-
-		NesMirroring mirroring = (header[6] & 0b0001) ? NesMirroring::vertical : NesMirroring::horizontal;
-		bool mirror_override = (header[6] & 0b1000) != 0;
-
-		// size in 16K units
-		int prg_rom_size = header[4];
-
-		// size in 8K units
-		int chr_rom_size = header[5];
-
-		if (has_trainer)
-		{
-			LOG_WARN("ROM has trainer data, but we are ignoring it");
-			file.seekg(512, std::ios::cur);
-		}
-
-		std::vector<U8> prg_rom(prg_rom_size * 16384);
-		if (!file.read(reinterpret_cast<char *>(data(prg_rom)), size(prg_rom)))
-		{
-			LOG_WARN("Error reading PRG_ROM data");
-			return std::nullopt;
-		}
-
-		std::vector<U8> chr_rom(chr_rom_size * 8192);
-		if (!file.read(reinterpret_cast<char *>(data(chr_rom)), size(chr_rom)))
-		{
-			LOG_WARN("Error reading CHR_ROM data");
-			return std::nullopt;
-		}
-
-		if (has_inst_rom)
-			LOG_WARN("ROM has INST-ROM data, but we are ignoring it");
-
-		return std::make_optional<NesRom>(version, mapper, mirroring, mirror_override, prg_rom_size, chr_rom_size, std::move(prg_rom), std::move(chr_rom));
-	}
-
-	NesCartridge::NesCartridge(const NesRom &rom) noexcept
-		: rom(std::move(rom))
-	{
-		// TODO: support more mappers
-		CHECK(rom.mapper == 0, "We only support mapper 0 for now");
-	}
-
-	U8 NesCartridge::cpu_read(U16 addr) noexcept
-	{
-		// TODO: handle different mappers
-
-		if (addr < 0x8000)
-		{
-			LOG_ERROR("Read from invalid address ${:04X}, ignoring", addr);
-			return 0;
-		}
-
-		U16 addr_mask = 0x7FFF;
-		if (rom.prg_rom_size == 1)
-			addr_mask = 0x3FFF;
-
-		return rom.prg_rom[addr & addr_mask];
-	}
-
-	void NesCartridge::cpu_write([[maybe_unused]] U16 addr, [[maybe_unused]] U8 value) noexcept
-	{
-		// TODO: handle different mappers
-		// TODO: support me
-		LOG_WARN("CPU write to cartridge not implemented, ignoring");
-	}
-
-	std::optional<U8> NesCartridge::ppu_read(U16 &addr) noexcept
-	{
-		// TODO: handle different mappers
-		if (addr < 0x2000)
-			return rom.chr_rom[addr];
-
-		// reading from the nametable
-		else if (addr < 0x3F00)
-		{
-			if (rom.mirroring == NesMirroring::horizontal)
-			{
-				// exchange the nt_x and nt_y bits
-				// we assume vertical mirroring by default, so this flips the 2400-27ff
-				// range with the 2800-2BFF range to achieve a horizontal mirror
-				addr = (addr & ~0b0'000'11'00000'00000) |
-					((addr & 0b0'000'10'00000'00000) >> 1) |
-					((addr & 0b0'000'01'00000'00000) << 1);
-			}
-		}
-
-		return std::nullopt;
-	}
-
-	bool NesCartridge::ppu_write(U16 &addr, U8 value) noexcept
-	{
-		if (addr < 0x2000)
-		{
-			LOG_WARN("PPU write to CHR-ROM??");
-			rom.chr_rom[addr] = value;
-			return true;
-		}
-		else if (addr < 0x3F00)
-		{
-			if (rom.mirroring == NesMirroring::horizontal)
-			{
-				// exchange the nt_x and nt_y bits
-				// we assume vertical mirroring by default, so this flips the 2400-27ff
-				// range with the 2800-2BFF range to achieve a horizontal mirror
-				addr = (addr & ~0b0'000'11'00000'00000) |
-					((addr & 0b0'000'10'00000'00000) >> 1) |
-					((addr & 0b0'000'01'00000'00000) << 1);
-			}
-		}
-
-		// TODO: handle different mappers
-		return false;
 	}
 }
