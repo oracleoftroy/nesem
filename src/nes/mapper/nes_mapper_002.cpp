@@ -40,7 +40,7 @@ namespace nesem::mapper
 		}
 
 		// writes, regardless of the address, adjust the current PRG-ROM bank we are reading from
-		bank_select = value & (rom.prg_rom_size == 8 ? 0x07 : 0x0F);
+		bank_select = (value & 0x0F) % rom.prg_rom_size;
 	}
 
 	std::optional<U8> NesMapper002::ppu_read(U16 &addr) noexcept
