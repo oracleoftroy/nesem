@@ -653,101 +653,99 @@ namespace nesem
 				// 	- On even cycles, data is written to secondary OAM (unless secondary OAM is full, in which case it will read the value in secondary OAM instead)
 				// end Nesdev
 
-				if (cycle & 1)
+				switch (sprite_evaluation_step)
 				{
-					switch (sprite_evaluation_step)
+					using enum SpriteEvaluationSteps;
+				case step1:
+					// 	1. Starting at n = 0, read a sprite's Y-coordinate (OAM[n][0], copying it to the next open slot in secondary OAM (unless 8 sprites have been found, in which case the write is ignored).
+					if (evaluated_sprite_count < 8)
 					{
-						using enum SpriteEvaluationSteps;
-					case step1:
-						// 	1. Starting at n = 0, read a sprite's Y-coordinate (OAM[n][0], copying it to the next open slot in secondary OAM (unless 8 sprites have been found, in which case the write is ignored).
-						if (evaluated_sprite_count < 8)
-						{
-							auto y = evaluated_sprites[evaluated_sprite_count * 4] = oam[reg.oamaddr];
-							evaluated_sprite_addr[evaluated_sprite_count] = U8(reg.oamaddr);
+						auto y = evaluated_sprites[evaluated_sprite_count * 4] = oam[reg.oamaddr];
+						evaluated_sprite_addr[evaluated_sprite_count] = U8(reg.oamaddr);
 
-							auto pos = scanline - y;
-							if (pos >= 0 && pos < sprite_size())
-								sprite_evaluation_step = step1a;
-							else
-								sprite_evaluation_step = step2;
-						}
-						break;
+						auto pos = scanline - y;
 
-						// 1a. If Y-coordinate is in range, copy remaining bytes of sprite data (OAM[n][1] thru OAM[n][3]) into secondary OAM.
-					case step1a:
-						evaluated_sprites[evaluated_sprite_count * 4 + 1] = oam[reg.oamaddr + 1];
-						sprite_evaluation_step = step1b;
-						break;
+						if (pos >= 0 && pos < sprite_size())
+							sprite_evaluation_step = step1a;
+						else
+							sprite_evaluation_step = step2;
+					}
+					break;
 
-					case step1b:
-						evaluated_sprites[evaluated_sprite_count * 4 + 2] = oam[reg.oamaddr + 2];
-						sprite_evaluation_step = step1c;
-						break;
+					// 1a. If Y-coordinate is in range, copy remaining bytes of sprite data (OAM[n][1] thru OAM[n][3]) into secondary OAM.
+				case step1a:
+					evaluated_sprites[evaluated_sprite_count * 4 + 1] = oam[reg.oamaddr + 1];
+					sprite_evaluation_step = step1b;
+					break;
 
-					case step1c:
-						evaluated_sprites[evaluated_sprite_count * 4 + 3] = oam[reg.oamaddr + 3];
-						++evaluated_sprite_count;
-						sprite_evaluation_step = step2;
-						break;
+				case step1b:
+					evaluated_sprites[evaluated_sprite_count * 4 + 2] = oam[reg.oamaddr + 2];
+					sprite_evaluation_step = step1c;
+					break;
 
-					case step2:
-						// 	2. Increment n
-						// 		2a. If n has overflowed back to zero (all 64 sprites evaluated), go to 4
-						// 		2b. If less than 8 sprites have been found, go to 1
-						// 		2c. If exactly 8 sprites have been found, disable writes to secondary OAM because it is full. This causes sprites in back to drop out.
+				case step1c:
+					evaluated_sprites[evaluated_sprite_count * 4 + 3] = oam[reg.oamaddr + 3];
+					++evaluated_sprite_count;
+					sprite_evaluation_step = step2;
+					break;
+
+				case step2:
+					// 	2. Increment n
+					// 		2a. If n has overflowed back to zero (all 64 sprites evaluated), go to 4
+					// 		2b. If less than 8 sprites have been found, go to 1
+					// 		2c. If exactly 8 sprites have been found, disable writes to secondary OAM because it is full. This causes sprites in back to drop out.
+					reg.oamaddr += 4;
+
+					if (reg.oamaddr > 255)
+						sprite_evaluation_step = step4;
+					else if (evaluated_sprite_count < 8)
+						sprite_evaluation_step = step1;
+					else
+						sprite_evaluation_step = step3;
+
+					break;
+
+				case step3:
+					// 	3. Starting at m = 0, evaluate OAM[n][m] as a Y-coordinate.
+					// 		3a. If the value is in range, set the sprite overflow flag in $2002 and read the next 3 entries of OAM (incrementing 'm' after each byte and incrementing 'n' when 'm' overflows); if m = 3, increment n
+					// 		3b. If the value is not in range, increment n and m (without carry). If n overflows to 0, go to 4; otherwise go to 3
+					// 			- The m increment is a hardware bug - if only n was incremented, the overflow flag would be set whenever more than 8 sprites were present on the same scanline, as expected.
+
+					if (auto pos = scanline - oam[reg.oamaddr++];
+						pos >= 0 && pos < sprite_size())
+					{
+						reg.ppustatus |= status_sprite_overflow;
+						sprite_evaluation_step = step3a;
+					}
+					else
+					{
+						// OAM increment bug: should only increment by 4, but the PPU hardware messed up this case
+						// we simulate this by already incremented m when reading y
 						reg.oamaddr += 4;
-
 						if (reg.oamaddr > 255)
 							sprite_evaluation_step = step4;
-						else if (evaluated_sprite_count < 8)
-							sprite_evaluation_step = step1;
-						else
-							sprite_evaluation_step = step3;
-
-						break;
-
-					case step3:
-						// 	3. Starting at m = 0, evaluate OAM[n][m] as a Y-coordinate.
-						// 		3a. If the value is in range, set the sprite overflow flag in $2002 and read the next 3 entries of OAM (incrementing 'm' after each byte and incrementing 'n' when 'm' overflows); if m = 3, increment n
-						// 		3b. If the value is not in range, increment n and m (without carry). If n overflows to 0, go to 4; otherwise go to 3
-						// 			- The m increment is a hardware bug - if only n was incremented, the overflow flag would be set whenever more than 8 sprites were present on the same scanline, as expected.
-
-						if (auto pos = scanline - oam[reg.oamaddr++];
-							pos >= 0 && pos < sprite_size())
-						{
-							reg.ppustatus |= status_sprite_overflow;
-							sprite_evaluation_step = step3a;
-						}
-						else
-						{
-							// OAM increment bug: should only increment by 4, but the PPU hardware messed up this case
-							// we simulate this by already incremented m when reading y
-							reg.oamaddr += 4;
-							if (reg.oamaddr > 255)
-								sprite_evaluation_step = step4;
-						}
-						break;
-
-					case step3a:
-						++reg.oamaddr;
-						sprite_evaluation_step = step3b;
-						break;
-
-					case step3b:
-						++reg.oamaddr;
-						sprite_evaluation_step = step3c;
-						break;
-
-					case step3c:
-						++reg.oamaddr;
-						sprite_evaluation_step = step3;
-						break;
-
-					case step4:
-						// 	4. Attempt (and fail) to copy OAM[n][0] into the next free slot in secondary OAM, and increment n (repeat until HBLANK is reached)
-						reg.oamaddr += 4;
-						break;
 					}
+					break;
+
+				case step3a:
+					++reg.oamaddr;
+					sprite_evaluation_step = step3b;
+					break;
+
+				case step3b:
+					++reg.oamaddr;
+					sprite_evaluation_step = step3c;
+					break;
+
+				case step3c:
+					++reg.oamaddr;
+					sprite_evaluation_step = step3;
+					break;
+
+				case step4:
+					// 	4. Attempt (and fail) to copy OAM[n][0] into the next free slot in secondary OAM, and increment n (repeat until HBLANK is reached)
+					reg.oamaddr += 4;
+					break;
 				}
 			}
 
