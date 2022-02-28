@@ -32,8 +32,13 @@ namespace nesem::mapper
 
 	void NesMapper000::cpu_write([[maybe_unused]] U16 addr, [[maybe_unused]] U8 value) noexcept
 	{
-		// TODO: support me
-		LOG_WARN("CPU write to cartridge not implemented, ignoring");
+		// NOTE: Mapper 000 doesn't support writing at all, as far as I am aware, but some games do seem to write
+		// in the range of the cartridge (e.g. Mrs. Pac Man / Ice Climber). There is no obvious error from ignoring
+		// the write, and Nesdev indicates that it is due to bus conflicts, but I don't know what other component
+		// would be listening within that address range.
+		// TODO: Is there any valid circumstance where we would need to support writing?
+		LOG_WARN_ONCE("CPU write to cartridge, ignoring... addr: ${:04X} value: ${:02X}", addr, value);
+		LOG_WARN_ONCE("***All future writes will be ignored***");
 	}
 
 	std::optional<U8> NesMapper000::ppu_read(U16 &addr) noexcept
