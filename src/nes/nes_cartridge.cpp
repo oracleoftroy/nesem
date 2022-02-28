@@ -11,14 +11,19 @@ namespace nesem
 {
 	std::unique_ptr<NesCartridge> load_cartridge(const std::filesystem::path &filename) noexcept
 	{
+		LOG_INFO("Loading ROM: {}", filename.string());
 		auto rom = mapper::read_rom(filename);
 
 		if (!rom)
+		{
+			LOG_WARN("Could not load ROM: {}", filename.string());
 			return {};
+		}
 
 		switch (rom->mapper)
 		{
 		default:
+			LOG_WARN("ROM uses unsupported mapper: {}", rom->mapper);
 			return {};
 
 		case mapper::NesMapper000::ines_mapper:

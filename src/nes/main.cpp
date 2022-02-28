@@ -207,6 +207,13 @@ private:
 		auto size = nes_screen.size();
 		auto scale = 3;
 
+		if (!rom_loaded)
+		{
+			nes_screen.fill({100, 149, 237});
+			auto pos = cm::Point2{size.w / 2 - 6 * 8, size.h / 2 - 4};
+			draw_string(nes_screen, {255, 255, 255}, "No ROM Loaded", pos);
+		}
+
 		canvas.blit({0, 0}, nes_screen, std::nullopt, {scale, scale});
 
 		if (debug_mode == DebugMode::fg_info || debug_mode == DebugMode::bg_info)
