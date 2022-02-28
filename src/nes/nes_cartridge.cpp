@@ -5,6 +5,7 @@
 #include <util/logging.hpp>
 
 #include "mapper/nes_mapper_000.hpp"
+#include "mapper/nes_mapper_002.hpp"
 #include "mapper/nes_rom.hpp"
 
 namespace nesem
@@ -37,6 +38,9 @@ namespace nesem
 
 		case mapper::NesMapper000::ines_mapper:
 			return std::make_unique<mapper::NesMapper000>(std::move(*rom));
+
+		case mapper::NesMapper002::ines_mapper:
+			return std::make_unique<mapper::NesMapper002>(std::move(*rom));
 		}
 	}
 }

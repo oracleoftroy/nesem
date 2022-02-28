@@ -79,6 +79,11 @@ namespace nesem::mapper
 			return std::nullopt;
 		}
 
+		// 0 indicates CHR-RAM. As there is nothing to read in that case, we previously allocated 0 bytes, but now allocate an 8K buffer
+		// TODO: should this be per mapper? Or is 8K the standard size for CHR-RAM?
+		if (chr_rom_size == 0)
+			chr_rom.resize(8192);
+
 		if (has_inst_rom)
 			LOG_WARN("ROM has INST-ROM data, but we are ignoring it");
 
