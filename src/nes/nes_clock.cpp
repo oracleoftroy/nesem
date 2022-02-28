@@ -40,7 +40,11 @@ namespace nesem
 	{
 		using namespace std::chrono_literals;
 
+		if (step == NesClockStep::None)
+			return 0s;
+
 		bool done = false;
+		auto start_scanline = nes->ppu().current_scanline();
 
 		// the total system time the step operation took
 		ClockRate::duration deltatime = 0s;
@@ -52,7 +56,10 @@ namespace nesem
 			if ((tickcount % clock_rate.ppu_divisor) == 0)
 			{
 				auto frame_complete = nes->ppu().clock();
-				done = done || step == NesClockStep::OnePpuCycle || (frame_complete && step == NesClockStep::OneFrame);
+				done = done ||
+					step == NesClockStep::OnePpuCycle ||
+					(frame_complete && step == NesClockStep::OneFrame) ||
+					(step == NesClockStep::OnePpuScanline && nes->ppu().current_scanline() != start_scanline);
 			}
 
 			if ((tickcount % clock_rate.cpu_divisor) == 0)

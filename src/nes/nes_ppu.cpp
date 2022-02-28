@@ -156,6 +156,11 @@ namespace nesem
 		this->cartridge = cart;
 	}
 
+	int NesPpu::current_scanline() noexcept
+	{
+		return scanline;
+	}
+
 	NesPpu::ScrollInfo NesPpu::get_scroll_info() const noexcept
 	{
 		return {

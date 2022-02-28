@@ -71,13 +71,21 @@ public:
 		button_left = app.key_from_name("A");
 		button_right = app.key_from_name("D");
 
-		toggle_fullscreen_key = app.key_from_name("F11");
+		toggle_fullscreen_key = app.key_from_name("Return");
 		palette_next_key = app.key_from_name("]");
 		palette_prev_key = app.key_from_name("[");
 
 		debug_mode_none = app.key_from_name("0");
 		debug_mode_bg = app.key_from_name("1");
 		debug_mode_fg = app.key_from_name("2");
+
+		break_key = app.key_from_name("Pause");
+		run_key = app.key_from_name("F5");
+
+		step_cpu_instruction_key = app.key_from_name("F8");
+		step_ppu_cycle_key = app.key_from_name("F9");
+		step_ppu_scanline_key = app.key_from_name("F10");
+		step_ppu_frame_key = app.key_from_name("F11");
 
 		rom_loaded = nes.load_rom(find_file(R"(data/nestest.nes)"));
 	}
@@ -97,7 +105,7 @@ private:
 
 	void handle_input(ui::App &app)
 	{
-		if (app.key_pressed(toggle_fullscreen_key))
+		if (app.key_pressed(toggle_fullscreen_key) && (app.modifiers() & ui::KeyMods::alt) != ui::KeyMods::none)
 		{
 			fullscreen = !fullscreen;
 			LOG_INFO("fullscreen now: {}", fullscreen);
@@ -122,18 +130,73 @@ private:
 			LOG_INFO("Debug mode now: {}", int(debug_mode));
 		}
 
+		if (app.key_pressed(break_key))
+		{
+			system_break = true;
+			LOG_INFO("System break now: {}", system_break);
+		}
+
+		if (app.key_pressed(run_key))
+		{
+			system_break = false;
+			LOG_INFO("System break now: {}", system_break);
+		}
+
+		if (system_break)
+		{
+			using enum nesem::NesClockStep;
+
+			if (app.key_pressed(step_cpu_instruction_key))
+			{
+				step = OneCpuCycle;
+				LOG_INFO("Step one CPU instruction");
+			}
+
+			if (app.key_pressed(step_ppu_cycle_key))
+			{
+				step = OnePpuCycle;
+				LOG_INFO("Step one PPU instruction");
+			}
+
+			if (app.key_pressed(step_ppu_scanline_key))
+			{
+				step = OnePpuScanline;
+				LOG_INFO("Step one PPU scanline");
+			}
+
+			if (app.key_pressed(step_ppu_frame_key))
+			{
+				step = OneFrame;
+				LOG_INFO("Step one PPU frame");
+			}
+		}
+
 		if (app.key_pressed(palette_next_key))
+		{
 			current_palette = nesem::U8(current_palette + 1) % 8;
+			LOG_INFO("palette {} selected", current_palette);
+		}
+
 		if (app.key_pressed(palette_prev_key))
+		{
 			current_palette = nesem::U8(current_palette - 1) % 8;
+			LOG_INFO("palette {} selected", current_palette);
+		}
 	}
 
 	void update(double deltatime)
 	{
 		if (rom_loaded)
 		{
-			// nes.tick(deltatime);
-			nes.step(nesem::NesClockStep::OneFrame);
+			using enum nesem::NesClockStep;
+
+			if (!system_break)
+				nes.step(OneFrame);
+			else if (step != None)
+			{
+				nes.step(step);
+				step = None;
+			}
 		}
 	}
 
@@ -193,6 +256,14 @@ private:
 				for (size_t i = 0, end = std::size(oam); i < end; i += 4)
 				{
 					draw_string(canvas, {255, 255, 255}, fmt::format("({:>3} {:>3}) {:02X} {:02X}", oam[i + 3], oam[i + 0], oam[i + 1], oam[i + 2]), pos);
+					pos.y += 8;
+				}
+
+				pos = cm::Point2{nes_screen.size().w * scale + 2 + 16 * 8, palette_end_pos.y};
+
+				for (const auto &s : nes.ppu().get_active_sprites())
+				{
+					draw_string(canvas, {255, 255, 255}, fmt::format("({:>3} {:>3}) {:02X} {:02X}", s.x, s.y, s.index, s.attrib), pos);
 					pos.y += 8;
 				}
 			}
@@ -368,6 +439,17 @@ private:
 	ui::Key debug_mode_none;
 	ui::Key debug_mode_bg;
 	ui::Key debug_mode_fg;
+
+	bool system_break = false;
+	ui::Key break_key;
+	ui::Key run_key;
+
+	nesem::NesClockStep step = nesem::NesClockStep::None;
+
+	ui::Key step_cpu_instruction_key;
+	ui::Key step_ppu_cycle_key;
+	ui::Key step_ppu_scanline_key;
+	ui::Key step_ppu_frame_key;
 
 	ui::Key toggle_fullscreen_key;
 	bool fullscreen = false;

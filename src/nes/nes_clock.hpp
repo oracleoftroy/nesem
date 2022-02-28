@@ -50,8 +50,10 @@ namespace nesem
 
 	enum class NesClockStep
 	{
+		None,
 		OneClockCycle,
 		OnePpuCycle,
+		OnePpuScanline,
 		OneCpuCycle,
 		OneCpuInstruction,
 		OneFrame,
