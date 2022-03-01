@@ -50,17 +50,7 @@ namespace nesem::mapper
 
 		// reading from the nametable
 		else if (addr < 0x3F00)
-		{
-			if (rom.mirroring == NesMirroring::horizontal)
-			{
-				// exchange the nt_x and nt_y bits
-				// we assume vertical mirroring by default, so this flips the 2400-27ff
-				// range with the 2800-2BFF range to achieve a horizontal mirror
-				addr = (addr & ~0b0'000'11'00000'00000) |
-					((addr & 0b0'000'10'00000'00000) >> 1) |
-					((addr & 0b0'000'01'00000'00000) << 1);
-			}
-		}
+			apply_hardware_nametable_mapping(rom, addr);
 
 		return std::nullopt;
 	}
@@ -80,17 +70,7 @@ namespace nesem::mapper
 			LOG_WARN("PPU write to CHR-ROM, ignoring");
 		}
 		else if (addr < 0x3F00)
-		{
-			if (rom.mirroring == NesMirroring::horizontal)
-			{
-				// exchange the nt_x and nt_y bits
-				// we assume vertical mirroring by default, so this flips the 2400-27ff
-				// range with the 2800-2BFF range to achieve a horizontal mirror
-				addr = (addr & ~0b0'000'11'00000'00000) |
-					((addr & 0b0'000'10'00000'00000) >> 1) |
-					((addr & 0b0'000'01'00000'00000) << 1);
-			}
-		}
+			apply_hardware_nametable_mapping(rom, addr);
 
 		return false;
 	}

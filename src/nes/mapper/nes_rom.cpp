@@ -89,4 +89,18 @@ namespace nesem::mapper
 
 		return std::make_optional<NesRom>(version, mapper, mirroring, mirror_override, prg_rom_size, chr_rom_size, std::move(prg_rom), std::move(chr_rom));
 	}
+
+	void apply_hardware_nametable_mapping(const NesRom &rom, U16 &addr) noexcept
+	{
+		if (rom.mirroring == NesMirroring::horizontal)
+		{
+			// exchange the nt_x and nt_y bits
+			// we assume vertical mirroring by default, so this flips the 2400-27ff
+			// range with the 2800-2BFF range to achieve a horizontal mirror
+			addr = (addr & ~0b0'000'11'00000'00000) |
+				((addr & 0b0'000'10'00000'00000) >> 1) |
+				((addr & 0b0'000'01'00000'00000) << 1);
+		}
+	}
+
 }

@@ -39,4 +39,7 @@ namespace nesem::mapper
 	};
 
 	std::optional<NesRom> read_rom(const std::filesystem::path &filename) noexcept;
+
+	// utility function for mappers representing physically soldered nametable maps
+	void apply_hardware_nametable_mapping(const NesRom &rom, U16 &addr) noexcept;
 }
