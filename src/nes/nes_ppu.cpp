@@ -739,7 +739,10 @@ namespace nesem
 
 				case step3c:
 					++reg.oamaddr;
-					sprite_evaluation_step = step3;
+					if (reg.oamaddr > 255)
+						sprite_evaluation_step = step4;
+					else
+						sprite_evaluation_step = step3;
 					break;
 
 				case step4:
