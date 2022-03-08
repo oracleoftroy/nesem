@@ -55,7 +55,12 @@ namespace ui
 		[[nodiscard]] Scancode scancode_from_name(const char *name) noexcept;
 
 		// get the current modifier keys (shift, alt, etc)
+		// TODO: consider deprecating...
 		[[nodiscard]] KeyMods modifiers() const noexcept;
+
+		// test if any of the selected modifiers are active
+		// caution, modifiers(alt | ctrl) triggers if either key is down, use modifiers(alt) && modifiers(ctrl) if you need both
+		[[nodiscard]] bool modifiers(KeyMods mods) const noexcept;
 
 		// returns true if the key is down regardless of previous state
 		[[nodiscard]] bool key_down(Key key) const noexcept;

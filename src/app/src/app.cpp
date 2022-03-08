@@ -363,6 +363,11 @@ namespace ui
 		return core->input.modifiers();
 	}
 
+	bool App::modifiers(KeyMods mods) const noexcept
+	{
+		return (core->input.modifiers() & mods) != KeyMods::none;
+	}
+
 	bool App::key_down(Key key) const noexcept
 	{
 		return core->input.key_down(key);
