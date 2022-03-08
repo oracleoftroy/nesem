@@ -87,6 +87,8 @@ public:
 		step_ppu_scanline_key = app.key_from_name("F10");
 		step_ppu_frame_key = app.key_from_name("F11");
 
+		reset_key = app.key_from_name("R");
+
 		rom_loaded = nes.load_rom(find_file(R"(data/nestest.nes)"));
 	}
 
@@ -105,7 +107,7 @@ private:
 
 	void handle_input(ui::App &app)
 	{
-		if (app.key_pressed(toggle_fullscreen_key) && (app.modifiers() & ui::KeyMods::alt) != ui::KeyMods::none)
+		if (app.key_pressed(toggle_fullscreen_key) && app.modifiers(ui::KeyMods::alt))
 		{
 			fullscreen = !fullscreen;
 			LOG_INFO("fullscreen now: {}", fullscreen);
@@ -181,6 +183,12 @@ private:
 		{
 			current_palette = nesem::U8(current_palette - 1) % 8;
 			LOG_INFO("palette {} selected", current_palette);
+		}
+
+		if (app.key_pressed(reset_key) && app.modifiers(ui::KeyMods::ctrl))
+		{
+			LOG_INFO("resetting NES...");
+			nes.reset();
 		}
 	}
 
@@ -450,6 +458,7 @@ private:
 	bool system_break = false;
 	ui::Key break_key;
 	ui::Key run_key;
+	ui::Key reset_key;
 
 	nesem::NesClockStep step = nesem::NesClockStep::None;
 
