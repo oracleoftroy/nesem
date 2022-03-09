@@ -6,20 +6,25 @@
 
 namespace nesem
 {
-	Nes::Nes(DrawFn draw, PollInputFn player1, PollInputFn player2)
-		: draw(std::move(draw)),
-		  player1(std::move(player1)),
-		  player2(std::move(player2)),
+	Nes::Nes(const NesSettings &settings)
+		: draw(std::move(settings.draw)),
+		  player1(std::move(settings.player1)),
+		  player2(std::move(settings.player2)),
 		  nes_bus(this),
 		  nes_cpu(this),
 		  nes_ppu(this),
-		  nes_clock(this)
+		  nes_clock(this),
+		  rom_loader(NesRomLoader::create(settings.nes20db_filename))
 	{
 	}
 
 	bool Nes::load_rom(const std::filesystem::path &filename) noexcept
 	{
-		auto cart = load_cartridge(filename);
+		auto rom = rom_loader.load_rom(filename);
+		if (!rom)
+			return false;
+
+		auto cart = load_cartridge(*rom);
 		if (!cart)
 			return false;
 

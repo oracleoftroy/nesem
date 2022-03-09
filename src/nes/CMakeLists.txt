@@ -13,21 +13,29 @@ add_library(
 	"nes_cpu_ops.hpp"
 	"nes_ppu.cpp"
 	"nes_ppu.hpp"
-	"mapper/nes_rom.cpp"
-	"mapper/nes_rom.hpp"
-	"mapper/nes_mapper_000.cpp"
-	"mapper/nes_mapper_000.hpp"
-	"mapper/nes_mapper_001.cpp"
-	"mapper/nes_mapper_001.hpp"
-	"mapper/nes_mapper_002.cpp"
-	"mapper/nes_mapper_002.hpp"
-	"mapper/nes_mapper_003.cpp"
-	"mapper/nes_mapper_003.hpp"
-	"mapper/nes_mapper_066.cpp"
-	"mapper/nes_mapper_066.hpp"
+	"nes_rom_loader.cpp"
+	"nes_rom_loader.hpp"
+	"mappers/nes_rom.cpp"
+	"mappers/nes_rom.hpp"
+	"mappers/nes_mapper_000.cpp"
+	"mappers/nes_mapper_000.hpp"
+	"mappers/nes_mapper_001.cpp"
+	"mappers/nes_mapper_001.hpp"
+	"mappers/nes_mapper_002.cpp"
+	"mappers/nes_mapper_002.hpp"
+	"mappers/nes_mapper_003.cpp"
+	"mappers/nes_mapper_003.hpp"
+	"mappers/nes_mapper_066.cpp"
+	"mappers/nes_mapper_066.hpp"
 )
+
+find_package(tinyxml2 CONFIG REQUIRED)
+find_package(cryptopp CONFIG REQUIRED)
+
 target_link_libraries(nesemlib PRIVATE project_options)
 target_link_libraries(nesemlib PUBLIC util)
+target_link_libraries(nesemlib PRIVATE tinyxml2::tinyxml2)
+target_link_libraries(nesemlib PRIVATE cryptopp-static)
 target_include_directories(nesemlib PUBLIC ".")
 
 add_executable(nesem WIN32 "nesem.manifest" "main.cpp" "text.cpp" "text.hpp")

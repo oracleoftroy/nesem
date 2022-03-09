@@ -4,55 +4,59 @@
 
 #include <util/logging.hpp>
 
-#include "mapper/nes_mapper_000.hpp"
-#include "mapper/nes_mapper_001.hpp"
-#include "mapper/nes_mapper_002.hpp"
-#include "mapper/nes_mapper_003.hpp"
-#include "mapper/nes_mapper_066.hpp"
-#include "mapper/nes_rom.hpp"
+#include "mappers/nes_mapper_000.hpp"
+#include "mappers/nes_mapper_001.hpp"
+#include "mappers/nes_mapper_002.hpp"
+#include "mappers/nes_mapper_003.hpp"
+#include "mappers/nes_mapper_066.hpp"
+#include "mappers/nes_rom.hpp"
 
 namespace nesem
 {
-	std::unique_ptr<NesCartridge> load_cartridge(const std::filesystem::path &filename) noexcept
+	std::unique_ptr<NesCartridge> load_cartridge(mappers::NesRom rom) noexcept
 	{
-		LOG_INFO("Loading ROM: {}", filename.string());
-		auto rom = mapper::read_rom(filename);
+		LOG_INFO("mapper: {}", mapper(rom));
 
-		if (!rom)
+		switch (mirroring_mode(rom))
 		{
-			LOG_WARN("Could not load ROM: {}", filename.string());
-			return {};
+			using enum mappers::ines_2::MirroringMode;
+		case four_screen:
+			LOG_INFO("mirroring: four-screen");
+			break;
+		case one_screen:
+			LOG_INFO("mirroring: one-screen");
+			break;
+		case horizontal:
+			LOG_INFO("mirroring: horizontal");
+			break;
+		case vertical:
+			LOG_INFO("mirroring: vertical");
+			break;
 		}
 
-		LOG_INFO("iNES file version: {}", rom->version);
-		LOG_INFO("mapper: {}", rom->mapper);
-		LOG_INFO("mirroring: {}",
-			rom->mirror_override                                     ? "dynamic"
-				: rom->mirroring == mapper::NesMirroring::horizontal ? "horizontal"
-																	 : "vertical");
-		LOG_INFO("PRG-ROM banks: {}", rom->prg_rom_size);
-		LOG_INFO("CHR-ROM banks: {}", rom->chr_rom_size);
+		LOG_INFO("PRG-ROM banks: {}", prgrom_banks(rom));
+		LOG_INFO("CHR-ROM banks: {}", chrrom_banks(rom));
 
-		switch (rom->mapper)
+		switch (mapper(rom))
 		{
 		default:
-			LOG_WARN("ROM uses unsupported mapper: {}", rom->mapper);
+			LOG_WARN("ROM uses unsupported mapper: {}", mapper(rom));
 			return {};
 
-		case mapper::NesMapper000::ines_mapper:
-			return std::make_unique<mapper::NesMapper000>(std::move(*rom));
+		case mappers::NesMapper000::ines_mapper:
+			return std::make_unique<mappers::NesMapper000>(std::move(rom));
 
-		case mapper::NesMapper001::ines_mapper:
-			return std::make_unique<mapper::NesMapper001>(std::move(*rom));
+		case mappers::NesMapper001::ines_mapper:
+			return std::make_unique<mappers::NesMapper001>(std::move(rom));
 
-		case mapper::NesMapper002::ines_mapper:
-			return std::make_unique<mapper::NesMapper002>(std::move(*rom));
+		case mappers::NesMapper002::ines_mapper:
+			return std::make_unique<mappers::NesMapper002>(std::move(rom));
 
-		case mapper::NesMapper003::ines_mapper:
-			return std::make_unique<mapper::NesMapper003>(std::move(*rom));
+		case mappers::NesMapper003::ines_mapper:
+			return std::make_unique<mappers::NesMapper003>(std::move(rom));
 
-		case mapper::NesMapper066::ines_mapper:
-			return std::make_unique<mapper::NesMapper066>(std::move(*rom));
+		case mappers::NesMapper066::ines_mapper:
+			return std::make_unique<mappers::NesMapper066>(std::move(rom));
 		}
 	}
 }

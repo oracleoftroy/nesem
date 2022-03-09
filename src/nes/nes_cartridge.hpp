@@ -7,6 +7,11 @@
 
 namespace nesem
 {
+	namespace mappers
+	{
+		struct NesRom;
+	}
+
 	class NesCartridge
 	{
 	public:
@@ -26,5 +31,5 @@ namespace nesem
 		virtual bool ppu_write(U16 &addr, U8 value) noexcept = 0;
 	};
 
-	std::unique_ptr<NesCartridge> load_cartridge(const std::filesystem::path &filename) noexcept;
+	std::unique_ptr<NesCartridge> load_cartridge(mappers::NesRom rom) noexcept;
 }

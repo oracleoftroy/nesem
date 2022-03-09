@@ -57,7 +57,11 @@ class NesApp
 {
 public:
 	NesApp(ui::App &app)
-		: nes(std::bind_front(&NesApp::on_nes_pixel, this), std::bind_front(&NesApp::read_controller, this, std::ref(app)))
+		: nes({
+			  .draw = std::bind_front(&NesApp::on_nes_pixel, this),
+			  .player1 = std::bind_front(&NesApp::read_controller, this, std::ref(app)),
+			  .nes20db_filename = find_file(R"(data/nes20db.xml)"),
+		  })
 	{
 		app.on_update = std::bind_front(&NesApp::tick, this);
 		app.on_file_drop = std::bind_front(&NesApp::load_rom, this);
