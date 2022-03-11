@@ -143,6 +143,9 @@ namespace nesem::mappers
 
 			// size in 8K units
 			int chr_rom_size;
+
+			// has battery backed prg-nvram
+			bool has_battery;
 		};
 	}
 

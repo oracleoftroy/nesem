@@ -250,6 +250,7 @@ namespace nesem
 	{
 		using namespace std::string_view_literals;
 
+		LOG_INFO("Loading {}", filename.string());
 		auto file = std::ifstream(filename, std::ios::binary);
 
 		if (!file)
@@ -290,6 +291,8 @@ namespace nesem
 		auto mirroring = (header[6] & 0b0001) ? mappers::ines_1::Mirroring::vertical : mappers::ines_1::Mirroring::horizontal;
 		bool mirror_override = (header[6] & 0b1000) != 0;
 
+		bool has_battery = (header[6] & 0b00000010) > 0;
+
 		// size in 16K units
 		int prg_rom_size = header[4];
 
@@ -323,7 +326,7 @@ namespace nesem
 
 		auto result = mappers::NesRom{
 			std::move(prg_rom), std::move(chr_rom),
-			mappers::ines_1::RomData{mapper, mirroring, mirror_override, prg_rom_size, chr_rom_size},
+			mappers::ines_1::RomData{mapper, mirroring, mirror_override, prg_rom_size, chr_rom_size, has_battery},
 			std::move(v2_data)
         };
 
