@@ -36,7 +36,22 @@ namespace nesem::mappers
 			U8 chr_0;
 			U8 chr_1;
 			U8 prg;
+			U8 chr_last; // copy of the last written chr_0 or chr_1 value for some cart specific bank switching rules
 		} reg;
+
+		enum class Prg
+		{
+			size_16k,
+			size_32k,
+		};
+		Prg prg_mode;
+
+		enum class Chr
+		{
+			size_4k,
+			size_8k,
+		};
+		Chr chr_mode;
 
 		U8 chr_bank_0;
 		U8 chr_bank_1;

@@ -7,7 +7,7 @@
 namespace nesem::mappers
 {
 	NesMapper001::NesMapper001(NesRom &&rom) noexcept
-		: rom(std::move(rom)), prg_ram(32 * 1024)
+		: rom(std::move(rom))
 	{
 		CHECK(rom.mapper == ines_mapper, "Wrong mapper!");
 		reset();
@@ -26,6 +26,26 @@ namespace nesem::mappers
 		chr_bank_1 = 0;
 		prg_bank_0 = 0;
 		prg_bank_1 = U8(prgrom_banks(rom) - 1);
+
+		if (rom.v2)
+		{
+			size_t prg_ram_size = 0;
+			if (rom.v2->prgram)
+				prg_ram_size += rom.v2->prgram->size;
+
+			if (rom.v2->prgnvram)
+				prg_ram_size += rom.v2->prgnvram->size;
+
+			if (prg_ram_size > 0x2000)
+				LOG_WARN("Allocating more than 8k RAM, but we currently don't support handling that much!");
+
+			prg_ram.resize(prg_ram_size);
+		}
+		else
+		{
+			// default to 32k.. why? because NesDev said it was a good default... but we only write here if in the 8k range of 6000-7FFF?
+			prg_ram.resize(32 * 1024);
+		}
 	}
 
 	U8 NesMapper001::cpu_read(U16 addr) noexcept
@@ -37,10 +57,19 @@ namespace nesem::mappers
 		}
 
 		if (addr < 0x8000)
-			return prg_ram[addr & 0x1FFF];
+		{
+			// TODO: some carts have both battery backed and non-battery backed ram and need special handling of chr for bank switching between them
+			// currently we are treating all ram the same, but at some point we need to properly handle battery backed ram and savestates
+			if (prg_ram_enabled)
+				return prg_ram[addr & 0x1FFF];
+			else
+			{
+				LOG_WARN("PRG-RAM write while disabled?");
+				return 0;
+			}
+		}
 
-		// 16k mode
-		if (reg.control & 0b01000)
+		if (prg_mode == Prg::size_16k)
 		{
 			// 16k mode - low address
 			if (addr < 0xC000)
@@ -96,8 +125,7 @@ namespace nesem::mappers
 	{
 		if (addr < 0x2000)
 		{
-			// 4K mode
-			if (reg.control & 0b10000)
+			if (chr_mode == Chr::size_4k)
 			{
 				if (addr < 0x1000)
 					return rom.chr_rom[chr_bank_0 * 0x1000 + (addr & 0x0FFF)];
@@ -166,9 +194,9 @@ namespace nesem::mappers
 		if (addr < 0xA000)
 			reg.control = load_shifter & 0b11111;
 		else if (addr < 0xC000)
-			reg.chr_0 = load_shifter & 0b11111;
+			reg.chr_last = reg.chr_0 = load_shifter & 0b11111;
 		else if (addr < 0xE000)
-			reg.chr_1 = load_shifter & 0b11111;
+			reg.chr_last = reg.chr_1 = load_shifter & 0b11111;
 		else // E000-FFFF
 			reg.prg = load_shifter & 0b11111;
 
@@ -176,39 +204,56 @@ namespace nesem::mappers
 
 		prg_ram_enabled = (reg.prg & 0b10000) == 0;
 
+		prg_mode = (reg.control & 0b01000) ? Prg::size_16k : Prg::size_32k;
+		chr_mode = (reg.control & 0b10000) ? Chr::size_4k : Chr::size_8k;
+
 		// update CHR-ROM banks
-		if ((reg.control & 0b10000) == 0)
+		if (chr_mode == Chr::size_8k)
 		{
 			// 8k mode
 			// shifter value in 4k chunks, so ignore low bit to bring it to 8k
 			chr_bank_0 = (reg.chr_0 & 0b11110) % chr_banks(rom);
 		}
-
-		// 4k mode
 		else
 		{
 			chr_bank_0 = reg.chr_0 % (chr_banks(rom) * 2);
 			chr_bank_1 = reg.chr_1 % (chr_banks(rom) * 2);
 		}
 
-		// update PRG-ROM
-		auto mode = (reg.control >> 2) & 0x03;
-		if (mode == 2)
+		// calculate the prg_bank we will use. By default, it uses the first 4 bits written to prg,
+		// but larger carts use extra bits written to the chr registers
+		U8 prg_bank = reg.prg & 0xF;
+
+		// 512k PRG-ROM (32 banks @16k each)
+		if (prgrom_banks(rom) == 32)
 		{
-			// fix first bank at $8000 and switch 16 KB bank at $C000;
-			prg_bank_0 = 0;
-			prg_bank_1 = reg.prg % prgrom_banks(rom);
+			auto high_bank = chr_mode == Chr::size_4k ? reg.chr_last : reg.chr_0;
+
+			// 512kb carts use bit 5 of chr reg to select page
+			prg_bank |= (high_bank & 0x10);
 		}
-		else if (mode == 3)
+
+		// update PRG-ROM
+		if (prg_mode == Prg::size_16k)
 		{
-			// fix last bank at $C000 and switch 16 KB bank at $8000)
-			prg_bank_0 = reg.prg % prgrom_banks(rom);
-			prg_bank_1 = U8(prgrom_banks(rom) - 1);
+			auto mode = (reg.control >> 2) & 0x01;
+			if (mode == 0)
+			{
+				// fix first bank at $8000 and switch 16 KB bank at $C000;
+				prg_bank_0 = 0;
+				prg_bank_1 = prg_bank % prgrom_banks(rom);
+			}
+			else if (mode == 1)
+			{
+				// fix last bank at $C000 and switch 16 KB bank at $8000)
+				prg_bank_0 = prg_bank % prgrom_banks(rom);
+				prg_bank_1 = U8(prgrom_banks(rom) - 1);
+			}
 		}
 		else
 		{
 			// 32k mode - switch 32 KB at $8000, ignoring low bit of bank number
-			prg_bank_0 = (reg.prg % prgrom_banks(rom)) >> 1;
+			prg_bank_0 = (prg_bank % prgrom_banks(rom)) >> 1;
 		}
 	}
 }
