@@ -67,12 +67,15 @@ namespace nesem
 		void tick(ClockRate::duration deltatime) noexcept;
 		ClockRate::duration step(NesClockStep step) noexcept;
 
+		// force stop the current tick/step. Used to preserve system state on an error
+		void stop() noexcept;
+
 	private:
 		Nes *nes;
 		ClockRate clock_rate;
 
+		bool force_stop = false;
 		U64 tickcount = 0;
 		ClockRate::duration accumulator{0.0};
 	};
-
 }

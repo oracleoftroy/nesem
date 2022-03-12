@@ -11,6 +11,7 @@ namespace nesem
 {
 	struct NesSettings
 	{
+		ErrorFn error;
 		DrawFn draw;
 		PollInputFn player1;
 		PollInputFn player2 = {};
@@ -25,6 +26,7 @@ namespace nesem
 		bool load_rom(const std::filesystem::path &filename) noexcept;
 		void unload_rom() noexcept;
 		void reset() noexcept;
+		void error(std::string_view message) noexcept;
 
 		// run the system at full speed for a timeslice
 		void tick(double deltatime) noexcept;
@@ -41,6 +43,7 @@ namespace nesem
 		NesPpu &ppu() noexcept;
 
 	private:
+		ErrorFn on_error;
 		DrawFn draw;
 		PollInputFn player1;
 		PollInputFn player2;

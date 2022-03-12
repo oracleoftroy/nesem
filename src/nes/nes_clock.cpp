@@ -19,7 +19,7 @@ namespace nesem
 		// deltatime is in seconds
 		accumulator += deltatime;
 
-		while (accumulator > clock_rate.frequency)
+		while (!force_stop && accumulator > clock_rate.frequency)
 		{
 			if ((tickcount % clock_rate.ppu_divisor) == 0)
 				nes->ppu().clock();
@@ -34,6 +34,8 @@ namespace nesem
 			++tickcount;
 			accumulator -= clock_rate.frequency;
 		}
+
+		force_stop = false;
 	}
 
 	ClockRate::duration NesClock::step(NesClockStep step) noexcept
@@ -49,7 +51,7 @@ namespace nesem
 		// the total system time the step operation took
 		ClockRate::duration deltatime = 0s;
 
-		while (!done)
+		while (!done && !force_stop)
 		{
 			done = step == NesClockStep::OneClockCycle;
 
@@ -72,6 +74,12 @@ namespace nesem
 			deltatime += clock_rate.frequency;
 		}
 
+		force_stop = false;
 		return deltatime;
+	}
+
+	void NesClock::stop() noexcept
+	{
+		force_stop = true;
 	}
 }

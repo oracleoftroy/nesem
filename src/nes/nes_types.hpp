@@ -30,8 +30,6 @@ namespace nesem
 	};
 	MAKE_FLAGS_ENUM(ProcessorStatus);
 
-	using DrawFn = std::function<void(int x, int y, int color_index)>;
-
 	enum class Buttons : U8
 	{
 		None = 0x00,
@@ -46,5 +44,7 @@ namespace nesem
 	};
 	MAKE_FLAGS_ENUM(Buttons);
 
+	using DrawFn = std::function<void(int x, int y, int color_index)>;
 	using PollInputFn = std::function<Buttons()>;
+	using ErrorFn = std::function<void(std::string_view message)>;
 }

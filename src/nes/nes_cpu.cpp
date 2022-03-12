@@ -859,10 +859,10 @@ namespace nesem
 	// invalid instruction
 	bool NesCpu::xxx() noexcept
 	{
-		LOG_CRITICAL("Invalid instruction {:02X}, exiting...", instruction);
-		spdlog::shutdown();
-		// DEBUG_BREAK();
-		std::terminate();
+		LOG_CRITICAL("{:>5}: PC:{:04X} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}", cycles, PC - 1, A, X, Y, U8(P), S);
+		LOG_CRITICAL("Invalid instruction {:02X}", instruction);
+
+		nes->error("Invalid CPU instruction");
 		return true;
 	}
 

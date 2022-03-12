@@ -2,12 +2,15 @@
 
 #include <utility>
 
+#include <util/logging.hpp>
+
 #include "nes_cartridge.hpp"
 
 namespace nesem
 {
 	Nes::Nes(const NesSettings &settings)
-		: draw(std::move(settings.draw)),
+		: on_error(std::move(settings.error)),
+		  draw(std::move(settings.draw)),
 		  player1(std::move(settings.player1)),
 		  player2(std::move(settings.player2)),
 		  nes_bus(this),
@@ -52,6 +55,20 @@ namespace nesem
 		nes_cartridge->reset();
 		nes_cpu.reset();
 		nes_ppu.reset();
+	}
+
+	void Nes::error(std::string_view message) noexcept
+	{
+		nes_clock.stop();
+
+		if (on_error)
+			on_error(message);
+		else
+		{
+			LOG_CRITICAL("Error encountered, but no error handler attached, resetting...");
+			DEBUG_BREAK(); // give us a chance to debug before resetting
+			reset();
+		}
 	}
 
 	void Nes::tick(double deltatime) noexcept
