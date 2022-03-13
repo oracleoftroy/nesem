@@ -408,6 +408,15 @@ private:
 		if (app.key_down(button_right))
 			result |= Right;
 
+		// The physical NES controller can't have both up and down or both left and right, and weird things can happen in some games if both are set.
+		// We will treat both buttons down as neither button down, as if the buttons cancel each other out
+
+		if ((result & (Up | Down)) == (Up | Down))
+			result &= ~(Up | Down);
+
+		if ((result & (Left | Right)) == (Left | Right))
+			result &= ~(Left | Right);
+
 		return result;
 	}
 
