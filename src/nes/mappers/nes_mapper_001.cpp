@@ -20,6 +20,7 @@ namespace nesem::mappers
 		reg.control = 0x0C;
 		reg.chr_0 = 0;
 		reg.chr_1 = 0;
+		reg.chr_last = 0;
 		reg.prg = 0;
 
 		chr_bank_0 = 0;
@@ -46,6 +47,8 @@ namespace nesem::mappers
 			// default to 32k.. why? because NesDev said it was a good default... but we only write here if in the 8k range of 6000-7FFF?
 			prg_ram.resize(32 * 1024);
 		}
+
+		update_state();
 	}
 
 	U8 NesMapper001::cpu_read(U16 addr) noexcept
@@ -200,8 +203,11 @@ namespace nesem::mappers
 		else // E000-FFFF
 			reg.prg = load_shifter & 0b11111;
 
-		// update state
+		update_state();
+	}
 
+	void NesMapper001::update_state() noexcept
+	{
 		prg_ram_enabled = (reg.prg & 0b10000) == 0;
 
 		prg_mode = (reg.control & 0b01000) ? Prg::size_16k : Prg::size_32k;

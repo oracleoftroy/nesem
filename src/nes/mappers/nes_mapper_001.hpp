@@ -23,6 +23,7 @@ namespace nesem::mappers
 
 		void nt_mirroring(U16 &addr) noexcept;
 		void load_complete(U16 addr) noexcept;
+		void update_state() noexcept;
 
 		NesRom rom;
 		std::vector<U8> prg_ram;
