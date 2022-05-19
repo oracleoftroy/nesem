@@ -615,7 +615,6 @@ namespace nesem
 		S = 0xFD;
 		P = ProcessorStatus::Default;
 
-		interrupt_requested = false;
 		nmi_requested = false;
 		step = 0;
 		cycles = 0;
@@ -631,16 +630,11 @@ namespace nesem
 			instruction = startup_sequence;
 	}
 
-	void NesCpu::irq() noexcept
+	bool NesCpu::interrupt_requested() noexcept
 	{
 		using enum ProcessorStatus;
 
-		// if interrupts disabled, ignore this signal
-		if ((P & I) == None)
-		{
-			interrupt_requested = true;
-			P |= I;
-		}
+		return ((P & I) == None) && nes->interrupt_requested();
 	}
 
 	void NesCpu::nmi() noexcept
@@ -715,6 +709,8 @@ namespace nesem
 
 			return instruction_complete;
 		}
+
+		// TODO: NMI should be able to interrupt an irq... I think
 		else if (instruction == nmi_sequence || instruction == irq_sequence)
 		{
 			using enum ProcessorStatus;
@@ -760,24 +756,10 @@ namespace nesem
 				instruction = nmi_sequence;
 				return instruction_complete;
 			}
-			else if (interrupt_requested)
+			else if (interrupt_requested())
 			{
-				interrupt_requested = false;
-
-				using enum ProcessorStatus;
-
-				// If interrupts are disabled, ignore this interrupt, otherwise, go into the interrupt handling sequence
-				// I think this is wrong, but I'm not sure what should happen. There are race conditions with setting and
-				// clearing the 'I' flag that need to be considered, and I get the impression that the irq signal may or
-				// may not stick around for various reasons.
-
-				// TODO: read https://wiki.nesdev.org/w/index.php?title=CPU_interrupts more carefully
-				// TODO: test with https://github.com/christopherpow/nes-test-roms/tree/master/cpu_interrupts_v2
-				if ((P & I) == None)
-				{
-					instruction = nmi_sequence;
-					return instruction_complete;
-				}
+				instruction = irq_sequence;
+				return instruction_complete;
 			}
 
 			instruction = readPC();

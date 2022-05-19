@@ -16,6 +16,7 @@ namespace nesem
 		  nes_bus(this),
 		  nes_cpu(this),
 		  nes_ppu(this),
+		  nes_apu(this),
 		  nes_clock(this),
 		  rom_loader(NesRomLoader::create(settings.nes20db_filename))
 	{
@@ -83,6 +84,17 @@ namespace nesem
 		return dt.count();
 	}
 
+	bool Nes::interrupt_requested() noexcept
+	{
+		// components requesting an interrput should hold the interrupt signal until the CPU writes back saying
+		// it handled the interrput. Multiple devices can signal an irq at the same time, so this gives us a
+		// central location where all active interupt requests can be accessed at once. Right now, only the APU
+		// signals irqs, but some mappers can request interrputs as well as I understand. It is the programmer's
+		// responsibility to figure out which device(s) signaled the interrupt and handle it appropriately.
+
+		return nes_apu.irq();
+	}
+
 	void Nes::screen_out(int x, int y, int color_index) noexcept
 	{
 		if (draw) [[likely]]
@@ -120,4 +132,8 @@ namespace nesem
 		return nes_ppu;
 	}
 
+	NesApu &Nes::apu() noexcept
+	{
+		return nes_apu;
+	}
 }

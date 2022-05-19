@@ -1,5 +1,6 @@
 #pragma once
 
+#include "nes_apu.hpp"
 #include "nes_bus.hpp"
 #include "nes_cartridge.hpp"
 #include "nes_clock.hpp"
@@ -34,6 +35,9 @@ namespace nesem
 		// step the system, returns the total system time the operations took
 		double step(NesClockStep step) noexcept;
 
+		// returns true if a component is signaling an interrupt
+		bool interrupt_requested() noexcept;
+
 		void screen_out(int x, int y, int color_index) noexcept;
 		U8 poll_player1() noexcept;
 		U8 poll_player2() noexcept;
@@ -41,6 +45,7 @@ namespace nesem
 		NesBus &bus() noexcept;
 		NesCpu &cpu() noexcept;
 		NesPpu &ppu() noexcept;
+		NesApu &apu() noexcept;
 
 	private:
 		ErrorFn on_error;
@@ -51,6 +56,7 @@ namespace nesem
 		NesBus nes_bus;
 		NesCpu nes_cpu;
 		NesPpu nes_ppu;
+		NesApu nes_apu;
 		NesClock nes_clock;
 		NesRomLoader rom_loader;
 

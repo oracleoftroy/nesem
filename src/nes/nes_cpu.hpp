@@ -14,7 +14,6 @@ namespace nesem
 
 		// signals
 		void reset(U16 pc_addr = 0) noexcept;
-		void irq() noexcept;
 		void nmi() noexcept;
 		void dma(U8 page) noexcept;
 
@@ -33,6 +32,8 @@ namespace nesem
 		U8 readPC() noexcept;
 
 		bool branch(bool condition) noexcept;
+
+		bool interrupt_requested() noexcept;
 
 	private:
 		Nes *nes;
@@ -54,7 +55,6 @@ namespace nesem
 		U8 scratch = 0xFF; // place for instructions to store intermediate value
 		U16 effective_addr = 0xFEFE; // temporary address for address modes
 
-		bool interrupt_requested = false;
 		bool nmi_requested = false;
 		bool in_dma = false;
 		U8 dma_page = 0;

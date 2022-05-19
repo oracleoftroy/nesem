@@ -70,6 +70,9 @@ namespace nesem
 				done = done || step == NesClockStep::OneCpuCycle || (instruction_complete && step == NesClockStep::OneCpuInstruction);
 			}
 
+			if ((tickcount % clock_rate.apu_divisor) == 0)
+				nes->apu().clock();
+
 			++tickcount;
 			deltatime += clock_rate.frequency;
 		}

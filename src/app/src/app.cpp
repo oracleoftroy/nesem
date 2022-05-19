@@ -6,6 +6,7 @@
 #include <utility>
 
 #include <SDL2/SDL.h>
+#include <ui/audio_device.hpp>
 #include <util/logging.hpp>
 #include <util/ptr.hpp>
 
@@ -171,7 +172,7 @@ namespace ui
 
 	App App::create(const std::string &window_title, cm::Sizei window_size, cm::Sizei pixel_size) noexcept
 	{
-		auto sdl = SdlLib::init(SDL_INIT_VIDEO);
+		auto sdl = SdlLib::init();
 
 		auto canvas_size = window_size / pixel_size;
 		auto canvas = Canvas(canvas_size);
@@ -436,6 +437,25 @@ namespace ui
 	cm::Sizei App::canvas_size() const noexcept
 	{
 		return core->canvas.size();
+	}
+
+	AudioDevice App::create_audio_device(int frequency, int channels, int sample_size) const noexcept
+	{
+		SDL_AudioSpec device_spec;
+
+		for (int i = 0, num_devices = SDL_GetNumAudioDevices(false);
+			 i < num_devices; ++i)
+		{
+			auto name = SDL_GetAudioDeviceName(i, false);
+			SDL_GetAudioDeviceSpec(i, false, &device_spec);
+
+			LOG_INFO("Audio device #{}: '{}' {} Hz, {} channels, {}-bit {}", i, name, device_spec.freq, device_spec.channels, SDL_AUDIO_BITSIZE(device_spec.format),
+				SDL_AUDIO_ISFLOAT(device_spec.format)        ? "float"
+					: SDL_AUDIO_ISSIGNED(device_spec.format) ? "signed int"
+															 : "unsigned int");
+		}
+
+		return AudioDevice::create(frequency, channels, sample_size);
 	}
 
 	App::App() noexcept = default;

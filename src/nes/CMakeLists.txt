@@ -2,6 +2,8 @@ add_library(
 	nesemlib
 	"nes.cpp"
 	"nes.hpp"
+	"nes_apu.cpp"
+	"nes_apu.hpp"
 	"nes_bus.cpp"
 	"nes_bus.hpp"
 	"nes_cartridge.cpp"

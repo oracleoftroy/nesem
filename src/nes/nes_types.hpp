@@ -44,6 +44,17 @@ namespace nesem
 	};
 	MAKE_FLAGS_ENUM(Buttons);
 
+	enum class ApuStatus : U8
+	{
+		none = 0x00,
+		pulse_1 = 0x01,
+		pulse_2 = 0x02,
+		triangle = 0x04,
+		noise = 0x08,
+		dmc = 0x10,
+	};
+	MAKE_FLAGS_ENUM(ApuStatus);
+
 	using DrawFn = std::function<void(int x, int y, int color_index)>;
 	using PollInputFn = std::function<Buttons()>;
 	using ErrorFn = std::function<void(std::string_view message)>;

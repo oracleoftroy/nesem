@@ -17,6 +17,7 @@ namespace ui
 	class Key;
 	class Scancode;
 	enum class KeyMods;
+	class AudioDevice;
 
 	class App
 	{
@@ -92,6 +93,9 @@ namespace ui
 
 		// returns the mouse position scaled to the canvas size
 		[[nodiscard]] cm::Point2i mouse_position() const noexcept;
+
+		// Audio
+		[[nodiscard]] AudioDevice create_audio_device(int frequency = 44100, int channels = 1, int sample_size = 512) const noexcept;
 
 	private:
 		struct Core;
