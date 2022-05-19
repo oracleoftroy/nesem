@@ -7,7 +7,7 @@ namespace nesem::mappers
 	NesMapper002::NesMapper002(NesRom &&rom) noexcept
 		: rom(std::move(rom))
 	{
-		CHECK(rom.mapper == ines_mapper, "Wrong mapper!");
+		CHECK(rom.v1.mapper == ines_mapper, "Wrong mapper!");
 	}
 
 	void NesMapper002::reset() noexcept
