@@ -7,6 +7,7 @@ if(${USE_VCPKG})
 		vcpkg
 		GIT_REPOSITORY https://github.com/microsoft/vcpkg.git
 		GIT_TAG master
+		GIT_SHALLOW true
 	)
 
 	# After the following call, the CMake targets defined by googletest and
