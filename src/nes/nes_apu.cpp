@@ -19,7 +19,7 @@ namespace nesem
 
 	void Channel::set(U32 offset, U8 value) noexcept
 	{
-		CHECK(offset >= 0 && offset < 4, "byte offset out of range of U32");
+		CHECK(offset < 4, "byte offset out of range of U32");
 
 		U32 shift = offset * 8;
 		U32 mask = 0xFF << shift;
@@ -27,68 +27,77 @@ namespace nesem
 		data = (data & ~mask) | (value << shift);
 	}
 
-	U8 Channel::duty() noexcept
+	U8 Channel::duty() const noexcept
 	{
 		return (data >> 6) & 3;
 	}
 
-	bool Channel::halt() noexcept
+	bool Channel::halt() const noexcept
 	{
 		return (data & 0b0010'0000) > 0;
 	}
 
 	// same as halt for pulse channels?
 	// TODO: err, delete one of these? Rename? keep?
-	bool Channel::loop() noexcept
+	bool Channel::loop() const noexcept
 	{
 		return halt();
 	}
 
-	bool Channel::use_constant_volume() noexcept
+	bool Channel::use_constant_volume() const noexcept
 	{
 		return (data & 0b0001'0000) > 0;
 	}
 
-	U8 Channel::volume() noexcept
+	U8 Channel::volume() const noexcept
 	{
 		return data & 0xF;
 	}
 
 	// same as volume for pulse channels...
 	// TODO: err, delete one of these? Rename? keep?
-	U8 Channel::divider() noexcept
+	U8 Channel::divider() const noexcept
 	{
 		return volume();
 	}
 
-	bool Channel::sweep_enabled() noexcept
+	bool Channel::sweep_enabled() const noexcept
 	{
 		return (data & 0b1000'0000'0000'0000) > 0;
 	}
 
-	U8 Channel::sweep_period() noexcept
+	U8 Channel::sweep_period() const noexcept
 	{
 		return (data >> 12) & 0x7;
 	}
 
-	bool Channel::sweep_negate() noexcept
+	bool Channel::sweep_negate() const noexcept
 	{
 		return (data & 0b0000'1000'0000'0000) > 0;
 	}
 
-	U8 Channel::sweep_shift() noexcept
+	U8 Channel::sweep_shift() const noexcept
 	{
 		return (data >> 8) & 0x7;
 	}
 
-	U16 Channel::timer() noexcept
+	U16 Channel::timer() const noexcept
 	{
 		return (data >> 16) & 0x7FF;
 	}
 
-	U8 Channel::length() noexcept
+	U8 Channel::length() const noexcept
 	{
 		return (data >> 27) & 0x1F;
+	}
+
+	void Sweep::clock(const Channel &channel) noexcept
+	{
+		--period;
+
+		if (channel.sweep_period() < 8)
+		{
+		}
 	}
 
 	NesApu::NesApu(Nes *nes) noexcept
@@ -186,7 +195,7 @@ namespace nesem
 		case 0x4011:
 		case 0x4012:
 		case 0x4013:
-			LOG_WARN("DMC channel not implemented, ignoring write to {:04X} with value: {:02X}", addr, value);
+			LOG_WARN_ONCE("DMC channel not implemented, ignoring write to {:04X} with value: {:02X}", addr, value);
 			return;
 
 		case 0x4015:

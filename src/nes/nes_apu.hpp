@@ -16,21 +16,40 @@ namespace nesem
 
 		void set(U32 offset, U8 value) noexcept;
 
-		U8 duty() noexcept;
-		bool halt() noexcept;
-		bool loop() noexcept;
+		U8 duty() const noexcept;
+		bool halt() const noexcept;
+		bool loop() const noexcept;
 
-		bool use_constant_volume() noexcept;
-		U8 volume() noexcept;
-		U8 divider() noexcept;
+		bool use_constant_volume() const noexcept;
+		U8 volume() const noexcept;
+		U8 divider() const noexcept;
 
-		bool sweep_enabled() noexcept;
-		U8 sweep_period() noexcept;
-		bool sweep_negate() noexcept;
-		U8 sweep_shift() noexcept;
+		bool sweep_enabled() const noexcept;
+		U8 sweep_period() const noexcept;
+		bool sweep_negate() const noexcept;
+		U8 sweep_shift() const noexcept;
 
-		U16 timer() noexcept;
-		U8 length() noexcept;
+		U16 timer() const noexcept;
+		U8 length() const noexcept;
+	};
+
+	struct Envelope
+	{
+		bool loop;
+		bool disable;
+		U8 counter;
+
+		void clock() noexcept;
+	};
+
+	struct Sweep
+	{
+		bool enable;
+		bool negate;
+		U8 period;
+		U8 shift;
+
+		void clock(const Channel &channel) noexcept;
 	};
 
 	struct Sequencer
