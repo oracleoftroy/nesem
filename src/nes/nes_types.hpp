@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <version>
 
 #include <util/enum.hpp>
 
@@ -55,7 +56,13 @@ namespace nesem
 	};
 	MAKE_FLAGS_ENUM(ApuStatus);
 
+#if defined(__cpp_lib_move_only_function)
+	using DrawFn = std::move_only_function<void(int x, int y, int color_index)>;
+	using PollInputFn = std::move_only_function<Buttons()>;
+	using ErrorFn = std::move_only_function<void(std::string_view message)>;
+#else
 	using DrawFn = std::function<void(int x, int y, int color_index)>;
 	using PollInputFn = std::function<Buttons()>;
 	using ErrorFn = std::function<void(std::string_view message)>;
+#endif
 }

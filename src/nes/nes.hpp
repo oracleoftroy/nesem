@@ -22,7 +22,7 @@ namespace nesem
 	class Nes final
 	{
 	public:
-		Nes(const NesSettings &settings);
+		Nes(NesSettings &&settings);
 
 		bool load_rom(const std::filesystem::path &filename) noexcept;
 		void unload_rom() noexcept;

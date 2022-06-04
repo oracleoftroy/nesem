@@ -1,8 +1,8 @@
 #include "nes_ppu.hpp"
 
-#include <util/logging.hpp>
-
 #include "nes.hpp"
+
+#include <util/logging.hpp>
 
 namespace
 {
@@ -51,6 +51,7 @@ namespace nesem
 	constexpr U8 mask_show_leftmost_sprites    = 0b0000'0100;
 	constexpr U8 mask_show_leftmost_background = 0b0000'0010;
 	constexpr U8 mask_grayscale                = 0b0000'0001;
+
 	// clang-format on
 
 	U16 NesPpu::OAMSprite::pattern_addr(U8 ppuctrl, int scanline) noexcept
@@ -182,7 +183,7 @@ namespace nesem
 		return active_sprites;
 	}
 
-	void NesPpu::draw_pattern_table(int index, U8 palette, const DrawFn &draw_pixel)
+	void NesPpu::draw_pattern_table(int index, U8 palette, DrawFn draw_pixel)
 	{
 		for (U16 tile_y = 0; tile_y < 16; ++tile_y)
 		{
@@ -208,7 +209,7 @@ namespace nesem
 		}
 	}
 
-	void NesPpu::draw_name_table(int index, const DrawFn &draw_pixel)
+	void NesPpu::draw_name_table(int index, DrawFn draw_pixel)
 	{
 		U16 pattern_start = (reg.ppuctrl & ctrl_pattern_addr) != 0 ? 0x1000 : 0;
 

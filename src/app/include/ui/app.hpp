@@ -3,9 +3,9 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
+#include <version>
 
 #include <cm/math.hpp>
-
 #include <ui/canvas.hpp>
 #include <util/enum.hpp>
 
@@ -27,11 +27,19 @@ namespace ui
 		App() noexcept;
 		~App();
 
+#if defined(__cpp_lib_move_only_function)
+		// callback function, called each tick
+		std::move_only_function<void(App &app, Canvas &canvas, float deltatime)> on_update;
+
+		// callback for handling dropped file
+		std::move_only_function<void(std::string_view filename)> on_file_drop;
+#else
 		// callback function, called each tick
 		std::function<void(App &app, Canvas &canvas, float deltatime)> on_update;
 
 		// callback for handling dropped file
 		std::function<void(std::string_view filename)> on_file_drop;
+#endif
 
 		// run the application. Exits when the window is closed
 		void run();

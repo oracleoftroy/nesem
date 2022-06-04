@@ -2,13 +2,13 @@
 
 #include <utility>
 
-#include <util/logging.hpp>
-
 #include "nes_cartridge.hpp"
+
+#include <util/logging.hpp>
 
 namespace nesem
 {
-	Nes::Nes(const NesSettings &settings)
+	Nes::Nes(NesSettings &&settings)
 		: on_error(std::move(settings.error)),
 		  draw(std::move(settings.draw)),
 		  player1(std::move(settings.player1)),

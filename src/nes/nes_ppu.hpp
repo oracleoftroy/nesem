@@ -200,7 +200,7 @@ namespace nesem
 		ScrollInfo get_scroll_info() const noexcept;
 		const std::array<U8, 256> &get_oam() const noexcept;
 		const std::array<OAMSprite, 8> &get_active_sprites() const noexcept;
-		void draw_pattern_table(int index, U8 palette, const DrawFn &draw_pixel);
-		void draw_name_table(int index, const DrawFn &draw_pixel);
+		void draw_pattern_table(int index, U8 palette, DrawFn draw_pixel);
+		void draw_name_table(int index, DrawFn draw_pixel);
 	};
 }
