@@ -512,6 +512,7 @@ namespace cm
 		auto dst_r = (dst >> format.shift_r) & 0xFF;
 		auto dst_g = (dst >> format.shift_g) & 0xFF;
 		auto dst_b = (dst >> format.shift_b) & 0xFF;
+		auto dst_a = (dst >> format.shift_a) & 0xFF;
 
 		auto src_r = (src >> format.shift_r) & 0xFF;
 		auto src_g = (src >> format.shift_g) & 0xFF;
@@ -546,7 +547,7 @@ namespace cm
 			.r = uint8_t(fp_mul(dst_r, one_minus_src_a) + fp_mul(src_r, src_a)),
 			.g = uint8_t(fp_mul(dst_g, one_minus_src_a) + fp_mul(src_g, src_a)),
 			.b = uint8_t(fp_mul(dst_b, one_minus_src_a) + fp_mul(src_b, src_a)),
-			.a = uint8_t(src_a),
+			.a = uint8_t(fp_mul(dst_a, one_minus_src_a) + src_a),
 		};
 
 		return to_pixel(format, c);
