@@ -280,7 +280,7 @@ namespace nesem
 		{
 			for (size_t i = 0; i < size(active_sprites); ++i)
 			{
-				if (active_sprites[i].x > 0)
+				if (active_sprites[i].x > 0 && active_sprites[i].x != 255)
 					--active_sprites[i].x;
 				else
 				{
