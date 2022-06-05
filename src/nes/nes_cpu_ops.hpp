@@ -233,11 +233,6 @@ namespace nesem::op
 		else
 			flags &= ~Z;
 
-		// // Just mimicking the docs for the moment, but this should never happen... bit 7 always gets a 0, AFAIK
-		// // TODO: Just unconditionally unset N?
-		// if (value & 0b1000'0000)
-		// 	flags |= N;
-		// else
 		flags &= ~N;
 
 		return {
@@ -418,6 +413,7 @@ namespace nesem::op
 				static_assert(r.flags == (C | V));
 			}
 		}
+
 		constexpr void SBC_tests()
 		{
 			using enum ProcessorStatus;
