@@ -326,21 +326,37 @@ private:
 			if (debug_mode == DebugMode::fg_info)
 			{
 				auto pos = cm::Point2{nes_screen_texture.size().w * nes_scale + 2, palette_end_pos.y};
+				auto offset = cm::Point2{16 * 8, 0};
+
 				const auto palette_start_pos = cm::Point2{canvas_size.w - 256 + 2, 128 + 2};
+
+				draw_string(text_canvas, {255, 255, 255}, "OEM memory - (x y) index attrib", pos);
+				pos.y += 2;
 
 				const auto &oam = nes.ppu().get_oam();
 				for (size_t i = 0, end = std::size(oam); i < end; i += 4)
 				{
-					draw_string(text_canvas, {255, 255, 255}, fmt::format("({:>3} {:>3}) {:02X} {:02X}", oam[i + 3], oam[i + 0], oam[i + 1], oam[i + 2]), pos);
-					pos.y += 8;
+					auto col = int((i / 4) % 2);
+					if (col == 0)
+						pos.y += 10;
+
+					draw_string(text_canvas, {255, 255, 255}, fmt::format("({:>3} {:>3}) {:02X} {:02X}", oam[i + 3], oam[i + 0], oam[i + 1], oam[i + 2]), pos + offset * col);
 				}
 
-				pos = cm::Point2{nes_screen_texture.size().w * nes_scale + 2 + 16 * 8, palette_end_pos.y};
+				// pos = cm::Point2{nes_screen_texture.size().w * nes_scale + 2 + 16 * 8, palette_end_pos.y};
+				pos.y += 20;
 
+				draw_string(text_canvas, {255, 255, 255}, "Active sprites for scanline", pos);
+				pos.y += 2;
+
+				int index = 0;
 				for (const auto &s : nes.ppu().get_active_sprites())
 				{
-					draw_string(text_canvas, {255, 255, 255}, fmt::format("({:>3} {:>3}) {:02X} {:02X}", s.x, s.y, s.index, s.attrib), pos);
-					pos.y += 8;
+					auto col = int(index++ % 2);
+					if (col == 0)
+						pos.y += 10;
+
+					draw_string(text_canvas, {255, 255, 255}, fmt::format("({:>3} {:>3}) {:02X} {:02X}", s.x, s.y, s.index, s.attrib), pos + offset * col);
 				}
 			}
 
