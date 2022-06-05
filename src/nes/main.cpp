@@ -79,6 +79,8 @@ public:
 		button_left = app.key_from_name("A");
 		button_right = app.key_from_name("D");
 
+		escape_key = app.key_from_name("Escape");
+
 		toggle_fullscreen_key = app.key_from_name("Return");
 		palette_next_key = app.key_from_name("]");
 		palette_prev_key = app.key_from_name("[");
@@ -97,7 +99,7 @@ public:
 
 		reset_key = app.key_from_name("R");
 
-		rom_loaded = nes.load_rom(find_file(R"(data/nestest.nes)"));
+		load_rom(find_file(R"(data/nestest.nes)").string());
 
 		nes_screen_texture = app.create_texture({256, 240});
 		nes_overlay_texture = app.create_texture({256, 240});
@@ -118,6 +120,11 @@ private:
 	{
 		error_msg.clear();
 		rom_loaded = nes.load_rom(filepath);
+
+		if (!rom_loaded)
+			rom_name = std::nullopt;
+		else
+			rom_name = filepath;
 	}
 
 	void on_error(std::string_view message)
@@ -136,6 +143,13 @@ private:
 
 	void handle_input(ui::App &app)
 	{
+		if (app.key_pressed(escape_key))
+		{
+			fullscreen = false;
+			LOG_INFO("fullscreen now: {}", fullscreen);
+			app.fullscreen(fullscreen);
+		}
+
 		if (app.key_pressed(toggle_fullscreen_key) && app.modifiers(ui::KeyMods::alt))
 		{
 			fullscreen = !fullscreen;
@@ -161,15 +175,15 @@ private:
 			LOG_INFO("Debug mode now: {}", int(debug_mode));
 		}
 
-		if (app.key_pressed(break_key))
-		{
-			system_break = true;
-			LOG_INFO("System break now: {}", system_break);
-		}
-
 		if (app.key_pressed(run_key))
 		{
 			system_break = false;
+			LOG_INFO("System break now: {}", system_break);
+		}
+
+		if (app.key_pressed(break_key))
+		{
+			system_break = !system_break;
 			LOG_INFO("System break now: {}", system_break);
 		}
 
@@ -222,7 +236,7 @@ private:
 		}
 	}
 
-	void update(double deltatime)
+	void update([[maybe_unused]] double deltatime)
 	{
 		if (rom_loaded)
 		{
@@ -254,16 +268,19 @@ private:
 
 		if (!rom_loaded)
 		{
-			draw_overlay_text(renderer, {100, 149, 237}, "No ROM Loaded");
+			draw_overlay_text(renderer, {100, 149, 237, 127}, "No ROM Loaded");
 		}
 		else if (!error_msg.empty())
 		{
-			draw_overlay_text(renderer, {0, 0, 0, 192}, error_msg);
+			draw_overlay_text(renderer, {0, 0, 0, 127}, error_msg);
 		}
 		else if (system_break)
 		{
-			draw_overlay_text(renderer, {0, 0, 0, 192}, "Paused");
+			draw_overlay_text(renderer, {0, 0, 0, 127}, "Paused");
 		}
+
+		auto text_canvas = text_overlay_texture.lock();
+		text_canvas.fill({0, 0, 0, 0});
 
 		if (debug_mode == DebugMode::fg_info || debug_mode == DebugMode::bg_info)
 		{
@@ -290,9 +307,6 @@ private:
 			renderer.draw_rect({200, 200, 200}, rect(pattern_1_pos, nes_pattern_1_texture.size()));
 
 			auto palette_end_pos = draw_palettes(renderer);
-
-			auto text_canvas = text_overlay_texture.lock();
-			text_canvas.fill({0, 0, 0, 0});
 
 			if (debug_mode == DebugMode::bg_info)
 			{
@@ -359,10 +373,24 @@ private:
 					draw_string(text_canvas, {255, 255, 255}, fmt::format("({:>3} {:>3}) {:02X} {:02X}", s.x, s.y, s.index, s.attrib), pos + offset * col);
 				}
 			}
-
-			text_overlay_texture.unlock();
-			renderer.blit({0, 0}, text_overlay_texture);
 		}
+
+		{
+			auto pos = cm::Point2{0, canvas_size.h - 10};
+			draw_string(text_canvas, {255, 255, 255}, fmt::format("{}", rom_name.value_or("No rom loaded")), pos);
+
+			pos.y -= 12;
+			draw_string(text_canvas, {255, 255, 255}, "Debug info:   off: 0    background info: 1    foreground info: 2", pos);
+
+			pos.y -= 12;
+			if (system_break)
+				draw_string(text_canvas, {255, 255, 255}, "F5: resume   F8: step cpu   F9: step PPU cycle   F10: step scanline   F11: step frame", pos);
+			else
+				draw_string(text_canvas, {255, 255, 255}, "Move: WASD   A: '/'   B: '.'   Start: spacebar   Select: ','      Break key to pause emulation", pos);
+		}
+
+		text_overlay_texture.unlock();
+		renderer.blit({0, 0}, text_overlay_texture);
 	}
 
 	void draw_overlay_text(ui::Renderer &canvas, const cm::Color &color, std::string_view msg) noexcept
@@ -594,6 +622,7 @@ private:
 	ui::Key step_ppu_scanline_key;
 	ui::Key step_ppu_frame_key;
 
+	ui::Key escape_key;
 	ui::Key toggle_fullscreen_key;
 	bool fullscreen = false;
 
@@ -601,6 +630,8 @@ private:
 	ui::Key palette_prev_key;
 
 	bool rom_loaded = false;
+	std::optional<std::string> rom_name;
+
 	nesem::Nes nes;
 	util::Random rng;
 
