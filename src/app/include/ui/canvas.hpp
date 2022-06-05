@@ -7,11 +7,12 @@
 
 namespace ui
 {
-	class Canvas
+	class Canvas final
 	{
 	public:
 		Canvas() noexcept = default;
 		explicit Canvas(cm::Sizei size, cm::ColorFormat format = {}) noexcept;
+		explicit Canvas(cm::Sizei size, cm::ColorFormat format, uint32_t *ptr) noexcept;
 		~Canvas();
 		Canvas(Canvas &&other) noexcept;
 		Canvas &operator=(Canvas &&other) noexcept;
@@ -53,6 +54,7 @@ namespace ui
 		cm::ColorFormat canvas_format = {};
 		uint32_t *canvas_ptr = nullptr;
 
+		bool owns_canvas = true;
 		bool blending_enabled = false;
 	};
 }

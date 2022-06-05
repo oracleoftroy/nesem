@@ -1,11 +1,14 @@
 #include <filesystem>
-
-#include <ui/app.hpp>
-#include <util/logging.hpp>
-#include <util/rng.hpp>
+#include <optional>
 
 #include "nes.hpp"
 #include "text.hpp"
+
+#include <ui/app.hpp>
+#include <ui/renderer.hpp>
+#include <ui/texture.hpp>
+#include <util/logging.hpp>
+#include <util/rng.hpp>
 
 enum class DebugMode
 {
@@ -95,6 +98,19 @@ public:
 		reset_key = app.key_from_name("R");
 
 		rom_loaded = nes.load_rom(find_file(R"(data/nestest.nes)"));
+
+		nes_screen_texture = app.create_texture({256, 240});
+		nes_overlay_texture = app.create_texture({256, 240});
+		nes_overlay_texture.enable_blending(true);
+
+		nes_pattern_0_texture = app.create_texture({128, 128});
+		nes_pattern_1_texture = app.create_texture({128, 128});
+
+		nes_nametable_0_texture = app.create_texture({256, 240});
+		nes_nametable_1_texture = app.create_texture({256, 240});
+
+		text_overlay_texture = app.create_texture(app.renderer_size());
+		text_overlay_texture.enable_blending(true);
 	}
 
 private:
@@ -111,7 +127,7 @@ private:
 		step = nesem::NesClockStep::None;
 	}
 
-	void tick(ui::App &app, ui::Canvas &canvas, float deltatime)
+	void tick(ui::App &app, ui::Renderer &canvas, float deltatime)
 	{
 		handle_input(app);
 		update(deltatime);
@@ -212,6 +228,8 @@ private:
 		{
 			using enum nesem::NesClockStep;
 
+			nes_screen = nes_screen_texture.lock();
+
 			if (!system_break)
 				nes.step(OneFrame);
 			else if (step != None)
@@ -219,116 +237,144 @@ private:
 				nes.step(step);
 				step = None;
 			}
+
+			nes_screen_texture.unlock();
+			nes_screen = std::nullopt;
 		}
 	}
 
-	void render(ui::Canvas &canvas)
+	void render(ui::Renderer &renderer)
 	{
-		canvas.fill({});
+		renderer.fill({});
 
-		auto size = nes_screen.size();
+		auto size = nes_screen_texture.size();
+		auto canvas_size = renderer.size();
 
-		canvas.blit({0, 0}, nes_screen, std::nullopt, {nes_scale, nes_scale});
+		renderer.blit({0, 0}, nes_screen_texture, std::nullopt, {nes_scale, nes_scale});
 
 		if (!rom_loaded)
 		{
-			nes_overlay.fill({100, 149, 237});
-			draw_overlay_text(canvas, {255, 255, 255}, "No ROM Loaded");
+			draw_overlay_text(renderer, {100, 149, 237}, "No ROM Loaded");
 		}
 		else if (!error_msg.empty())
 		{
-			nes_overlay.fill({0, 0, 0, 192});
-			draw_overlay_text(canvas, {255, 255, 255}, error_msg);
+			draw_overlay_text(renderer, {0, 0, 0, 192}, error_msg);
 		}
 		else if (system_break)
 		{
-			nes_overlay.fill({0, 0, 0, 192});
-			draw_overlay_text(canvas, {255, 255, 255}, "Paused");
+			draw_overlay_text(renderer, {0, 0, 0, 192}, "Paused");
 		}
 
 		if (debug_mode == DebugMode::fg_info || debug_mode == DebugMode::bg_info)
 		{
-			auto pattern_0_pos = cm::Point2{canvas.size().w - (nes_pattern_1.size().w * 2), 0};
-			auto pattern_1_pos = cm::Point2{canvas.size().w - (nes_pattern_1.size().w * 1), 0};
-			auto nametable_1_pos = cm::Point2{canvas.size().w - nes_nametable_1.size().w, canvas.size().h - nes_nametable_1.size().h};
-			auto nametable_0_pos = cm::Point2{nametable_1_pos.x, nametable_1_pos.y - nes_nametable_0.size().h};
+			auto pattern_0_pos = cm::Point2{canvas_size.w - (nes_pattern_1_texture.size().w * 2), 0};
+			auto pattern_1_pos = cm::Point2{canvas_size.w - (nes_pattern_1_texture.size().w * 1), 0};
+			auto nametable_1_pos = cm::Point2{canvas_size.w - nes_nametable_1_texture.size().w, canvas_size.h - nes_nametable_1_texture.size().h};
+			auto nametable_0_pos = cm::Point2{nametable_1_pos.x, nametable_1_pos.y - nes_nametable_0_texture.size().h};
 
-			nes.ppu().draw_pattern_table(0, current_palette, std::bind_front(&NesApp::on_pattern_pixel, this, 0));
-			canvas.blit(pattern_0_pos, nes_pattern_0, std::nullopt);
+			{
+				auto canvas = nes_pattern_0_texture.lock();
+				nes.ppu().draw_pattern_table(0, current_palette, std::bind_front(&NesApp::on_pattern_pixel, this, std::ref(canvas)));
+				nes_pattern_0_texture.unlock();
+			}
+			{
+				auto canvas = nes_pattern_1_texture.lock();
+				nes.ppu().draw_pattern_table(1, current_palette, std::bind_front(&NesApp::on_pattern_pixel, this, std::ref(canvas)));
+				nes_pattern_1_texture.unlock();
+			}
+			renderer.blit(pattern_0_pos, nes_pattern_0_texture);
+			renderer.blit(pattern_1_pos, nes_pattern_1_texture);
 
-			nes.ppu().draw_pattern_table(1, current_palette, std::bind_front(&NesApp::on_pattern_pixel, this, 1));
-			canvas.blit(pattern_1_pos, nes_pattern_1, std::nullopt);
+			renderer.draw_line({200, 200, 200}, {size.w * nes_scale, 0}, {size.w * nes_scale, canvas_size.h});
+			renderer.draw_rect({200, 200, 200}, rect(pattern_0_pos, nes_pattern_0_texture.size()));
+			renderer.draw_rect({200, 200, 200}, rect(pattern_1_pos, nes_pattern_1_texture.size()));
 
-			canvas.draw_line({200, 200, 200}, {size.w * nes_scale, 0}, {size.w * nes_scale, canvas.size().h});
-			canvas.draw_rect({200, 200, 200}, rect(pattern_0_pos, nes_pattern_0.size()));
-			canvas.draw_rect({200, 200, 200}, rect(pattern_1_pos, nes_pattern_1.size()));
+			auto palette_end_pos = draw_palettes(renderer);
 
-			auto palette_end_pos = draw_palettes(canvas);
+			auto text_canvas = text_overlay_texture.lock();
+			text_canvas.fill({0, 0, 0, 0});
 
 			if (debug_mode == DebugMode::bg_info)
 			{
 				auto [fine_x, fine_y, coarse_x, coarse_y, nt] = nes.ppu().get_scroll_info();
 
-				auto pos = cm::Point2{nes_screen.size().w * nes_scale + 2, palette_end_pos.y};
-				draw_string(canvas, {255, 255, 255}, fmt::format("fine x,y: {}, {}", fine_x, fine_y), pos);
-				pos.y += 8;
-				draw_string(canvas, {255, 255, 255}, fmt::format("coarse x,y: {:>2}, {:>2}", coarse_x, coarse_y), pos);
-				pos.y += 8;
-				draw_string(canvas, {255, 255, 255}, fmt::format("nametable: {}", nt), pos);
+				auto pos = cm::Point2{nes_screen_texture.size().w * nes_scale + 2, palette_end_pos.y};
 
-				nes.ppu().draw_name_table(0, std::bind_front(&NesApp::on_nametable_pixel, this, 0));
-				canvas.blit(nametable_0_pos, nes_nametable_0, std::nullopt);
-				nes.ppu().draw_name_table(1, std::bind_front(&NesApp::on_nametable_pixel, this, 1));
-				canvas.blit(nametable_1_pos, nes_nametable_1, std::nullopt);
-				canvas.draw_rect({200, 200, 200}, rect(nametable_0_pos, nes_nametable_0.size()));
-				canvas.draw_rect({200, 200, 200}, rect(nametable_1_pos, nes_nametable_1.size()));
+				draw_string(text_canvas, {255, 255, 255}, fmt::format("fine x,y: {}, {}", fine_x, fine_y), pos);
+				pos.y += 8;
+				draw_string(text_canvas, {255, 255, 255}, fmt::format("coarse x,y: {:>2}, {:>2}", coarse_x, coarse_y), pos);
+				pos.y += 8;
+				draw_string(text_canvas, {255, 255, 255}, fmt::format("nametable: {}", nt), pos);
+
+				{
+					auto nt_canvas = nes_nametable_0_texture.lock();
+					nes.ppu().draw_name_table(0, std::bind_front(&NesApp::on_nametable_pixel, this, std::ref(nt_canvas)));
+					nes_nametable_0_texture.unlock();
+				}
+				{
+					auto nt_canvas = nes_nametable_1_texture.lock();
+					nes.ppu().draw_name_table(1, std::bind_front(&NesApp::on_nametable_pixel, this, std::ref(nt_canvas)));
+					nes_nametable_1_texture.unlock();
+				}
+
+				renderer.blit(nametable_0_pos, nes_nametable_0_texture);
+				renderer.blit(nametable_1_pos, nes_nametable_1_texture);
+				renderer.draw_rect({200, 200, 200}, rect(nametable_0_pos, nes_nametable_0_texture.size()));
+				renderer.draw_rect({200, 200, 200}, rect(nametable_1_pos, nes_nametable_1_texture.size()));
 			}
 
 			if (debug_mode == DebugMode::fg_info)
 			{
-				auto pos = cm::Point2{nes_screen.size().w * nes_scale + 2, palette_end_pos.y};
-				const auto palette_start_pos = cm::Point2{canvas.size().w - 256 + 2, 128 + 2};
+				auto pos = cm::Point2{nes_screen_texture.size().w * nes_scale + 2, palette_end_pos.y};
+				const auto palette_start_pos = cm::Point2{canvas_size.w - 256 + 2, 128 + 2};
 
 				const auto &oam = nes.ppu().get_oam();
 				for (size_t i = 0, end = std::size(oam); i < end; i += 4)
 				{
-					draw_string(canvas, {255, 255, 255}, fmt::format("({:>3} {:>3}) {:02X} {:02X}", oam[i + 3], oam[i + 0], oam[i + 1], oam[i + 2]), pos);
+					draw_string(text_canvas, {255, 255, 255}, fmt::format("({:>3} {:>3}) {:02X} {:02X}", oam[i + 3], oam[i + 0], oam[i + 1], oam[i + 2]), pos);
 					pos.y += 8;
 				}
 
-				pos = cm::Point2{nes_screen.size().w * nes_scale + 2 + 16 * 8, palette_end_pos.y};
+				pos = cm::Point2{nes_screen_texture.size().w * nes_scale + 2 + 16 * 8, palette_end_pos.y};
 
 				for (const auto &s : nes.ppu().get_active_sprites())
 				{
-					draw_string(canvas, {255, 255, 255}, fmt::format("({:>3} {:>3}) {:02X} {:02X}", s.x, s.y, s.index, s.attrib), pos);
+					draw_string(text_canvas, {255, 255, 255}, fmt::format("({:>3} {:>3}) {:02X} {:02X}", s.x, s.y, s.index, s.attrib), pos);
 					pos.y += 8;
 				}
 			}
+
+			text_overlay_texture.unlock();
+			renderer.blit({0, 0}, text_overlay_texture);
 		}
 	}
 
-	void draw_overlay_text(ui::Canvas &canvas, const cm::Color &color, std::string_view msg) noexcept
+	void draw_overlay_text(ui::Renderer &canvas, const cm::Color &color, std::string_view msg) noexcept
 	{
+		auto nes_overlay = nes_overlay_texture.lock();
 		auto size = nes_overlay.size();
 
 		auto msg_width = int(msg.size() * 8);
 
-		auto pos = cm::Point2{size.w / 2 - (msg_width / 2), size.h / 2 - 4};
-		draw_string(nes_overlay, color, msg, pos);
+		auto string_pos = cm::Point2{size.w / 2 - (msg_width / 2), size.h / 2 - 4};
 
-		auto overlay_area = rect(pos, cm::Sizei{msg_width, 8});
+		auto overlay_area = rect(string_pos, cm::Sizei{msg_width, 8});
 		overlay_area.x -= 8;
 		overlay_area.y -= 8;
 		overlay_area.w += 16;
 		overlay_area.h += 16;
-		nes_overlay.draw_rect(color, overlay_area);
 
-		canvas.enable_blending(true);
-		canvas.blit(top_left(overlay_area) * nes_scale, nes_overlay, overlay_area, {nes_scale, nes_scale});
-		canvas.enable_blending(false);
+		nes_overlay.fill(color);
+		nes_overlay.fill_rect({24, 24, 24, 240}, overlay_area);
+		nes_overlay.draw_rect({255, 255, 255}, overlay_area);
+		draw_string(nes_overlay, {255, 255, 255}, msg, string_pos);
+
+		nes_overlay_texture.unlock();
+
+		canvas.blit({0, 0}, nes_overlay_texture, std::nullopt, {nes_scale, nes_scale});
 	}
 
-	cm::Point2i draw_palettes(ui::Canvas &canvas) noexcept
+	cm::Point2i draw_palettes(ui::Renderer &canvas) noexcept
 	{
 		const auto palette_start_pos = cm::Point2{canvas.size().w - 256 + 2, 128 + 2};
 		auto palette_pos = palette_start_pos;
@@ -373,17 +419,23 @@ private:
 
 	void on_nes_pixel(int x, int y, int color_index) noexcept
 	{
-		nes_screen.draw_point(nes_colors[color_index], {x, y});
+		if (!nes_screen) [[unlikely]]
+		{
+			LOG_WARN("nes_screen not locked!");
+			return;
+		}
+
+		nes_screen->draw_point(nes_colors[color_index], {x, y});
 	}
 
-	void on_pattern_pixel(int index, int x, int y, int color_index) noexcept
+	void on_pattern_pixel(ui::Canvas &canvas, int x, int y, int color_index) noexcept
 	{
-		(index == 0 ? nes_pattern_0 : nes_pattern_1).draw_point(nes_colors[color_index], {x, y});
+		canvas.draw_point(nes_colors[color_index], {x, y});
 	}
 
-	void on_nametable_pixel(int index, int x, int y, int color_index) noexcept
+	void on_nametable_pixel(ui::Canvas &canvas, int x, int y, int color_index) noexcept
 	{
-		(index == 0 ? nes_nametable_0 : nes_nametable_1).draw_point(nes_colors[color_index], {x, y});
+		canvas.draw_point(nes_colors[color_index], {x, y});
 	}
 
 	nesem::Buttons read_controller(ui::App &app)
@@ -498,12 +550,16 @@ private:
 
 	int nes_scale = 3;
 
-	ui::Canvas nes_screen = ui::Canvas({256, 240});
-	ui::Canvas nes_overlay = ui::Canvas({256, 240});
-	ui::Canvas nes_pattern_0 = ui::Canvas({128, 128});
-	ui::Canvas nes_pattern_1 = ui::Canvas({128, 128});
-	ui::Canvas nes_nametable_0 = ui::Canvas({256, 240});
-	ui::Canvas nes_nametable_1 = ui::Canvas({256, 240});
+	std::optional<ui::Canvas> nes_screen;
+
+	ui::Texture nes_screen_texture;
+	ui::Texture nes_overlay_texture;
+	ui::Texture nes_pattern_0_texture;
+	ui::Texture nes_pattern_1_texture;
+	ui::Texture nes_nametable_0_texture;
+	ui::Texture nes_nametable_1_texture;
+
+	ui::Texture text_overlay_texture;
 
 	DebugMode debug_mode = DebugMode::none;
 	ui::Key debug_mode_none;

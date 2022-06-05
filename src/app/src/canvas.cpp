@@ -253,6 +253,11 @@ namespace ui
 	{
 	}
 
+	Canvas::Canvas(cm::Sizei size, cm::ColorFormat format, uint32_t *ptr) noexcept
+		: canvas_size(size), canvas_format(format), canvas_ptr(ptr), owns_canvas(false)
+	{
+	}
+
 	Canvas::~Canvas()
 	{
 		cleanup();
@@ -260,13 +265,17 @@ namespace ui
 
 	void Canvas::cleanup() noexcept
 	{
-		delete[] canvas_ptr;
+		if (owns_canvas)
+			delete[] canvas_ptr;
+
+		canvas_ptr = nullptr;
 	}
 
 	Canvas::Canvas(Canvas &&other) noexcept
 		: canvas_size(std::exchange(other.canvas_size, {})),
 		  canvas_format(other.canvas_format),
-		  canvas_ptr(std::exchange(other.canvas_ptr, nullptr))
+		  canvas_ptr(std::exchange(other.canvas_ptr, nullptr)),
+		  owns_canvas(other.owns_canvas)
 	{
 	}
 
@@ -277,6 +286,7 @@ namespace ui
 		canvas_size = std::exchange(other.canvas_size, {});
 		canvas_format = other.canvas_format;
 		canvas_ptr = std::exchange(other.canvas_ptr, nullptr);
+		owns_canvas = other.owns_canvas;
 
 		return *this;
 	}

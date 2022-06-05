@@ -10,7 +10,18 @@ target_link_libraries(drawlib PRIVATE project_options)
 target_link_libraries(drawlib PRIVATE cmlib util)
 target_include_directories(drawlib PUBLIC include)
 
-add_library(appui "src/app.cpp" "include/ui/app.hpp" "src/audio_device.cpp" "include/ui/audio_device.hpp" "src/app-main.cpp")
+add_library(
+	appui
+	"src/app.cpp"
+	"include/ui/app.hpp"
+	"src/audio_device.cpp"
+	"include/ui/audio_device.hpp"
+	"src/texture.cpp"
+	"include/ui/texture.hpp"
+	"src/renderer.cpp"
+	"include/ui/renderer.hpp"
+	"src/app-main.cpp"
+)
 target_link_libraries(appui PRIVATE project_options)
 target_link_libraries(appui PUBLIC drawlib util)
 target_link_libraries(appui PRIVATE SDL2::SDL2 SDL2::SDL2main)

@@ -6,14 +6,34 @@
 #include <utility>
 
 #include <SDL2/SDL.h>
+
 #include <ui/audio_device.hpp>
+#include <ui/renderer.hpp>
+#include <ui/texture.hpp>
 #include <util/logging.hpp>
 #include <util/ptr.hpp>
 
 namespace ui
 {
+	namespace
+	{
+		cm::Recti viewport(SDL_Renderer *renderer) noexcept
+		{
+			SDL_Rect rect;
+			SDL_RenderGetViewport(renderer, &rect);
+
+			return cm::Rect{
+				.x = rect.x,
+				.y = rect.y,
+				.w = rect.w,
+				.h = rect.h,
+			};
+		}
+	}
+
 	using SdlWindow = util::custom_unique_ptr<SDL_Window, &SDL_DestroyWindow>;
 	using SdlSurface = util::custom_unique_ptr<SDL_Surface, &SDL_FreeSurface>;
+	using SdlRenderer = util::custom_unique_ptr<SDL_Renderer, &SDL_DestroyRenderer>;
 
 	struct Clock
 	{
@@ -27,11 +47,11 @@ namespace ui
 		}
 	};
 
-	class InputState
+	class InputState final
 	{
 	public:
 		InputState();
-		void update(cm::Sizei window_size, cm::Sizei canvas_size) noexcept;
+		void update() noexcept;
 
 		[[nodiscard]] KeyMods modifiers() const noexcept;
 		[[nodiscard]] bool key_down(Key key) const noexcept;
@@ -161,11 +181,11 @@ namespace ui
 		SdlLib sdl;
 		std::string window_title;
 		cm::Sizei window_size;
+		cm::Sizei logical_size;
+		cm::Recti renderer_viewport;
 
-		Canvas canvas;
 		SdlWindow window;
-		SDL_Surface *window_surface;
-		SdlSurface canvas_surface;
+		SdlRenderer renderer;
 
 		InputState input;
 	};
@@ -174,9 +194,7 @@ namespace ui
 	{
 		auto sdl = SdlLib::init();
 
-		auto canvas_size = window_size / pixel_size;
-		auto canvas = Canvas(canvas_size);
-		auto format = canvas.format();
+		auto logical_size = window_size / pixel_size;
 
 		auto window = SdlWindow(SDL_CreateWindow(window_title.c_str(), SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, window_size.w, window_size.h, SDL_WINDOW_ALLOW_HIGHDPI));
 		if (!window)
@@ -185,44 +203,27 @@ namespace ui
 			return {};
 		}
 
-		auto window_surface = SDL_GetWindowSurface(window.get());
-		if (!window_surface)
+		auto renderer = SdlRenderer(SDL_CreateRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED));
+
+		if (!renderer)
 		{
-			LOG_CRITICAL("Error getting window surface: {}", SDL_GetError());
+			LOG_CRITICAL("Error creating renderer: {}", SDL_GetError());
 			return {};
 		}
 
-		LOG_INFO(
-			"Window surface format:\n"
-			"    R mask: 0x{:08X}\n"
-			"    G mask: 0x{:08X}\n"
-			"    B mask: 0x{:08X}\n"
-			"    A mask: 0x{:08X}",
-			window_surface->format->Rmask,
-			window_surface->format->Gmask,
-			window_surface->format->Bmask,
-			window_surface->format->Amask);
+		if (SDL_RenderSetLogicalSize(renderer.get(), logical_size.w, logical_size.h) != 0)
+			LOG_WARN("Error setting renderer logical size: {}", SDL_GetError());
 
-		// Create the SDL surface without alpha. All blending will be done by the canvas, and
-		// SDL is very slow if an alpha component is provided, even when blending is disabled
-		auto canvas_surface = SdlSurface(SDL_CreateRGBSurfaceFrom(canvas.ptr(),
-			canvas_size.w, canvas_size.h, 32, canvas_size.w * sizeof(*canvas.ptr()),
-			format.mask_r, format.mask_g, format.mask_b, 0));
-
-		if (!canvas_surface)
-		{
-			LOG_CRITICAL("Error creating canvas surface: {}", SDL_GetError());
-			return {};
-		}
+		auto renderer_viewport = viewport(renderer.get());
 
 		return App{std::make_unique<Core>(
 			std::move(sdl),
 			std::move(window_title),
 			window_size,
-			std::move(canvas),
+			logical_size,
+			renderer_viewport,
 			std::move(window),
-			window_surface,
-			std::move(canvas_surface))};
+			std::move(renderer))};
 	}
 
 	App::App(std::unique_ptr<Core> &&core) noexcept
@@ -246,10 +247,11 @@ namespace ui
 					{
 						LOG_INFO("Window size changed, now {}x{}", event.window.data1, event.window.data2);
 
-						// changing size invalidates the surface, so reacquire
-						if (core->window_surface = SDL_GetWindowSurface(core->window.get());
-							!core->window_surface)
-							LOG_CRITICAL("Error getting window surface: {}", SDL_GetError());
+						// update our window size to reflect the change
+						SDL_GetWindowSize(core->window.get(), &core->window_size.w, &core->window_size.h);
+
+						core->renderer_viewport = viewport(core->renderer.get());
+						LOG_INFO("Renderer viewport is {},{} {}x{}", core->renderer_viewport.x, core->renderer_viewport.y, core->renderer_viewport.w, core->renderer_viewport.h);
 					}
 					break;
 
@@ -298,23 +300,16 @@ namespace ui
 					fps.reset();
 				}
 
-				core->input.update(core->window_size, core->canvas.size());
+				core->input.update();
 				if (on_update)
-					on_update(*this, core->canvas, frame_time);
+				{
+					auto r = Renderer(core->renderer.get());
+					on_update(*this, r, frame_time);
+				}
 			}
 
 			// render
-			if (SDL_BlitScaled(core->canvas_surface.get(), nullptr, core->window_surface, nullptr) != 0)
-				LOG_WARN("Blit failed, reason: {}", SDL_GetError());
-
-			if (SDL_UpdateWindowSurface(core->window.get()) != 0)
-			{
-				LOG_WARN("Updating window failed, reason: {}", SDL_GetError());
-
-				if (core->window_surface = SDL_GetWindowSurface(core->window.get());
-					!core->window_surface)
-					LOG_CRITICAL("Error getting window surface: {}", SDL_GetError());
-			}
+			SDL_RenderPresent(core->renderer.get());
 		}
 	}
 
@@ -326,13 +321,6 @@ namespace ui
 
 		if (SDL_SetWindowFullscreen(core->window.get(), flags) != 0)
 			LOG_WARN("Could not set fullscreen to {}, reason: {}", mode, SDL_GetError());
-
-		core->window_surface = SDL_GetWindowSurface(core->window.get());
-		if (!core->window_surface)
-			LOG_WARN("Could not acquire window surface, reason: {}", SDL_GetError());
-
-		// update our window size to reflect the change
-		SDL_GetWindowSize(core->window.get(), &core->window_size.w, &core->window_size.h);
 	}
 
 	App::operator bool() noexcept
@@ -434,9 +422,12 @@ namespace ui
 		return core->input.mouse_position();
 	}
 
-	cm::Sizei App::canvas_size() const noexcept
+	cm::Sizei App::renderer_size() const noexcept
 	{
-		return core->canvas.size();
+		cm::Sizei size;
+		SDL_RenderGetLogicalSize(core->renderer.get(), &size.w, &size.h);
+
+		return size;
 	}
 
 	AudioDevice App::create_audio_device(int frequency, int channels, int sample_size) const noexcept
@@ -456,6 +447,22 @@ namespace ui
 		}
 
 		return AudioDevice::create(frequency, channels, sample_size);
+	}
+
+	Texture App::create_texture(cm::Sizei size) noexcept
+	{
+		auto texture = SDL_CreateTexture(core->renderer.get(), SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, size.w, size.h);
+		if (!texture)
+		{
+			LOG_WARN("Error creating texture: {}", SDL_GetError());
+			return {};
+		}
+
+		// this should never fail. The docs indicate that this will fail if the texture is invalid, but we just created a valid texture.
+		if (SDL_SetTextureScaleMode(texture, SDL_ScaleModeNearest) != 0) [[unlikely]]
+			LOG_WARN("Error setting texture scale mode: {}", SDL_GetError());
+
+		return Texture(texture);
 	}
 
 	App::App() noexcept = default;
@@ -506,7 +513,7 @@ namespace ui
 		current_keys.resize(num_keys);
 	}
 
-	void InputState::update(cm::Sizei window_size, cm::Sizei canvas_size) noexcept
+	void InputState::update() noexcept
 	{
 		int num_keys;
 		auto keys = SDL_GetKeyboardState(&num_keys);
@@ -519,7 +526,6 @@ namespace ui
 
 		// update mouse position and buttons
 		last_mouse_buttons = std::exchange(current_mouse_buttons, SDL_GetMouseState(&mouse_pos.x, &mouse_pos.y));
-		mouse_pos = (mouse_pos * canvas_size) / window_size;
 	}
 
 	bool InputState::key_down(Key key) const noexcept

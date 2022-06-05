@@ -18,8 +18,10 @@ namespace ui
 	class Scancode;
 	enum class KeyMods;
 	class AudioDevice;
+	class Texture;
+	class Renderer;
 
-	class App
+	class App final
 	{
 	public:
 		static App create(const std::string &window_title, cm::Sizei window_size, cm::Sizei pixel_size = {1, 1}) noexcept;
@@ -29,13 +31,13 @@ namespace ui
 
 #if defined(__cpp_lib_move_only_function)
 		// callback function, called each tick
-		std::move_only_function<void(App &app, Canvas &canvas, float deltatime)> on_update;
+		std::move_only_function<void(App &app, Renderer &renderer, float deltatime)> on_update;
 
 		// callback for handling dropped file
 		std::move_only_function<void(std::string_view filename)> on_file_drop;
 #else
 		// callback function, called each tick
-		std::function<void(App &app, Canvas &canvas, float deltatime)> on_update;
+		std::function<void(App &app, Renderer &renderer, float deltatime)> on_update;
 
 		// callback for handling dropped file
 		std::function<void(std::string_view filename)> on_file_drop;
@@ -52,8 +54,8 @@ namespace ui
 		// enter or leave fullscreen mode. This currently matches the current desktop resolution rather than change the monitor resolution to match the window
 		void fullscreen(bool mode) noexcept;
 
-		// The dimensions of the canvas
-		[[nodiscard]] cm::Sizei canvas_size() const noexcept;
+		// The dimensions of the renderer
+		[[nodiscard]] cm::Sizei renderer_size() const noexcept;
 
 		// Input handling
 
@@ -104,6 +106,9 @@ namespace ui
 
 		// Audio
 		[[nodiscard]] AudioDevice create_audio_device(int frequency = 44100, int channels = 1, int sample_size = 512) const noexcept;
+
+		// Texturing
+		[[nodiscard]] Texture create_texture(cm::Sizei size) noexcept;
 
 	private:
 		struct Core;
