@@ -1,11 +1,15 @@
 #pragma once
 
+#include <ui/canvas.hpp>
+
 namespace ui
 {
-	class Canvas;
-
 	class Texture final
 	{
+	private:
+		class TextureLock;
+		struct LockData;
+
 	public:
 		Texture() noexcept = default;
 		explicit Texture(void *texture) noexcept;
@@ -19,8 +23,10 @@ namespace ui
 
 		void enable_blending(bool enable) noexcept;
 
-		Canvas lock() noexcept;
-		void unlock() noexcept;
+		LockData lock() noexcept;
+
+		Canvas unsafe_lock() noexcept;
+		void unsafe_unlock() noexcept;
 
 		void destroy() noexcept;
 
@@ -30,5 +36,29 @@ namespace ui
 
 	private:
 		void *texture = nullptr;
+
+		class TextureLock final
+		{
+		public:
+			explicit TextureLock(Texture *texture) noexcept;
+			~TextureLock();
+
+			TextureLock(TextureLock &&other) noexcept;
+			TextureLock &operator=(TextureLock &&other) noexcept;
+
+			TextureLock(const TextureLock &other) noexcept = delete;
+			TextureLock &operator=(const TextureLock &other) noexcept = delete;
+
+			void unlock() noexcept;
+
+		private:
+			Texture *texture = nullptr;
+		};
+
+		struct LockData
+		{
+			Canvas canvas;
+			TextureLock lock;
+		};
 	};
 }

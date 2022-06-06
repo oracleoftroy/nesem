@@ -39,7 +39,15 @@ namespace ui
 		SDL_SetTextureBlendMode(t, blend_mode);
 	}
 
-	Canvas Texture::lock() noexcept
+	auto Texture::lock() noexcept -> LockData
+	{
+		return LockData{
+			.canvas = unsafe_lock(),
+			.lock = TextureLock(this),
+		};
+	}
+
+	Canvas Texture::unsafe_lock() noexcept
 	{
 		auto t = static_cast<SDL_Texture *>(texture);
 		Uint32 texture_format;
@@ -89,7 +97,7 @@ namespace ui
 		return Canvas(size, format, static_cast<uint32_t *>(pixels));
 	}
 
-	void Texture::unlock() noexcept
+	void Texture::unsafe_unlock() noexcept
 	{
 		auto t = static_cast<SDL_Texture *>(texture);
 		SDL_UnlockTexture(t);
@@ -118,4 +126,35 @@ namespace ui
 	{
 		return texture;
 	}
+
+	Texture::TextureLock::TextureLock(Texture *texture) noexcept
+		: texture(texture)
+	{
+	}
+
+	Texture::TextureLock::~TextureLock()
+	{
+		unlock();
+	}
+
+	Texture::TextureLock::TextureLock(TextureLock &&other) noexcept
+		: texture(std::exchange(other.texture, nullptr))
+	{
+	}
+
+	auto Texture::TextureLock::operator=(TextureLock &&other) noexcept -> TextureLock &
+	{
+		unlock();
+		texture = std::exchange(other.texture, nullptr);
+		return *this;
+	}
+
+	void Texture::TextureLock::unlock() noexcept
+	{
+		if (texture)
+			texture->unsafe_unlock();
+
+		texture = nullptr;
+	}
+
 }
