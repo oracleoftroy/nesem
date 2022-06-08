@@ -15,6 +15,8 @@ namespace nesem
 	class NesCartridge
 	{
 	public:
+		virtual ~NesCartridge() = default;
+		
 		virtual void reset() noexcept = 0;
 
 		virtual U8 cpu_read(U16 addr) noexcept = 0;
