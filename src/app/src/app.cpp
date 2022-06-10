@@ -275,8 +275,6 @@ namespace ui
 			return true;
 		};
 
-		constexpr auto frame_time = 1 / 60.0f;
-		double elapsed_time = 0.0;
 		Clock clock;
 		FPS fps;
 
@@ -286,26 +284,20 @@ namespace ui
 			auto real_deltatime = clock.update().count();
 			fps.update(real_deltatime);
 
-			// if we have a large frameskip, cap it for the fixed timestep
+			// if we have a large frameskip, cap it
 			auto deltatime = std::min(real_deltatime, 0.25);
-			elapsed_time += deltatime;
 
-			while (elapsed_time > frame_time)
+			if (fps.accum_time >= 1.0)
 			{
-				elapsed_time -= frame_time;
+				SDL_SetWindowTitle(core->window.get(), fmt::format("{} - FPS: {:.2f} Low: {:.2f} High: {:.2f}", core->window_title, fps.average(), fps.low(), fps.high()).c_str());
+				fps.reset();
+			}
 
-				if (fps.accum_time >= 1.0)
-				{
-					SDL_SetWindowTitle(core->window.get(), fmt::format("{} - FPS: {:.2f} Low: {:.2f} High: {:.2f}", core->window_title, fps.average(), fps.low(), fps.high()).c_str());
-					fps.reset();
-				}
-
-				core->input.update();
-				if (on_update)
-				{
-					auto r = Renderer(core->renderer.get());
-					on_update(*this, r, frame_time);
-				}
+			core->input.update();
+			if (on_update)
+			{
+				auto r = Renderer(core->renderer.get());
+				on_update(*this, r, deltatime);
 			}
 
 			// render

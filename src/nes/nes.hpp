@@ -14,6 +14,7 @@ namespace nesem
 	{
 		ErrorFn error;
 		DrawFn draw;
+		FrameReadyFn frame_ready;
 		PollInputFn player1;
 		PollInputFn player2 = {};
 		std::filesystem::path nes20db_filename = {};
@@ -39,6 +40,8 @@ namespace nesem
 		bool interrupt_requested() noexcept;
 
 		void screen_out(int x, int y, int color_index) noexcept;
+		void frame_complete() noexcept;
+
 		U8 poll_player1() noexcept;
 		U8 poll_player2() noexcept;
 
@@ -50,6 +53,7 @@ namespace nesem
 	private:
 		ErrorFn on_error;
 		DrawFn draw;
+		FrameReadyFn frame_ready;
 		PollInputFn player1;
 		PollInputFn player2;
 

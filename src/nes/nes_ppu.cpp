@@ -435,7 +435,7 @@ namespace nesem
 	{
 		bool frame_complete = false;
 
-		// odd frame skip: the very first cycle of an odd frame is skipped if renering is enabled
+		// odd frame skip: the very first cycle of an odd frame is skipped if rendering is enabled
 		if (scanline == 0 && cycle == 0 && (frame & 1) == 1 && rendering_enabled())
 			cycle = 1;
 
@@ -448,6 +448,7 @@ namespace nesem
 			if (reg.ppuctrl & ctrl_nmi_flag)
 				nes->cpu().nmi();
 
+			nes->frame_complete();
 			frame_complete = true;
 		}
 

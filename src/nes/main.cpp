@@ -63,6 +63,7 @@ public:
 		: nes({
 			  .error = std::bind_front(&NesApp::on_error, this),
 			  .draw = std::bind_front(&NesApp::on_nes_pixel, this),
+			  .frame_ready = std::bind_front(&NesApp::on_nes_frame_ready, this),
 			  .player1 = std::bind_front(&NesApp::read_controller, this, std::ref(app)),
 			  .nes20db_filename = find_file(R"(data/nes20db.xml)"),
 		  })
@@ -102,6 +103,7 @@ public:
 		load_rom(find_file(R"(data/nestest.nes)").string());
 
 		nes_screen_texture = app.create_texture({256, 240});
+		nes_pending_texture = app.create_texture({256, 240});
 		nes_overlay_texture = app.create_texture({256, 240});
 		nes_overlay_texture.enable_blending(true);
 
@@ -113,6 +115,8 @@ public:
 
 		text_overlay_texture = app.create_texture(app.renderer_size());
 		text_overlay_texture.enable_blending(true);
+
+		nes_screen = nes_pending_texture.unsafe_lock();
 	}
 
 private:
@@ -127,11 +131,29 @@ private:
 			rom_name = filepath;
 	}
 
+	void trigger_break(bool enable)
+	{
+		system_break = enable;
+		step = nesem::NesClockStep::None;
+
+		if (system_break)
+		{
+			// we take control of the screen when stepping
+			nes_pending_texture.unsafe_unlock();
+			std::swap(nes_pending_texture, nes_screen_texture);
+			nes_screen = std::nullopt;
+		}
+		else
+		{
+			// restore normal frame handling
+			nes_screen = nes_pending_texture.unsafe_lock();
+		}
+	}
+
 	void on_error(std::string_view message)
 	{
 		error_msg = message;
-		system_break = true;
-		step = nesem::NesClockStep::None;
+		trigger_break(true);
 	}
 
 	void tick(ui::App &app, ui::Renderer &canvas, float deltatime)
@@ -177,13 +199,13 @@ private:
 
 		if (app.key_pressed(run_key))
 		{
-			system_break = false;
+			trigger_break(false);
 			LOG_INFO("System break now: {}", system_break);
 		}
 
 		if (app.key_pressed(break_key))
 		{
-			system_break = !system_break;
+			trigger_break(!system_break);
 			LOG_INFO("System break now: {}", system_break);
 		}
 
@@ -242,18 +264,21 @@ private:
 		{
 			using enum nesem::NesClockStep;
 
-			nes_screen = nes_screen_texture.unsafe_lock();
-
 			if (!system_break)
-				nes.step(OneFrame);
-			else if (step != None)
+				nes.tick(deltatime);
+			else
 			{
-				nes.step(step);
-				step = None;
-			}
+				auto [screen, lock] = nes_screen_texture.lock();
+				nes_screen = std::move(screen);
 
-			nes_screen_texture.unsafe_unlock();
-			nes_screen = std::nullopt;
+				if (step != None)
+				{
+					nes.step(step);
+					step = None;
+				}
+
+				nes_screen = std::nullopt;
+			}
 		}
 	}
 
@@ -508,6 +533,23 @@ private:
 		nes_screen->draw_point(nes_colors[color_index], {x, y});
 	}
 
+	void on_nes_frame_ready() noexcept
+	{
+		// not that break is unlikely per se, but when we are running at full speed, we want this to be as fast as possible
+		if (system_break) [[unlikely]]
+			return;
+
+		if (!nes_screen) [[unlikely]]
+		{
+			LOG_WARN("nes_screen not locked!");
+			return;
+		}
+
+		nes_pending_texture.unsafe_unlock();
+		std::swap(nes_pending_texture, nes_screen_texture);
+		nes_screen = nes_pending_texture.unsafe_lock();
+	}
+
 	void on_pattern_pixel(ui::Canvas &canvas, int x, int y, int color_index) noexcept
 	{
 		canvas.draw_point(nes_colors[color_index], {x, y});
@@ -633,6 +675,7 @@ private:
 	std::optional<ui::Canvas> nes_screen;
 
 	ui::Texture nes_screen_texture;
+	ui::Texture nes_pending_texture;
 	ui::Texture nes_overlay_texture;
 	ui::Texture nes_pattern_0_texture;
 	ui::Texture nes_pattern_1_texture;

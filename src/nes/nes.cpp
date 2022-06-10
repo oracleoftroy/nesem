@@ -11,6 +11,7 @@ namespace nesem
 	Nes::Nes(NesSettings &&settings)
 		: on_error(std::move(settings.error)),
 		  draw(std::move(settings.draw)),
+		  frame_ready(std::move(settings.frame_ready)),
 		  player1(std::move(settings.player1)),
 		  player2(std::move(settings.player2)),
 		  nes_bus(this),
@@ -99,6 +100,12 @@ namespace nesem
 	{
 		if (draw) [[likely]]
 			draw(x, y, color_index);
+	}
+
+	void Nes::frame_complete() noexcept
+	{
+		if (frame_ready) [[likely]]
+			frame_ready();
 	}
 
 	U8 Nes::poll_player1() noexcept

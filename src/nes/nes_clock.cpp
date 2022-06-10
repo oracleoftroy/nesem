@@ -1,8 +1,8 @@
 #include "nes_clock.hpp"
 
-#include <util/logging.hpp>
-
 #include "nes.hpp"
+
+#include <util/logging.hpp>
 
 namespace nesem
 {
@@ -27,9 +27,8 @@ namespace nesem
 			if ((tickcount % clock_rate.cpu_divisor) == 0)
 				nes->cpu().clock();
 
-			// if (tickcount % clock_rate.apu_divisor)
-			// 	// tick the apu
-			// 	;
+			if ((tickcount % clock_rate.apu_divisor) == 0)
+				nes->apu().clock();
 
 			++tickcount;
 			accumulator -= clock_rate.frequency;
