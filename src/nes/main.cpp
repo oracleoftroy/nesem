@@ -290,13 +290,30 @@ private:
 				auto nametable_1_pos = cm::Point2{canvas_size.w - nes_nametable_1_texture.size().w, canvas_size.h - nes_nametable_1_texture.size().h};
 				auto nametable_0_pos = cm::Point2{nametable_1_pos.x, nametable_1_pos.y - nes_nametable_0_texture.size().h};
 
+				auto pattern_tables = std::array{
+					nes.ppu().read_pattern_table(0),
+					nes.ppu().read_pattern_table(1),
+				};
+
 				{
 					auto [canvas, lock] = nes_pattern_0_texture.lock();
-					nes.ppu().draw_pattern_table(0, current_palette, std::bind_front(&NesApp::on_pattern_pixel, this, std::ref(canvas)));
+					for (int y = 0; y < 128; ++y)
+						for (int x = 0; x < 128; ++x)
+						{
+							auto palette_entry = pattern_tables[0].read_pixel(x, y, current_palette);
+							auto color_index = read_palette(palette_entry);
+							canvas.draw_point(nes_colors[color_index], {x, y});
+						}
 				}
 				{
 					auto [canvas, lock] = nes_pattern_1_texture.lock();
-					nes.ppu().draw_pattern_table(1, current_palette, std::bind_front(&NesApp::on_pattern_pixel, this, std::ref(canvas)));
+					for (int y = 0; y < 128; ++y)
+						for (int x = 0; x < 128; ++x)
+						{
+							auto palette_entry = pattern_tables[1].read_pixel(x, y, current_palette);
+							auto color_index = read_palette(palette_entry);
+							canvas.draw_point(nes_colors[color_index], {x, y});
+						}
 				}
 
 				renderer.blit(pattern_0_pos, nes_pattern_0_texture);
@@ -320,13 +337,30 @@ private:
 					pos.y += 8;
 					draw_string(text_canvas, {255, 255, 255}, fmt::format("nametable: {}", nt), pos);
 
+					auto name_tables = std::array{
+						nes.ppu().read_name_table(0, pattern_tables),
+						// nes.ppu().read_name_table(1, pattern_tables),
+					    // nes.ppu().read_name_table(2, pattern_tables),
+						nes.ppu().read_name_table(3, pattern_tables),
+					};
+
 					{
-						auto [nt_canvas, lock] = nes_nametable_0_texture.lock();
-						nes.ppu().draw_name_table(0, std::bind_front(&NesApp::on_nametable_pixel, this, std::ref(nt_canvas)));
+						auto [canvas, lock] = nes_nametable_0_texture.lock();
+						for (int y = 0; y < 240; ++y)
+							for (int x = 0; x < 256; ++x)
+							{
+								auto color_index = name_tables[0].read_pixel(x, y);
+								canvas.draw_point(nes_colors[color_index], {x, y});
+							}
 					}
 					{
-						auto [nt_canvas, lock] = nes_nametable_1_texture.lock();
-						nes.ppu().draw_name_table(1, std::bind_front(&NesApp::on_nametable_pixel, this, std::ref(nt_canvas)));
+						auto [canvas, lock] = nes_nametable_1_texture.lock();
+						for (int y = 0; y < 240; ++y)
+							for (int x = 0; x < 256; ++x)
+							{
+								auto color_index = name_tables[1].read_pixel(x, y);
+								canvas.draw_point(nes_colors[color_index], {x, y});
+							}
 					}
 
 					renderer.blit(nametable_0_pos, nes_nametable_0_texture);
@@ -415,6 +449,12 @@ private:
 		canvas.blit({0, 0}, nes_overlay_texture, std::nullopt, {nes_scale, nes_scale});
 	}
 
+	nesem::U8 read_palette(nesem::U16 entry) noexcept
+	{
+		nesem::U16 palette_base_addr = 0x3F00;
+		return nes.ppu().read(palette_base_addr + entry);
+	}
+
 	cm::Point2i draw_palettes(ui::Renderer &canvas) noexcept
 	{
 		const auto palette_start_pos = cm::Point2{canvas.size().w - 256 + 2, 128 + 2};
@@ -422,7 +462,6 @@ private:
 		auto color_size = cm::Size{14, 14};
 		auto palette_size = cm::Size{color_size.w * 4 + 6, color_size.w + 4};
 
-		nesem::U16 palette_base_addr = 0x3F00;
 		for (nesem::U16 p = 0; p < 8; ++p)
 		{
 			for (int i = 0; i < 4; ++i)
@@ -431,7 +470,7 @@ private:
 				color_pos.x += (color_size.w) * i;
 				auto color_rect = rect(color_pos, color_size);
 
-				auto color_index = nes.ppu().read(palette_base_addr + p * 4 + i);
+				auto color_index = read_palette(p * 4 + i);
 
 				canvas.fill_rect(nes_colors[color_index], color_rect);
 				canvas.draw_rect({255, 255, 255}, color_rect);

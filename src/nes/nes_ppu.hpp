@@ -9,6 +9,26 @@ namespace nesem
 	class Nes;
 	class NesCartridge;
 
+	struct NesPatternTable
+	{
+		// pattern table is a 16x16 table of 8x8 tiles
+		// each entry is 2 bits each, packed 4 per byte
+		// in other words, we need 2 bytes per tile per row
+		// thus, a 16x16 grid of 8x2 bytes
+		std::array<U8, 16 * 16 * 8 * 2> table;
+
+		U8 read_pixel(int x, int y, U8 palette) const noexcept;
+		void write_pixel(int x, int y, U8 entry) noexcept;
+	};
+
+	struct NesNameTable
+	{
+		std::array<U8, 256 * 240> table;
+
+		U8 read_pixel(int x, int y) const noexcept;
+		void write_pixel(int x, int y, U8 palette) noexcept;
+	};
+
 	// models a 2C02
 	class NesPpu final
 	{
@@ -200,7 +220,11 @@ namespace nesem
 		ScrollInfo get_scroll_info() const noexcept;
 		const std::array<U8, 256> &get_oam() const noexcept;
 		const std::array<OAMSprite, 8> &get_active_sprites() const noexcept;
-		void draw_pattern_table(int index, U8 palette, DrawFn draw_pixel);
-		void draw_name_table(int index, DrawFn draw_pixel);
+
+		// get the current pattern table for visualization / debugging
+		NesPatternTable read_pattern_table(int index) noexcept;
+
+		// get the current name table based on the provided pre-calculated pattern tables
+		NesNameTable read_name_table(int index, const std::array<NesPatternTable, 2> &pattern) noexcept;
 	};
 }

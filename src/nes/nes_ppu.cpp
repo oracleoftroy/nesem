@@ -166,10 +166,10 @@ namespace nesem
 	{
 		return {
 			.fine_x = reg.fine_x,
-			.fine_y = (reg.vram_addr & vram_fine_y_mask) >> vram_fine_y_shift,
-			.coarse_x = (reg.vram_addr & vram_coarse_x_mask) >> vram_coarse_x_shift,
-			.coarse_y = (reg.vram_addr & vram_coarse_y_mask) >> vram_coarse_y_shift,
-			.nt = (reg.vram_addr & vram_nametable_mask) >> vram_nametable_shift,
+			.fine_y = U16((reg.vram_addr & vram_fine_y_mask) >> vram_fine_y_shift),
+			.coarse_x = U16((reg.vram_addr & vram_coarse_x_mask) >> vram_coarse_x_shift),
+			.coarse_y = U16((reg.vram_addr & vram_coarse_y_mask) >> vram_coarse_y_shift),
+			.nt = U16((reg.vram_addr & vram_nametable_mask) >> vram_nametable_shift),
 		};
 	}
 
@@ -183,8 +183,30 @@ namespace nesem
 		return active_sprites;
 	}
 
-	void NesPpu::draw_pattern_table(int index, U8 palette, DrawFn draw_pixel)
+	U8 NesPatternTable::read_pixel(int x, int y, U8 palette) const noexcept
 	{
+		auto x_shift = (x & 0b11) << 1;
+		auto x_pos = x >> 2;
+		auto index = y * 16 * 2 + x_pos;
+
+		return (palette << 2) | ((table[index] >> x_shift) & 0b11);
+	}
+
+	void NesPatternTable::write_pixel(int x, int y, U8 entry) noexcept
+	{
+		auto x_pos = x >> 2;
+		auto index = y * 16 * 2 + x_pos;
+
+		auto x_shift = (x & 0b11) << 1;
+		U8 mask = 0b11 << x_shift;
+
+		table[index] = (table[index] & ~mask) | ((entry << x_shift) & mask);
+	}
+
+	NesPatternTable NesPpu::read_pattern_table(int index) noexcept
+	{
+		NesPatternTable result;
+
 		for (U16 tile_y = 0; tile_y < 16; ++tile_y)
 		{
 			for (U16 tile_x = 0; tile_x < 16; ++tile_x)
@@ -199,32 +221,42 @@ namespace nesem
 					for (U16 col = 0; col < 8; ++col)
 					{
 						U8 bit = 0x80 >> col;
+						U8 palette_index = ((tile_hi & bit) != 0) << 1 | ((tile_lo & bit) != 0);
 
-						U16 palette_index = (palette << 2) | ((tile_hi & bit) != 0) << 1 | ((tile_lo & bit) != 0);
-
-						draw_pixel(int(tile_x * 8 + col), int(tile_y * 8 + row), read(0x3F00 + palette_index));
+						result.write_pixel(tile_x * 8 + col, tile_y * 8 + row, palette_index);
 					}
 				}
 			}
 		}
+
+		return result;
 	}
 
-	void NesPpu::draw_name_table(int index, DrawFn draw_pixel)
+	U8 NesNameTable::read_pixel(int x, int y) const noexcept
 	{
-		U16 pattern_start = (reg.ppuctrl & ctrl_pattern_addr) != 0 ? 0x1000 : 0;
+		return table[y * 256 + x];
+	}
+
+	void NesNameTable::write_pixel(int x, int y, U8 palette) noexcept
+	{
+		table[y * 256 + x] = palette;
+	}
+
+	NesNameTable NesPpu::read_name_table(int index, const std::array<NesPatternTable, 2> &pattern) noexcept
+	{
+		NesNameTable result;
+		U16 pattern_index = (reg.ppuctrl & ctrl_pattern_addr) != 0 ? 1 : 0;
 
 		for (U16 tile_y = 0; tile_y < 30; ++tile_y)
 		{
 			for (U16 tile_x = 0; tile_x < 32; ++tile_x)
 			{
-				// U16 nt_addr = 0x2000 | ((index & 3) << vram_nametable_shift) | (tile_y << vram_coarse_y_shift) | tile_x;
-				// U16 attr_addr = 0x23C0 | ((index & 3) << vram_nametable_shift) | ((tile_y << 1) & 0b111000) | (tile_x >> 2);
+				index = index ? 3 : 0;
+				U16 nt_addr = 0x2000 | ((index & 3) << vram_nametable_shift) | (tile_y << vram_coarse_y_shift) | tile_x;
+				U16 attr_addr = 0x23C0 | ((index & 3) << vram_nametable_shift) | ((tile_y << 1) & 0b111000) | (tile_x >> 2);
 
-				// auto nt = read(nt_addr);
-				// auto attr = read(attr_addr);
-
-				auto nt = nametable[index][(tile_y << vram_coarse_y_shift) | tile_x];
-				auto attr = nametable[index][0x03C0 | ((tile_y << 1) & 0b111000) | (tile_x >> 2)];
+				auto nt = read(nt_addr);
+				auto attr = read(attr_addr);
 
 				if (tile_y & 2)
 					attr >>= 4;
@@ -236,20 +268,16 @@ namespace nesem
 
 				for (U16 row = 0; row < 8; ++row)
 				{
-					U8 tile_lo = read(pattern_start | (nt << 4) | (row + 0x0000));
-					U8 tile_hi = read(pattern_start | (nt << 4) | (row + 0x0008));
-
 					for (U16 col = 0; col < 8; ++col)
 					{
-						U8 bit = 0x80 >> col;
-
-						U16 palette_index = (attr << 2) | ((tile_hi & bit) != 0) << 1 | ((tile_lo & bit) != 0);
-
-						draw_pixel(int(tile_x * 8 + col), int(tile_y * 8 + row), read(0x3F00 + palette_index));
+						auto tile = pattern[pattern_index].read_pixel((nt & 0xF) * 8 + col, ((nt >> 4) & 0xF) * 8 + row, attr);
+						result.write_pixel(tile_x * 8 + col, tile_y * 8 + row, read(0x3F00 + tile));
 					}
 				}
 			}
 		}
+
+		return result;
 	}
 
 	void NesPpu::reload() noexcept
