@@ -86,10 +86,10 @@ namespace nesem
 
 	bool Nes::interrupt_requested() noexcept
 	{
-		// components requesting an interrput should hold the interrupt signal until the CPU writes back saying
-		// it handled the interrput. Multiple devices can signal an irq at the same time, so this gives us a
-		// central location where all active interupt requests can be accessed at once. Right now, only the APU
-		// signals irqs, but some mappers can request interrputs as well as I understand. It is the programmer's
+		// components requesting an interrupt should hold the interrupt signal until the CPU writes back saying
+		// it handled the interrupt. Multiple devices can signal an irq at the same time, so this gives us a
+		// central location where all active interrupt requests can be accessed at once. Right now, only the APU
+		// signals irqs, but some mappers can request interrupts as well as I understand. It is the programmer's
 		// responsibility to figure out which device(s) signaled the interrupt and handle it appropriately.
 
 		return nes_apu.irq();
