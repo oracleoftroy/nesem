@@ -2,8 +2,10 @@
 
 #include <filesystem>
 #include <utility>
+#include <vector>
 
 #include <debugbreak.h>
+#include <spdlog/async.h>
 #include <spdlog/sinks/ansicolor_sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/sinks/msvc_sink.h>
@@ -89,15 +91,22 @@ namespace util::detail
 
 		LoggerInit(const std::filesystem::path &filename = {})
 		{
-			auto logger = std::make_shared<spdlog::logger>("");
+			spdlog::init_thread_pool(8192, 1);
+			std::vector<spdlog::sink_ptr> sinks;
 
-			setup_console_sinks(*logger);
-			setup_file_sinks(*logger, filename);
+			setup_console_sinks(sinks);
+			setup_file_sinks(sinks, filename);
 
+			auto logger = std::make_shared<spdlog::async_logger>("", begin(sinks), end(sinks), spdlog::thread_pool());
 			spdlog::set_default_logger(std::move(logger));
 		}
 
-		void setup_console_sinks(spdlog::logger &logger)
+		~LoggerInit()
+		{
+			spdlog::shutdown();
+		}
+
+		void setup_console_sinks(std::vector<spdlog::sink_ptr> &sinks)
 		{
 #if defined(_WIN32)
 			// try to attach to the parent console
@@ -105,21 +114,21 @@ namespace util::detail
 			// Failure is fine, assume we don't have a parent to attach to.
 			// -1 == ATTACH_PARENT_PROCESS
 			if (AttachConsole(ATTACH_PARENT_PROCESS))
-				logger.sinks().emplace_back(std::make_shared<spdlog::sinks::wincolor_stdout_sink_mt>());
+				sinks.emplace_back(std::make_shared<spdlog::sinks::wincolor_stdout_sink_mt>());
 
-			logger.sinks().emplace_back(std::make_shared<spdlog::sinks::msvc_sink_mt>());
+			sinks.emplace_back(std::make_shared<spdlog::sinks::msvc_sink_mt>());
 
 #else
-			logger.sinks().emplace_back(std::make_shared<spdlog::sinks::ansicolor_stdout_sink_mt>());
+			sinks.emplace_back(std::make_shared<spdlog::sinks::ansicolor_stdout_sink_mt>());
 #endif
 			// spdlog creates a sink to console and we added one to a debugger
 			// as these are both immediate current run sorts of things, provide a slightly shorter pattern,
 			// basically the default without the current date
-			for (auto &sink : logger.sinks())
+			for (auto &sink : sinks)
 				sink->set_pattern(console_pattern);
 		}
 
-		void setup_file_sinks(spdlog::logger &logger, const std::filesystem::path &filename)
+		void setup_file_sinks(std::vector<spdlog::sink_ptr> &sinks, const std::filesystem::path &filename)
 		{
 			if (filename.empty())
 				return;
@@ -127,7 +136,7 @@ namespace util::detail
 			auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename.string(), true);
 			file_sink->set_pattern(default_pattern);
 
-			logger.sinks().push_back(std::move(file_sink));
+			sinks.push_back(std::move(file_sink));
 		}
 	};
 
