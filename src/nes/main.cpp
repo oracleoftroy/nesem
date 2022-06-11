@@ -156,7 +156,7 @@ private:
 		trigger_break(true);
 	}
 
-	void tick(ui::App &app, ui::Renderer &canvas, float deltatime)
+	void tick(ui::App &app, ui::Renderer &canvas, double deltatime)
 	{
 		handle_input(app);
 		update(deltatime);

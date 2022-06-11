@@ -31,13 +31,13 @@ namespace ui
 
 #if defined(__cpp_lib_move_only_function)
 		// callback function, called each tick
-		std::move_only_function<void(App &app, Renderer &renderer, float deltatime)> on_update;
+		std::move_only_function<void(App &app, Renderer &renderer, double deltatime)> on_update;
 
 		// callback for handling dropped file
 		std::move_only_function<void(std::string_view filename)> on_file_drop;
 #else
 		// callback function, called each tick
-		std::function<void(App &app, Renderer &renderer, float deltatime)> on_update;
+		std::function<void(App &app, Renderer &renderer, double deltatime)> on_update;
 
 		// callback for handling dropped file
 		std::function<void(std::string_view filename)> on_file_drop;
