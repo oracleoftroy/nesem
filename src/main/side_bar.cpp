@@ -27,8 +27,6 @@ namespace app
 		auto canvas_size = canvas.size();
 		canvas.fill({22, 22, 22});
 
-		canvas.draw_line({200, 200, 200}, {0, 0}, {0, area.h});
-
 		auto pattern_tables = std::array{
 			nes.ppu().read_pattern_table(0),
 			nes.ppu().read_pattern_table(1),
@@ -52,15 +50,14 @@ namespace app
 			}
 
 			auto pos = cm::Point2{128 * index, 0};
-			nes_pattern_pos[index] = {area.x + pos.x, pos.y};
-			canvas.draw_rect({200, 200, 200}, rect(pos, nes_pattern_textures[index].size()));
+			nes_pattern_pos[index] = {area.x + pos.x, area.h - 240 * 2 - 128};
 		}
 
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Draw palettes
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-		const auto palette_start_pos = cm::Point2{2, 128 + 2};
+		const auto palette_start_pos = cm::Point2{2, nes_pattern_pos[0].y - 4 - 16 * 2};
 		auto palette_pos = palette_start_pos;
 		auto color_size = cm::Size{14, 14};
 		auto palette_size = cm::Size{color_size.w * 4 + 6, color_size.w + 4};
@@ -123,28 +120,27 @@ namespace app
 
 				auto pos = cm::Point2{0, area.h - (240 * (2 - index))};
 				nes_nametable_pos[index] = {area.x, pos.y};
-				canvas.draw_rect({200, 200, 200}, rect(pos, nes_nametable_textures[index].size()));
 			}
 
 			auto [fine_x, fine_y, coarse_x, coarse_y, nt] = nes.ppu().get_scroll_info();
 
-			auto pos = cm::Point2{2, palette_pos.y};
+			auto pos = cm::Point2{2, palette_start_pos.y - 12};
 
-			draw_string(canvas, {255, 255, 255}, fmt::format("fine x,y: {}, {}", fine_x, fine_y), pos);
-			pos.y += 8;
-			draw_string(canvas, {255, 255, 255}, fmt::format("coarse x,y: {:>2}, {:>2}", coarse_x, coarse_y), pos);
-			pos.y += 8;
 			draw_string(canvas, {255, 255, 255}, fmt::format("nametable: {}", nt), pos);
+			pos.y -= 10;
+			draw_string(canvas, {255, 255, 255}, fmt::format("coarse x,y: {:>2}, {:>2}", coarse_x, coarse_y), pos);
+			pos.y -= 10;
+			draw_string(canvas, {255, 255, 255}, fmt::format("fine x,y: {}, {}", fine_x, fine_y), pos);
 		}
 		break;
 
 		case DebugMode::fg_info:
 		{
-			auto pos = cm::Point2{2, palette_pos.y};
+			auto pos = cm::Point2{2, nes_pattern_pos[0].y + 128 + 4};
 			auto offset = cm::Point2{16 * 8, 0};
 
 			draw_string(canvas, {255, 255, 255}, "OEM memory - (x y) index attrib", pos);
-			pos.y += 2;
+			pos.y += 4;
 
 			const auto &oam = nes.ppu().get_oam();
 			for (size_t i = 0, end = std::size(oam); i < end; i += 4)
@@ -159,7 +155,7 @@ namespace app
 			pos.y += 20;
 
 			draw_string(canvas, {255, 255, 255}, "Active sprites for scanline", pos);
-			pos.y += 2;
+			pos.y += 4;
 
 			int index = 0;
 			for (const auto &s : nes.ppu().get_active_sprites())

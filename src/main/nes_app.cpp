@@ -49,7 +49,6 @@ namespace
 		LOG_INFO("Could not find file {}", path.string());
 		return path;
 	}
-
 }
 
 namespace app
