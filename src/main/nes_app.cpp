@@ -307,7 +307,10 @@ namespace app
 			using enum nesem::NesClockStep;
 
 			if (!system_break)
+			{
 				nes.tick(deltatime);
+				side_bar.update(debug_mode, nes, *this);
+			}
 			else
 			{
 				auto [screen, lock] = nes_screen_texture.lock();
@@ -316,13 +319,12 @@ namespace app
 				if (step != None)
 				{
 					nes.step(step);
+					side_bar.update(debug_mode, nes, *this);
 					step = None;
 				}
 
 				nes_screen = std::nullopt;
 			}
-
-			side_bar.update(debug_mode, nes, *this);
 		}
 	}
 

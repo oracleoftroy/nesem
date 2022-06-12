@@ -162,6 +162,11 @@ namespace nesem
 		return scanline;
 	}
 
+	int NesPpu::current_cycle() noexcept
+	{
+		return cycle;
+	}
+
 	NesPpu::ScrollInfo NesPpu::get_scroll_info() const noexcept
 	{
 		return {

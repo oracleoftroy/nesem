@@ -217,6 +217,7 @@ namespace nesem
 		};
 
 		int current_scanline() noexcept;
+		int current_cycle() noexcept;
 		ScrollInfo get_scroll_info() const noexcept;
 		const std::array<U8, 256> &get_oam() const noexcept;
 		const std::array<OAMSprite, 8> &get_active_sprites() const noexcept;

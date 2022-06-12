@@ -27,6 +27,8 @@ namespace app
 		auto canvas_size = canvas.size();
 		canvas.fill({22, 22, 22});
 
+		draw_string(canvas, {255, 255, 255}, fmt::format("scanline: {:>3}    cycle: {:>3}", nes.ppu().current_scanline(), nes.ppu().current_cycle()), {2, 2});
+
 		auto pattern_tables = std::array{
 			nes.ppu().read_pattern_table(0),
 			nes.ppu().read_pattern_table(1),
