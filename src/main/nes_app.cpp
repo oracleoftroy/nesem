@@ -113,6 +113,7 @@ namespace app
 			bottom_bar = BottomBar(app, bottom_area);
 			side_bar = SideBar(app, side_area);
 			overlay = NesOverlay(app, rect({0, 0}, nes_resolution), nes_scale);
+			controller_overlay = ControllerOverlay(app, nes_area);
 		}
 
 		// extra stuff that should mostly go away....?
@@ -341,6 +342,7 @@ namespace app
 		side_bar.render(renderer, debug_mode);
 		bottom_bar.render(renderer);
 		overlay.render(renderer);
+		controller_overlay.render(renderer);
 	}
 
 	void NesApp::on_nes_pixel(int x, int y, int color_index) noexcept
@@ -402,6 +404,7 @@ namespace app
 		if ((result & (Left | Right)) == (Left | Right))
 			result &= ~(Left | Right);
 
+		controller_overlay.update(result);
 		return result;
 	}
 

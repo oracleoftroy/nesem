@@ -785,6 +785,48 @@ namespace cm
 	}
 
 	template <typename T>
+	constexpr Rect<T> widen(Rect<T> rect, T amount) noexcept
+	{
+		return {rect.x - amount, rect.y - amount, rect.w + amount * 2, rect.h + amount * 2};
+	}
+
+	template <typename T>
+	constexpr Rect<T> widen(Rect<T> rect, Size<T> amount) noexcept
+	{
+		return {rect.x - amount.w, rect.y - amount.h, rect.w + amount.w * 2, rect.h + amount.h * 2};
+	}
+
+	template <typename T>
+	constexpr Rect<T> &operator+=(Rect<T> &rect, Point2<T> pos)
+	{
+		rect.x += pos.x;
+		rect.y += pos.y;
+		return rect;
+	}
+
+	template <typename T>
+	constexpr Rect<T> operator+(Rect<T> rect, Point2<T> pos)
+	{
+		rect += pos;
+		return rect;
+	}
+
+	template <typename T>
+	constexpr Rect<T> &operator-=(Rect<T> &rect, Point2<T> pos)
+	{
+		rect.x -= pos.x;
+		rect.y -= pos.y;
+		return rect;
+	}
+
+	template <typename T>
+	constexpr Rect<T> operator-(Rect<T> rect, Point2<T> pos)
+	{
+		rect -= pos;
+		return rect;
+	}
+
+	template <typename T>
 	constexpr std::optional<Rect<T>> clip_rect(Rect<T> bounds, Rect<T> r) noexcept
 	{
 		auto bounds_br = bottom_right(bounds);

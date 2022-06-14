@@ -6,6 +6,8 @@ add_executable(
 	"nes_app.hpp"
 	"nes_overlay.cpp"
 	"nes_overlay.hpp"
+	"controller_overlay.cpp"
+	"controller_overlay.hpp"
 	"bottom_bar.cpp"
 	"bottom_bar.hpp"
 	"side_bar.cpp"

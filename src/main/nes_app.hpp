@@ -6,6 +6,7 @@
 #include <nes.hpp>
 
 #include "bottom_bar.hpp"
+#include "controller_overlay.hpp"
 #include "nes_overlay.hpp"
 #include "side_bar.hpp"
 
@@ -166,5 +167,6 @@ namespace app
 		BottomBar bottom_bar;
 		SideBar side_bar;
 		NesOverlay overlay;
+		ControllerOverlay controller_overlay;
 	};
 }
