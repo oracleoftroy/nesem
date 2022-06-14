@@ -193,7 +193,19 @@ namespace app
 	void NesApp::on_change_debug_mode(DebugMode mode)
 	{
 		debug_mode = mode;
-		side_bar.update(debug_mode, nes, *this);
+
+		// the side bar is normally updated when we tick the nes. But we don't tick the nes when we are paused, so force an update
+		if (system_break)
+			side_bar.update(debug_mode, nes, *this);
+	}
+
+	void NesApp::on_change_current_palette(nesem::U8 palette)
+	{
+		current_palette = palette;
+
+		// the side bar is normally updated when we tick the nes. But we don't tick the nes when we are paused, so force an update
+		if (system_break)
+			side_bar.update(debug_mode, nes, *this);
 	}
 
 	void NesApp::tick(ui::App &app, ui::Renderer &canvas, double deltatime)
@@ -284,13 +296,13 @@ namespace app
 
 		if (app.key_pressed(palette_next_key))
 		{
-			current_palette = nesem::U8(current_palette + 1) % 8;
+			on_change_current_palette(nesem::U8(current_palette + 1) % 8);
 			LOG_INFO("palette {} selected", current_palette);
 		}
 
 		if (app.key_pressed(palette_prev_key))
 		{
-			current_palette = nesem::U8(current_palette - 1) % 8;
+			on_change_current_palette(nesem::U8(current_palette - 1) % 8);
 			LOG_INFO("palette {} selected", current_palette);
 		}
 

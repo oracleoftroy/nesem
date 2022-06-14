@@ -39,6 +39,7 @@ namespace app
 
 		void on_error(std::string_view message);
 		void on_change_debug_mode(DebugMode mode);
+		void on_change_current_palette(nesem::U8 palette);
 		void on_nes_pixel(int x, int y, int color_index) noexcept;
 		void on_nes_frame_ready() noexcept;
 
