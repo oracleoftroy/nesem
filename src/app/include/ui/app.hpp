@@ -20,6 +20,7 @@ namespace ui
 	class AudioDevice;
 	class Texture;
 	class Renderer;
+	class InputState;
 
 	class App final
 	{
@@ -114,6 +115,8 @@ namespace ui
 		struct Core;
 		std::unique_ptr<Core> core;
 
+		friend class InputState;
+
 		explicit App(std::unique_ptr<Core> &&core) noexcept;
 	};
 
@@ -139,8 +142,6 @@ namespace ui
 		gui = left_gui | right_gui
 	};
 	MAKE_FLAGS_ENUM(KeyMods)
-
-	class InputState;
 
 	class Key
 	{

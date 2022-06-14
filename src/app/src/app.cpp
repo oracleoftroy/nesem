@@ -51,7 +51,8 @@ namespace ui
 	{
 	public:
 		InputState();
-		void update() noexcept;
+
+		void update(const App::Core &core) noexcept;
 
 		[[nodiscard]] KeyMods modifiers() const noexcept;
 		[[nodiscard]] bool key_down(Key key) const noexcept;
@@ -293,7 +294,7 @@ namespace ui
 				fps.reset();
 			}
 
-			core->input.update();
+			core->input.update(*core);
 			if (on_update)
 			{
 				auto r = Renderer(core->renderer.get());
@@ -505,7 +506,7 @@ namespace ui
 		current_keys.resize(num_keys);
 	}
 
-	void InputState::update() noexcept
+	void InputState::update(const App::Core &app) noexcept
 	{
 		int num_keys;
 		auto keys = SDL_GetKeyboardState(&num_keys);
@@ -518,6 +519,12 @@ namespace ui
 
 		// update mouse position and buttons
 		last_mouse_buttons = std::exchange(current_mouse_buttons, SDL_GetMouseState(&mouse_pos.x, &mouse_pos.y));
+
+		float fx, fy;
+		SDL_RenderWindowToLogical(app.renderer.get(), mouse_pos.x, mouse_pos.y, &fx, &fy);
+
+		mouse_pos.x = static_cast<int>(fx);
+		mouse_pos.y = static_cast<int>(fy);
 	}
 
 	bool InputState::key_down(Key key) const noexcept
