@@ -1,9 +1,12 @@
 #include "ui/app.hpp"
 
+#include <algorithm>
 #include <chrono>
 #include <locale>
+#include <numeric>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #include <SDL2/SDL.h>
 
@@ -79,13 +82,9 @@ namespace ui
 		uint32_t current_mouse_buttons = 0;
 	};
 
-	struct FPS
+	class FPS
 	{
-		double fastest_frame = std::numeric_limits<double>::infinity();
-		double slowest_frame = 0.0;
-		double accum_time = 0.0;
-		uint32_t framecount = 0;
-
+	public:
 		void update(double deltatime) noexcept
 		{
 			// skip the first frame after a reset (when we do extra work to display fps data)
@@ -95,25 +94,50 @@ namespace ui
 				slowest_frame = std::max(slowest_frame, deltatime);
 
 				accum_time += deltatime;
+				times.emplace_back(deltatime);
 			}
 
 			++framecount;
 		}
 
-		[[nodiscard]] double average() const noexcept
+		[[nodiscard]] double accumulated_time() const noexcept
+		{
+			return accum_time;
+		}
+
+		[[nodiscard]] double fps() const noexcept
 		{
 			// subtract 1 to account for skipped frame
 			return (framecount - 1) / accum_time;
 		}
 
-		[[nodiscard]] double low() const noexcept
+		[[nodiscard]] double average() const noexcept
 		{
-			return 1 / slowest_frame;
+			return (std::accumulate(begin(times), end(times), 0.0) / size(times)) * 1000.0;
 		}
 
-		[[nodiscard]] double high() const noexcept
+		[[nodiscard]] double median() noexcept
 		{
-			return 1 / fastest_frame;
+			if (times.empty())
+				return 0;
+
+			auto size_times = size(times);
+
+			// not a true median, but good enough. This will favor slightly higher values on an even number of samples
+			auto mid = begin(times) + size_times / 2;
+			std::ranges::nth_element(times, mid);
+
+			return *mid * 1000.0;
+		}
+
+		[[nodiscard]] double worst() const noexcept
+		{
+			return slowest_frame * 1000.0;
+		}
+
+		[[nodiscard]] double best() const noexcept
+		{
+			return fastest_frame * 1000.0;
 		}
 
 		void reset() noexcept
@@ -122,7 +146,15 @@ namespace ui
 			slowest_frame = 0.0;
 			accum_time = 0.0;
 			framecount = 0;
+			times.clear();
 		}
+
+	private:
+		double fastest_frame = std::numeric_limits<double>::infinity();
+		double slowest_frame = 0.0;
+		double accum_time = 0.0;
+		uint32_t framecount = 0;
+		std::vector<double> times;
 	};
 
 	struct SdlLib
@@ -288,9 +320,9 @@ namespace ui
 			// if we have a large frameskip, cap it
 			auto deltatime = std::min(real_deltatime, 0.25);
 
-			if (fps.accum_time >= 1.0)
+			if (fps.accumulated_time() >= 1.0)
 			{
-				SDL_SetWindowTitle(core->window.get(), fmt::format("{} - FPS: {:.2f} Low: {:.2f} High: {:.2f}", core->window_title, fps.average(), fps.low(), fps.high()).c_str());
+				SDL_SetWindowTitle(core->window.get(), fmt::format("{0} - FPS: {1:.2f}     Best: {2:.2f}ms  Worst: {3:.2f}ms  Median: {4:.2f}ms  Average: {5:.2f}ms", core->window_title, fps.fps(), fps.best(), fps.worst(), fps.median(), fps.average()).c_str());
 				fps.reset();
 			}
 
