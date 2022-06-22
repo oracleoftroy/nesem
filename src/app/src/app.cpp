@@ -113,7 +113,7 @@ namespace ui
 
 		[[nodiscard]] double average() const noexcept
 		{
-			return (std::accumulate(begin(times), end(times), 0.0) / size(times)) * 1000.0;
+			return accum_time / (framecount - 1) * 1000.0;
 		}
 
 		[[nodiscard]] double median() noexcept
