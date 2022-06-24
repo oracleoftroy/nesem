@@ -35,32 +35,36 @@ namespace nesem
 
 		bool interrupt_requested() noexcept;
 
+		void log_instruction() noexcept;
+
 	private:
-		Nes *nes;
+		friend struct CpuOps;
 
-		// 6502 registers
-		U16 PC = 0; // program counter
-		U8 S = 0; // stack pointer, starts from the top of page 1 and grows downward
-		ProcessorStatus P; // processor status
-		U8 A; // Accumulator
-		U8 X; // Index register X
-		U8 Y; // Index register Y
+		enum class OpType
+		{
+			read,
+			read_modify_write,
+			write,
+		};
 
-		// other state
+		enum class AddressStatus
+		{
+			// the operation is ongoing
+			pending,
 
-		// cycles since startup/reset
-		U64 cycles = 0;
-		int instruction = -1; // the current instruction being executed, or -1 for reset
-		U8 step = 0; // the current step for the current instruction
-		U8 scratch = 0xFF; // place for instructions to store intermediate value
-		U16 effective_addr = 0xFEFE; // temporary address for address modes
+			// the read operation is complete, and scratch holds the read value
+			read_complete,
 
-		bool nmi_requested = false;
-		bool in_dma = false;
-		U8 dma_page = 0;
-		int dma_step = -1;
+			// the operation is ready to store the result next cycle, make sure scratch is up to date
+			write_ready,
 
-	public:
+			// the operation is complete
+			complete,
+
+			// we are modifying the accumulator directly, so we already have everything we need
+			accumulator,
+		};
+
 		// All CPU instructions
 		bool xxx() noexcept; // invalid instruction
 		bool ADC() noexcept;
@@ -120,32 +124,6 @@ namespace nesem
 		bool TXS() noexcept;
 		bool TYA() noexcept;
 
-	private:
-		enum class OpType
-		{
-			read,
-			read_modify_write,
-			write,
-		};
-
-		enum class AddressStatus
-		{
-			// the operation is ongoing
-			pending,
-
-			// the read operation is complete, and scratch holds the read value
-			read_complete,
-
-			// the operation is ready to store the result next cycle, make sure scratch is up to date
-			write_ready,
-
-			// the operation is complete
-			complete,
-
-			// we are modifying the accumulator directly, so we already have everything we need
-			accumulator,
-		};
-
 		// Addressing modes
 		AddressStatus INX(OpType type) noexcept; // read and write
 		AddressStatus ZP(OpType type) noexcept;
@@ -161,7 +139,29 @@ namespace nesem
 		AddressStatus write() noexcept;
 		AddressStatus read_modify_write() noexcept;
 
-		void log_instruction() noexcept;
-	};
+	private:
+		Nes *nes;
 
+		// 6502 registers
+		U16 PC = 0; // program counter
+		U8 S = 0; // stack pointer, starts from the top of page 1 and grows downward
+		ProcessorStatus P; // processor status
+		U8 A; // Accumulator
+		U8 X; // Index register X
+		U8 Y; // Index register Y
+
+		// other state
+
+		// cycles since startup/reset
+		U64 cycles = 0;
+		int instruction = -1; // the current instruction being executed, or -1 for reset
+		U8 step = 0; // the current step for the current instruction
+		U8 scratch = 0xFF; // place for instructions to store intermediate value
+		U16 effective_addr = 0xFEFE; // temporary address for address modes
+
+		bool nmi_requested = false;
+		bool in_dma = false;
+		U8 dma_page = 0;
+		int dma_step = -1;
+	};
 }

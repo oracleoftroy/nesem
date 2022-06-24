@@ -5,17 +5,21 @@
 #include <string_view>
 
 #include <fmt/format.h>
-#include <util/logging.hpp>
 
 #include "nes.hpp"
 #include "nes_cpu_ops.hpp"
 
-struct Op
+#include <util/logging.hpp>
+
+namespace nesem
 {
-	using Fn = bool (nesem::NesCpu::*)();
-	std::string_view name;
-	Fn op;
-};
+
+	struct Op
+	{
+		using Fn = bool (nesem::NesCpu::*)();
+		std::string_view name;
+		Fn op;
+	};
 
 #define OP(ins)                    \
 	Op                             \
@@ -24,70 +28,71 @@ struct Op
 		.op = &nesem::NesCpu::ins, \
 	}
 
-//      0     1     2     3     4     5     6     7     8     9     a     b     c     d     e     f
-//   ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
-// 0 │ BRK │ ORA │  -  │  -  │  -  │ ORA │ ASL │  -  │ PHP │ ORA │ ASL │  -  │  -  │ ORA │ ASL │  -  │
-//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
-// 1 │ BPL │ ORA │  -  │  -  │  -  │ ORA │ ASL │  -  │ CLC │ ORA │  -  │  -  │  -  │ ORA │ ASL │  -  │
-//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
-// 2 │ JSR │ AND │  -  │  -  │ BIT │ AND │ ROL │  -  │ PLP │ AND │ ROL │  -  │ BIT │ AND │ ROL │  -  │
-//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
-// 3 │ BMI │ AND │  -  │  -  │  -  │ AND │ ROL │  -  │ SEC │ AND │  -  │  -  │  -  │ AND │ ROL │  -  │
-//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
-// 4 │ RTI │ EOR │  -  │  -  │  -  │ EOR │ LSR │  -  │ PHA │ EOR │ LSR │  -  │ JMP │ EOR │ LSR │  -  │
-//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
-// 5 │ BVC │ EOR │  -  │  -  │  -  │ EOR │ LSR │  -  │ CLI │ EOR │  -  │  -  │  -  │ EOR │ LSR │  -  │
-//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
-// 6 │ RTS │ ADC │  -  │  -  │  -  │ ADC │ ROR │  -  │ PLA │ ADC │ ROR │  -  │ JMP │ ADC │ ROR │  -  │
-//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
-// 7 │ BVS │ ADC │  -  │  -  │  -  │ ADC │ ROR │  -  │ SEI │ ADC │  -  │  -  │  -  │ ADC │ ROR │  -  │
-//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
-// 8 │  -  │ STA │  -  │  -  │ STY │ STA │ STX │  -  │ DEY │  -  │ TXA │  -  │ STY │ STA │ STX │  -  │
-//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
-// 9 │ BCC │ STA │  -  │  -  │ STY │ STA │ STX │  -  │ TYA │ STA │ TXS │  -  │  -  │ STA │  -  │  -  │
-//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
-// a │ LDY │ LDA │ LDX │  -  │ LDY │ LDA │ LDX │  -  │ TAY │ LDA │ TAX │  -  │ LDY │ LDA │ LDX │  -  │
-//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
-// b │ BCS │ LDA │  -  │  -  │ LDY │ LDA │ LDX │  -  │ CLV │ LDA │ TSX │  -  │ LDY │ LDA │ LDX │  -  │
-//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
-// c │ CPY │ CMP │  -  │  -  │ CPY │ CMP │ DEC │  -  │ INY │ CMP │ DEX │  -  │ CPY │ CMP │ DEC │  -  │
-//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
-// d │ BNE │ CMP │  -  │  -  │  -  │ CMP │ DEC │  -  │ CLD │ CMP │  -  │  -  │  -  │ CMP │ DEC │  -  │
-//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
-// e │ CPX │ SBC │  -  │  -  │ CPX │ SBC │ INC │  -  │ INX │ SBC │ NOP │  -  │ CPX │ SBC │ INC │  -  │
-//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
-// f │ BEQ │ SBC │  -  │  -  │  -  │ SBC │ INC │  -  │ SED │ SBC │  -  │  -  │  -  │ SBC │ INC │  -  │
-//   └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
-// total ops: 56
+	struct CpuOps
+	{
+		//      0     1     2     3     4     5     6     7     8     9     a     b     c     d     e     f
+		//   ┌─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┬─────┐
+		// 0 │ BRK │ ORA │  -  │  -  │  -  │ ORA │ ASL │  -  │ PHP │ ORA │ ASL │  -  │  -  │ ORA │ ASL │  -  │
+		//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+		// 1 │ BPL │ ORA │  -  │  -  │  -  │ ORA │ ASL │  -  │ CLC │ ORA │  -  │  -  │  -  │ ORA │ ASL │  -  │
+		//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+		// 2 │ JSR │ AND │  -  │  -  │ BIT │ AND │ ROL │  -  │ PLP │ AND │ ROL │  -  │ BIT │ AND │ ROL │  -  │
+		//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+		// 3 │ BMI │ AND │  -  │  -  │  -  │ AND │ ROL │  -  │ SEC │ AND │  -  │  -  │  -  │ AND │ ROL │  -  │
+		//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+		// 4 │ RTI │ EOR │  -  │  -  │  -  │ EOR │ LSR │  -  │ PHA │ EOR │ LSR │  -  │ JMP │ EOR │ LSR │  -  │
+		//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+		// 5 │ BVC │ EOR │  -  │  -  │  -  │ EOR │ LSR │  -  │ CLI │ EOR │  -  │  -  │  -  │ EOR │ LSR │  -  │
+		//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+		// 6 │ RTS │ ADC │  -  │  -  │  -  │ ADC │ ROR │  -  │ PLA │ ADC │ ROR │  -  │ JMP │ ADC │ ROR │  -  │
+		//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+		// 7 │ BVS │ ADC │  -  │  -  │  -  │ ADC │ ROR │  -  │ SEI │ ADC │  -  │  -  │  -  │ ADC │ ROR │  -  │
+		//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+		// 8 │  -  │ STA │  -  │  -  │ STY │ STA │ STX │  -  │ DEY │  -  │ TXA │  -  │ STY │ STA │ STX │  -  │
+		//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+		// 9 │ BCC │ STA │  -  │  -  │ STY │ STA │ STX │  -  │ TYA │ STA │ TXS │  -  │  -  │ STA │  -  │  -  │
+		//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+		// a │ LDY │ LDA │ LDX │  -  │ LDY │ LDA │ LDX │  -  │ TAY │ LDA │ TAX │  -  │ LDY │ LDA │ LDX │  -  │
+		//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+		// b │ BCS │ LDA │  -  │  -  │ LDY │ LDA │ LDX │  -  │ CLV │ LDA │ TSX │  -  │ LDY │ LDA │ LDX │  -  │
+		//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+		// c │ CPY │ CMP │  -  │  -  │ CPY │ CMP │ DEC │  -  │ INY │ CMP │ DEX │  -  │ CPY │ CMP │ DEC │  -  │
+		//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+		// d │ BNE │ CMP │  -  │  -  │  -  │ CMP │ DEC │  -  │ CLD │ CMP │  -  │  -  │  -  │ CMP │ DEC │  -  │
+		//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+		// e │ CPX │ SBC │  -  │  -  │ CPX │ SBC │ INC │  -  │ INX │ SBC │ NOP │  -  │ CPX │ SBC │ INC │  -  │
+		//   ├─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┼─────┤
+		// f │ BEQ │ SBC │  -  │  -  │  -  │ SBC │ INC │  -  │ SED │ SBC │  -  │  -  │  -  │ SBC │ INC │  -  │
+		//   └─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┴─────┘
+		// total ops: 56
 
-constexpr auto ops = std::array{
-	// clang-format off
-	// 0        1        2        3        4        5        6        7        8        9        A        B        C        D        E        F
-	OP(BRK), OP(ORA), OP(xxx), OP(xxx), OP(xxx), OP(ORA), OP(ASL), OP(xxx), OP(PHP), OP(ORA), OP(ASL), OP(xxx), OP(xxx), OP(ORA), OP(ASL), OP(xxx), // 0
-	OP(BPL), OP(ORA), OP(xxx), OP(xxx), OP(xxx), OP(ORA), OP(ASL), OP(xxx), OP(CLC), OP(ORA), OP(xxx), OP(xxx), OP(xxx), OP(ORA), OP(ASL), OP(xxx), // 1
-	OP(JSR), OP(AND), OP(xxx), OP(xxx), OP(BIT), OP(AND), OP(ROL), OP(xxx), OP(PLP), OP(AND), OP(ROL), OP(xxx), OP(BIT), OP(AND), OP(ROL), OP(xxx), // 2
-	OP(BMI), OP(AND), OP(xxx), OP(xxx), OP(xxx), OP(AND), OP(ROL), OP(xxx), OP(SEC), OP(AND), OP(xxx), OP(xxx), OP(xxx), OP(AND), OP(ROL), OP(xxx), // 3
-	OP(RTI), OP(EOR), OP(xxx), OP(xxx), OP(xxx), OP(EOR), OP(LSR), OP(xxx), OP(PHA), OP(EOR), OP(LSR), OP(xxx), OP(JMP), OP(EOR), OP(LSR), OP(xxx), // 4
-	OP(BVC), OP(EOR), OP(xxx), OP(xxx), OP(xxx), OP(EOR), OP(LSR), OP(xxx), OP(CLI), OP(EOR), OP(xxx), OP(xxx), OP(xxx), OP(EOR), OP(LSR), OP(xxx), // 5
-	OP(RTS), OP(ADC), OP(xxx), OP(xxx), OP(xxx), OP(ADC), OP(ROR), OP(xxx), OP(PLA), OP(ADC), OP(ROR), OP(xxx), OP(JMP), OP(ADC), OP(ROR), OP(xxx), // 6
-	OP(BVS), OP(ADC), OP(xxx), OP(xxx), OP(xxx), OP(ADC), OP(ROR), OP(xxx), OP(SEI), OP(ADC), OP(xxx), OP(xxx), OP(xxx), OP(ADC), OP(ROR), OP(xxx), // 7
-	OP(xxx), OP(STA), OP(xxx), OP(xxx), OP(STY), OP(STA), OP(STX), OP(xxx), OP(DEY), OP(xxx), OP(TXA), OP(xxx), OP(STY), OP(STA), OP(STX), OP(xxx), // 8
-	OP(BCC), OP(STA), OP(xxx), OP(xxx), OP(STY), OP(STA), OP(STX), OP(xxx), OP(TYA), OP(STA), OP(TXS), OP(xxx), OP(xxx), OP(STA), OP(xxx), OP(xxx), // 9
-	OP(LDY), OP(LDA), OP(LDX), OP(xxx), OP(LDY), OP(LDA), OP(LDX), OP(xxx), OP(TAY), OP(LDA), OP(TAX), OP(xxx), OP(LDY), OP(LDA), OP(LDX), OP(xxx), // A
-	OP(BCS), OP(LDA), OP(xxx), OP(xxx), OP(LDY), OP(LDA), OP(LDX), OP(xxx), OP(CLV), OP(LDA), OP(TSX), OP(xxx), OP(LDY), OP(LDA), OP(LDX), OP(xxx), // B
-	OP(CPY), OP(CMP), OP(xxx), OP(xxx), OP(CPY), OP(CMP), OP(DEC), OP(xxx), OP(INY), OP(CMP), OP(DEX), OP(xxx), OP(CPY), OP(CMP), OP(DEC), OP(xxx), // C
-	OP(BNE), OP(CMP), OP(xxx), OP(xxx), OP(xxx), OP(CMP), OP(DEC), OP(xxx), OP(CLD), OP(CMP), OP(xxx), OP(xxx), OP(xxx), OP(CMP), OP(DEC), OP(xxx), // D
-	OP(CPX), OP(SBC), OP(xxx), OP(xxx), OP(CPX), OP(SBC), OP(INC), OP(xxx), OP(INX), OP(SBC), OP(NOP), OP(xxx), OP(CPX), OP(SBC), OP(INC), OP(xxx), // E
-	OP(BEQ), OP(SBC), OP(xxx), OP(xxx), OP(xxx), OP(SBC), OP(INC), OP(xxx), OP(SED), OP(SBC), OP(xxx), OP(xxx), OP(xxx), OP(SBC), OP(INC), OP(xxx), // F
-	// clang-format on
-};
+		constexpr static std::array ops = {
+			// clang-format off
+			// 0        1        2        3        4        5        6        7        8        9        A        B        C        D        E        F
+			OP(BRK), OP(ORA), OP(xxx), OP(xxx), OP(xxx), OP(ORA), OP(ASL), OP(xxx), OP(PHP), OP(ORA), OP(ASL), OP(xxx), OP(xxx), OP(ORA), OP(ASL), OP(xxx), // 0
+			OP(BPL), OP(ORA), OP(xxx), OP(xxx), OP(xxx), OP(ORA), OP(ASL), OP(xxx), OP(CLC), OP(ORA), OP(xxx), OP(xxx), OP(xxx), OP(ORA), OP(ASL), OP(xxx), // 1
+			OP(JSR), OP(AND), OP(xxx), OP(xxx), OP(BIT), OP(AND), OP(ROL), OP(xxx), OP(PLP), OP(AND), OP(ROL), OP(xxx), OP(BIT), OP(AND), OP(ROL), OP(xxx), // 2
+			OP(BMI), OP(AND), OP(xxx), OP(xxx), OP(xxx), OP(AND), OP(ROL), OP(xxx), OP(SEC), OP(AND), OP(xxx), OP(xxx), OP(xxx), OP(AND), OP(ROL), OP(xxx), // 3
+			OP(RTI), OP(EOR), OP(xxx), OP(xxx), OP(xxx), OP(EOR), OP(LSR), OP(xxx), OP(PHA), OP(EOR), OP(LSR), OP(xxx), OP(JMP), OP(EOR), OP(LSR), OP(xxx), // 4
+			OP(BVC), OP(EOR), OP(xxx), OP(xxx), OP(xxx), OP(EOR), OP(LSR), OP(xxx), OP(CLI), OP(EOR), OP(xxx), OP(xxx), OP(xxx), OP(EOR), OP(LSR), OP(xxx), // 5
+			OP(RTS), OP(ADC), OP(xxx), OP(xxx), OP(xxx), OP(ADC), OP(ROR), OP(xxx), OP(PLA), OP(ADC), OP(ROR), OP(xxx), OP(JMP), OP(ADC), OP(ROR), OP(xxx), // 6
+			OP(BVS), OP(ADC), OP(xxx), OP(xxx), OP(xxx), OP(ADC), OP(ROR), OP(xxx), OP(SEI), OP(ADC), OP(xxx), OP(xxx), OP(xxx), OP(ADC), OP(ROR), OP(xxx), // 7
+			OP(xxx), OP(STA), OP(xxx), OP(xxx), OP(STY), OP(STA), OP(STX), OP(xxx), OP(DEY), OP(xxx), OP(TXA), OP(xxx), OP(STY), OP(STA), OP(STX), OP(xxx), // 8
+			OP(BCC), OP(STA), OP(xxx), OP(xxx), OP(STY), OP(STA), OP(STX), OP(xxx), OP(TYA), OP(STA), OP(TXS), OP(xxx), OP(xxx), OP(STA), OP(xxx), OP(xxx), // 9
+			OP(LDY), OP(LDA), OP(LDX), OP(xxx), OP(LDY), OP(LDA), OP(LDX), OP(xxx), OP(TAY), OP(LDA), OP(TAX), OP(xxx), OP(LDY), OP(LDA), OP(LDX), OP(xxx), // A
+			OP(BCS), OP(LDA), OP(xxx), OP(xxx), OP(LDY), OP(LDA), OP(LDX), OP(xxx), OP(CLV), OP(LDA), OP(TSX), OP(xxx), OP(LDY), OP(LDA), OP(LDX), OP(xxx), // B
+			OP(CPY), OP(CMP), OP(xxx), OP(xxx), OP(CPY), OP(CMP), OP(DEC), OP(xxx), OP(INY), OP(CMP), OP(DEX), OP(xxx), OP(CPY), OP(CMP), OP(DEC), OP(xxx), // C
+			OP(BNE), OP(CMP), OP(xxx), OP(xxx), OP(xxx), OP(CMP), OP(DEC), OP(xxx), OP(CLD), OP(CMP), OP(xxx), OP(xxx), OP(xxx), OP(CMP), OP(DEC), OP(xxx), // D
+			OP(CPX), OP(SBC), OP(xxx), OP(xxx), OP(CPX), OP(SBC), OP(INC), OP(xxx), OP(INX), OP(SBC), OP(NOP), OP(xxx), OP(CPX), OP(SBC), OP(INC), OP(xxx), // E
+			OP(BEQ), OP(SBC), OP(xxx), OP(xxx), OP(xxx), OP(SBC), OP(INC), OP(xxx), OP(SED), OP(SBC), OP(xxx), OP(xxx), OP(xxx), OP(SBC), OP(INC), OP(xxx), // F
+			// clang-format on
+		};
 
-static_assert(size(ops) == 256);
+		static_assert(size(ops) == 256);
+	};
 
 #undef OP
 
-namespace nesem
-{
 	// Pseudo instructions used to distinguish other events
 	constexpr int startup_sequence = -1;
 	constexpr int nmi_sequence = -2;
@@ -95,7 +100,7 @@ namespace nesem
 
 	std::string decompile(U8 instruction, NesBus &bus, U16 pc) noexcept
 	{
-		std::string_view name = ops[instruction].name;
+		std::string_view name = CpuOps::ops[instruction].name;
 
 		switch (instruction)
 		{
@@ -335,7 +340,7 @@ namespace nesem
 	// format the instruction in an nestest.log compatible format
 	std::string format_nestest(U8 instruction, NesBus &bus, U16 pc) noexcept
 	{
-		std::string_view name = ops[instruction].name;
+		std::string_view name = CpuOps::ops[instruction].name;
 
 		//                      PC     INS   DISASM
 		constexpr auto fmt = "{0:04X}  {1:9} {2:31}";
@@ -769,7 +774,7 @@ namespace nesem
 		else
 		{
 			// instructions return true when completed, so reset the step counter
-			if (std::invoke(ops[instruction].op, this))
+			if (std::invoke(CpuOps::ops[instruction].op, this))
 			{
 				step = 0;
 				instruction_complete = true;
