@@ -218,12 +218,12 @@ namespace nesem::mappers
 		{
 			// 8k mode
 			// shifter value in 4k chunks, so ignore low bit to bring it to 8k
-			chr_bank_0 = (reg.chr_0 & 0b11110) % chr_banks(rom);
+			chr_bank_0 = U8((reg.chr_0 & 0b11110) % chr_banks(rom));
 		}
 		else
 		{
-			chr_bank_0 = reg.chr_0 % (chr_banks(rom) * 2);
-			chr_bank_1 = reg.chr_1 % (chr_banks(rom) * 2);
+			chr_bank_0 = U8(reg.chr_0 % (chr_banks(rom) * 2));
+			chr_bank_1 = U8(reg.chr_1 % (chr_banks(rom) * 2));
 		}
 
 		// calculate the prg_bank we will use. By default, it uses the first 4 bits written to prg,
@@ -247,19 +247,19 @@ namespace nesem::mappers
 			{
 				// fix first bank at $8000 and switch 16 KB bank at $C000;
 				prg_bank_0 = 0;
-				prg_bank_1 = prg_bank % prgrom_banks(rom);
+				prg_bank_1 = U8(prg_bank % prgrom_banks(rom));
 			}
 			else if (mode == 1)
 			{
 				// fix last bank at $C000 and switch 16 KB bank at $8000)
-				prg_bank_0 = prg_bank % prgrom_banks(rom);
+				prg_bank_0 = U8(prg_bank % prgrom_banks(rom));
 				prg_bank_1 = U8(prgrom_banks(rom) - 1);
 			}
 		}
 		else
 		{
 			// 32k mode - switch 32 KB at $8000, ignoring low bit of bank number
-			prg_bank_0 = (prg_bank % prgrom_banks(rom)) >> 1;
+			prg_bank_0 = U8((prg_bank % prgrom_banks(rom)) >> 1);
 		}
 	}
 }

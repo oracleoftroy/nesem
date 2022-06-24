@@ -325,10 +325,6 @@ namespace app
 	{
 		// renderer.fill({});
 		renderer.fill({22, 22, 22});
-
-		auto size = nes_screen_texture.size();
-		auto canvas_size = renderer.size();
-
 		renderer.blit({0, 0}, nes_screen_texture, std::nullopt, {nes_scale, nes_scale});
 
 		side_bar.render(renderer, debug_mode);

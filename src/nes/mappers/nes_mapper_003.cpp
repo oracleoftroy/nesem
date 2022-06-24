@@ -39,7 +39,7 @@ namespace nesem::mappers
 		}
 
 		// writes, regardless of the address, adjust the current CHR-ROM bank we are reading from
-		bank_select = (value & 0x03) % chr_banks(rom);
+		bank_select = U8((value & 0x03) % chr_banks(rom));
 	}
 
 	std::optional<U8> NesMapper003::ppu_read(U16 &addr) noexcept

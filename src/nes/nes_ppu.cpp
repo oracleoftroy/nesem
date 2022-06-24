@@ -171,10 +171,10 @@ namespace nesem
 	{
 		return {
 			.fine_x = reg.fine_x,
-			.fine_y = U16((reg.vram_addr & vram_fine_y_mask) >> vram_fine_y_shift),
-			.coarse_x = U16((reg.vram_addr & vram_coarse_x_mask) >> vram_coarse_x_shift),
-			.coarse_y = U16((reg.vram_addr & vram_coarse_y_mask) >> vram_coarse_y_shift),
-			.nt = U16((reg.vram_addr & vram_nametable_mask) >> vram_nametable_shift),
+			.fine_y = U8((reg.vram_addr & vram_fine_y_mask) >> vram_fine_y_shift),
+			.coarse_x = U8((reg.vram_addr & vram_coarse_x_mask) >> vram_coarse_x_shift),
+			.coarse_y = U8((reg.vram_addr & vram_coarse_y_mask) >> vram_coarse_y_shift),
+			.nt = U8((reg.vram_addr & vram_nametable_mask) >> vram_nametable_shift),
 		};
 	}
 
@@ -188,7 +188,7 @@ namespace nesem
 		return active_sprites;
 	}
 
-	U8 NesPatternTable::read_pixel(int x, int y, U8 palette) const noexcept
+	U8 NesPatternTable::read_pixel(U16 x, U16 y, U8 palette) const noexcept
 	{
 		auto x_shift = (x & 0b11) << 1;
 		auto x_pos = x >> 2;
@@ -197,7 +197,7 @@ namespace nesem
 		return (palette << 2) | ((table[index] >> x_shift) & 0b11);
 	}
 
-	void NesPatternTable::write_pixel(int x, int y, U8 entry) noexcept
+	void NesPatternTable::write_pixel(U16 x, U16 y, U8 entry) noexcept
 	{
 		auto x_pos = x >> 2;
 		auto index = y * 16 * 2 + x_pos;
@@ -237,12 +237,12 @@ namespace nesem
 		return result;
 	}
 
-	U8 NesNameTable::read_pixel(int x, int y) const noexcept
+	U8 NesNameTable::read_pixel(U16 x, U16 y) const noexcept
 	{
 		return table[y * 256 + x];
 	}
 
-	void NesNameTable::write_pixel(int x, int y, U8 palette) noexcept
+	void NesNameTable::write_pixel(U16 x, U16 y, U8 palette) noexcept
 	{
 		table[y * 256 + x] = palette;
 	}

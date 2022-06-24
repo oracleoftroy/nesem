@@ -17,16 +17,16 @@ namespace nesem
 		// thus, a 16x16 grid of 8x2 bytes
 		std::array<U8, 16 * 16 * 8 * 2> table;
 
-		U8 read_pixel(int x, int y, U8 palette) const noexcept;
-		void write_pixel(int x, int y, U8 entry) noexcept;
+		U8 read_pixel(U16 x, U16 y, U8 palette) const noexcept;
+		void write_pixel(U16 x, U16 y, U8 entry) noexcept;
 	};
 
 	struct NesNameTable
 	{
 		std::array<U8, 256 * 240> table;
 
-		U8 read_pixel(int x, int y) const noexcept;
-		void write_pixel(int x, int y, U8 palette) noexcept;
+		U8 read_pixel(U16 x, U16 y) const noexcept;
+		void write_pixel(U16 x, U16 y, U8 palette) noexcept;
 	};
 
 	// models a 2C02
@@ -211,9 +211,9 @@ namespace nesem
 
 		struct ScrollInfo
 		{
-			int fine_x, fine_y;
-			int coarse_x, coarse_y;
-			int nt;
+			U8 fine_x, fine_y;
+			U8 coarse_x, coarse_y;
+			U8 nt;
 		};
 
 		int current_scanline() noexcept;

@@ -24,7 +24,6 @@ namespace app
 			return;
 
 		auto [canvas, lock] = texture.lock();
-		auto canvas_size = canvas.size();
 		canvas.fill({22, 22, 22});
 
 		draw_string(canvas, {255, 255, 255}, fmt::format("scanline: {:>3}    cycle: {:>3}", nes.ppu().current_scanline(), nes.ppu().current_cycle()), {2, 2});
@@ -36,7 +35,7 @@ namespace app
 
 		auto current_palette = app.get_current_palette();
 
-		for (int index = 0; index < size(pattern_tables); ++index)
+		for (size_t index = 0; index < size(pattern_tables); ++index)
 		{
 			{
 				auto [pt_canvas, pt_lock] = nes_pattern_textures[index].lock();
@@ -51,7 +50,7 @@ namespace app
 				}
 			}
 
-			auto pos = cm::Point2{128 * index, 0};
+			auto pos = cm::Point2{128 * static_cast<int>(index), 0};
 			nes_pattern_pos[index] = {area.x + pos.x, area.h - 240 * 2 - 128};
 		}
 
@@ -162,7 +161,7 @@ namespace app
 			int index = 0;
 			for (const auto &s : nes.ppu().get_active_sprites())
 			{
-				auto col = int(index++ % 2);
+				auto col = index++ % 2;
 				if (col == 0)
 					pos.y += 10;
 
@@ -170,6 +169,10 @@ namespace app
 			}
 		}
 		break;
+
+		case DebugMode::none:
+			// nothing to do, here so that if we add a new mode, we can get a warning for unhandled cases
+			break;
 		}
 	}
 
@@ -178,12 +181,12 @@ namespace app
 		if (mode != DebugMode::none)
 		{
 			renderer.blit(top_left(area), texture);
-			for (auto i = 0; i < size(nes_pattern_textures); ++i)
+			for (size_t i = 0; i < size(nes_pattern_textures); ++i)
 				renderer.blit(nes_pattern_pos[i], nes_pattern_textures[i]);
 
 			if (mode == DebugMode::bg_info)
 			{
-				for (auto i = 0; i < size(nes_nametable_textures); ++i)
+				for (size_t i = 0; i < size(nes_nametable_textures); ++i)
 					renderer.blit(nes_nametable_pos[i], nes_nametable_textures[i]);
 			}
 		}
