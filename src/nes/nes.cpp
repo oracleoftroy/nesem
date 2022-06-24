@@ -12,8 +12,8 @@ namespace nesem
 		: on_error(std::move(settings.error)),
 		  draw(std::move(settings.draw)),
 		  frame_ready(std::move(settings.frame_ready)),
-		  player1(std::move(settings.player1)),
-		  player2(std::move(settings.player2)),
+		  player1_input(std::move(settings.player1)),
+		  player2_input(std::move(settings.player2)),
 		  nes_bus(this),
 		  nes_cpu(this),
 		  nes_ppu(this),
@@ -96,7 +96,7 @@ namespace nesem
 		return nes_apu.irq();
 	}
 
-	void Nes::screen_out(int x, int y, int color_index) noexcept
+	void Nes::screen_out(int x, int y, U8 color_index) noexcept
 	{
 		if (draw) [[likely]]
 			draw(x, y, color_index);
@@ -108,20 +108,20 @@ namespace nesem
 			frame_ready();
 	}
 
-	U8 Nes::poll_player1() noexcept
+	NesInputDevice &Nes::player1() noexcept
 	{
-		if (player1)
-			return static_cast<U8>(player1());
+		if (!player1_input)
+			LOG_ERROR("No input device for player 1?");
 
-		return 0;
+		return *player1_input;
 	}
 
-	U8 Nes::poll_player2() noexcept
+	NesInputDevice &Nes::player2() noexcept
 	{
-		if (player2)
-			return static_cast<U8>(player2());
+		if (!player2_input)
+			LOG_ERROR("No input device for player 2?");
 
-		return 0;
+		return *player2_input;
 	}
 
 	NesBus &Nes::bus() noexcept

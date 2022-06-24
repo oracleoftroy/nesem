@@ -5,6 +5,7 @@
 #include "nes_cartridge.hpp"
 #include "nes_clock.hpp"
 #include "nes_cpu.hpp"
+#include "nes_input_device.hpp"
 #include "nes_ppu.hpp"
 #include "nes_rom_loader.hpp"
 
@@ -15,8 +16,8 @@ namespace nesem
 		ErrorFn error;
 		DrawFn draw;
 		FrameReadyFn frame_ready;
-		PollInputFn player1;
-		PollInputFn player2 = {};
+		std::unique_ptr<NesInputDevice> player1 = make_null_input();
+		std::unique_ptr<NesInputDevice> player2 = make_null_input();
 		std::filesystem::path nes20db_filename = {};
 	};
 
@@ -39,11 +40,11 @@ namespace nesem
 		// returns true if a component is signaling an interrupt
 		bool interrupt_requested() noexcept;
 
-		void screen_out(int x, int y, int color_index) noexcept;
+		void screen_out(int x, int y, U8 color_index) noexcept;
 		void frame_complete() noexcept;
 
-		U8 poll_player1() noexcept;
-		U8 poll_player2() noexcept;
+		NesInputDevice &player1() noexcept;
+		NesInputDevice &player2() noexcept;
 
 		NesBus &bus() noexcept;
 		NesCpu &cpu() noexcept;
@@ -54,8 +55,8 @@ namespace nesem
 		ErrorFn on_error;
 		DrawFn draw;
 		FrameReadyFn frame_ready;
-		PollInputFn player1;
-		PollInputFn player2;
+		std::unique_ptr<NesInputDevice> player1_input;
+		std::unique_ptr<NesInputDevice> player2_input;
 
 		NesBus nes_bus;
 		NesCpu nes_cpu;

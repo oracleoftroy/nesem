@@ -13,6 +13,7 @@ add_library(
 	"nes_cpu.cpp"
 	"nes_cpu.hpp"
 	"nes_cpu_ops.hpp"
+	"nes_input_device.hpp"
 	"nes_ppu.cpp"
 	"nes_ppu.hpp"
 	"nes_rom_loader.cpp"

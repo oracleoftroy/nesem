@@ -58,7 +58,8 @@ namespace app
 			  .error = std::bind_front(&NesApp::on_error, this),
 			  .draw = std::bind_front(&NesApp::on_nes_pixel, this),
 			  .frame_ready = std::bind_front(&NesApp::on_nes_frame_ready, this),
-			  .player1 = std::bind_front(&NesApp::read_controller, this, std::ref(app)),
+			  .player1 = std::make_unique<nesem::NesController>(std::bind_front(&NesApp::read_controller, this, std::ref(app))),
+			  .player2 = std::make_unique<nesem::NesInputDevice>(std::bind_front(&NesApp::read_zapper, this, std::ref(app))),
 			  .nes20db_filename = find_file(R"(data/nes20db.xml)"),
 		  })
 	{
@@ -101,7 +102,6 @@ namespace app
 		{ // setup screen areas
 			// pre-measure rects for the different areas of the screen
 			auto size = app.renderer_size();
-			auto nes_resolution = cm::Size{256, 240};
 			auto nes_area = rect({0, 0}, nes_resolution * nes_scale);
 
 			auto side_bar_size = cm::Size{size.w - nes_area.w, size.h};
@@ -119,9 +119,6 @@ namespace app
 		// extra stuff that should mostly go away....?
 
 		nes_screen_texture = app.create_texture({256, 240});
-		nes_pending_texture = app.create_texture({256, 240});
-
-		nes_screen = nes_pending_texture.unsafe_lock();
 
 		load_rom(find_file(R"(data/nestest.nes)").string());
 	}
@@ -167,19 +164,8 @@ namespace app
 		system_break = enable;
 		step = nesem::NesClockStep::None;
 
-		if (system_break)
-		{
-			// we take control of the screen when stepping
-			nes_pending_texture.unsafe_unlock();
-			std::swap(nes_pending_texture, nes_screen_texture);
-			nes_screen = std::nullopt;
-		}
-		else
-		{
-			// restore normal frame handling
-			nes_screen = nes_pending_texture.unsafe_lock();
+		if (!system_break)
 			overlay.hide();
-		}
 
 		bottom_bar.update(system_break, rom_name);
 	}
@@ -324,19 +310,13 @@ namespace app
 				nes.tick(deltatime);
 				side_bar.update(debug_mode, nes, *this);
 			}
-			else
+			else if (step != None)
 			{
-				auto [screen, lock] = nes_screen_texture.lock();
-				nes_screen = std::move(screen);
+				nes.step(step);
+				side_bar.update(debug_mode, nes, *this);
+				step = None;
 
-				if (step != None)
-				{
-					nes.step(step);
-					side_bar.update(debug_mode, nes, *this);
-					step = None;
-				}
-
-				nes_screen = std::nullopt;
+				draw_screen();
 			}
 		}
 	}
@@ -357,35 +337,34 @@ namespace app
 		controller_overlay.render(renderer);
 	}
 
-	void NesApp::on_nes_pixel(int x, int y, int color_index) noexcept
+	void NesApp::on_nes_pixel(int x, int y, nesem::U8 color_index) noexcept
 	{
-		if (!nes_screen) [[unlikely]]
-		{
-			LOG_WARN("nes_screen not locked!");
-			return;
-		}
-
-		nes_screen->draw_point(nes_colors[color_index], {x, y});
+		nes_screen[y * nes_resolution.w + x] = color_index;
 	}
 
 	void NesApp::on_nes_frame_ready() noexcept
 	{
+		// update zapper info
+		if (triggered_frame_counter > 0)
+			--triggered_frame_counter;
+
 		// not that break is unlikely per se, but when we are running at full speed, we want this to be as fast as possible
 		if (system_break) [[unlikely]]
 			return;
 
-		if (!nes_screen) [[unlikely]]
-		{
-			LOG_WARN("nes_screen not locked!");
-			return;
-		}
-
-		nes_pending_texture.unsafe_unlock();
-		std::swap(nes_pending_texture, nes_screen_texture);
-		nes_screen = nes_pending_texture.unsafe_lock();
+		draw_screen();
 	}
 
-	nesem::Buttons NesApp::read_controller(ui::App &app)
+	void NesApp::draw_screen()
+	{
+		auto [canvas, lock] = nes_screen_texture.lock();
+
+		std::ranges::transform(nes_screen, canvas.ptr(), [this, format = canvas.format()](nesem::U8 index) {
+			return to_pixel(format, nes_colors[index]);
+		});
+	}
+
+	nesem::U8 NesApp::read_controller(ui::App &app)
 	{
 		using enum nesem::Buttons;
 		auto result = None;
@@ -417,7 +396,78 @@ namespace app
 			result &= ~(Left | Right);
 
 		controller_overlay.update(result);
+		return static_cast<nesem::U8>(result);
+	}
+
+	nesem::U8 NesApp::read_zapper(ui::App &app)
+	{
+		// output
+		// bits xxx43xxx
+		//         ^^--- light sensed (0 sensed, 1 not sensed)
+		//         L---- trigger pulled (1 pulled, 0 released)
+		nesem::U8 result = 0;
+
+		bool mouse_down = app.mouse_down(1);
+
+		// when trigger is pulled, hold trigger high for several frames
+		// nesdev indicates that "most existing zapper games ... usually fire on a transition from 1 to 0."
+		// also nesdev:
+		// "The official Zapper's trigger returns 0 while the trigger is fully open, 1 while it is halfway in, and 0 again after it has been pulled all the way to where it goes clunk.
+		// "The large capacitor (10µF) inside the Zapper when combined with the 10kΩ pullup inside the console means that it will take approximately 100ms to change to "released" after the trigger has been fully pulled."
+		// 100ms gives about a 6 frame delay between the trigger going high and low again
+		// Using a smaller delay for less input lag
+		constexpr auto frame_delay = 2;
+
+		if (triggered_frame_counter == 0 && !mouse_down)
+			triggered_frame_counter = -1;
+		else if (triggered_frame_counter == -1 && mouse_down)
+			triggered_frame_counter = frame_delay;
+
+		if (triggered_frame_counter > 0)
+			result |= (1 << 4);
+
+		auto pos = app.mouse_position() / nes_scale;
+
+		// bit goes low if we detect light as the ppu is rendering around our mouse position
+		if (!sense_light(pos))
+			result |= (1 << 3);
+
 		return result;
 	}
 
+	bool NesApp::sense_light(cm::Point2i pos) noexcept
+	{
+		// no light if cursor isn't in nes window
+		if (pos.x < 0 || pos.x >= nes_resolution.w ||
+			pos.y < 0 || pos.y >= nes_resolution.h)
+			return false;
+
+		auto cycle = nes.ppu().current_cycle();
+		auto scanline = nes.ppu().current_scanline();
+
+		// NesDev: "The sensor may turn on and off in 10 to 25 scanlines"
+		// We will only sense light if the pixel at pos was recently rendered
+		bool nearby = (pos.y < scanline || (pos.y == scanline && pos.x < cycle)) && (scanline - pos.y) <= 18;
+
+		if (!nearby)
+			return false;
+
+		auto pixel = nes_screen[pos.y * nes_resolution.w + pos.x];
+
+		// check if we read a "light" pixel
+		return pixel == 0x20 ||
+			pixel == 0x30 ||
+			pixel == 0x31 ||
+			pixel == 0x32 ||
+			pixel == 0x33 ||
+			pixel == 0x34 ||
+			pixel == 0x35 ||
+			pixel == 0x36 ||
+			pixel == 0x37 ||
+			pixel == 0x38 ||
+			pixel == 0x39 ||
+			pixel == 0x3a ||
+			pixel == 0x3b ||
+			pixel == 0x3c;
+	}
 }

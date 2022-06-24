@@ -58,14 +58,14 @@ namespace nesem
 	MAKE_FLAGS_ENUM(ApuStatus);
 
 #if defined(__cpp_lib_move_only_function)
-	using DrawFn = std::move_only_function<void(int x, int y, int color_index)>;
+	using DrawFn = std::move_only_function<void(int x, int y, U8 color_index)>;
 	using FrameReadyFn = std::move_only_function<void()>;
-	using PollInputFn = std::move_only_function<Buttons()>;
+	using PollInputFn = std::move_only_function<U8()>;
 	using ErrorFn = std::move_only_function<void(std::string_view message)>;
 #else
-	using DrawFn = std::function<void(int x, int y, int color_index)>;
+	using DrawFn = std::function<void(int x, int y, U8 color_index)>;
 	using FrameReadyFn = std::function<void()>;
-	using PollInputFn = std::function<Buttons()>;
+	using PollInputFn = std::function<U8()>;
 	using ErrorFn = std::function<void(std::string_view message)>;
 #endif
 }

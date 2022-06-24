@@ -1,9 +1,9 @@
 #include "nes_bus.hpp"
 
-#include <util/logging.hpp>
-
 #include "nes.hpp"
 #include "nes_cartridge.hpp"
+
+#include <util/logging.hpp>
 
 namespace nesem
 {
@@ -58,25 +58,14 @@ namespace nesem
 			// I don't know if any games actually make use of this, but that is how the hardware behaves
 			if (poll_input)
 			{
-				controller1 = nes->poll_player1();
-				controller2 = nes->poll_player2();
+				nes->player1().poll();
+				nes->player2().poll();
 			}
 
-			// return the next button and shift our latched data one bit. 1 for button down, 0 for up. Offical controllers will return 1 if
-			auto read_controller_next = [](U8 &v) {
-				// Open bus behavior will write the high 3 bits of the address into bits 5-7. Some games (e.g. paperboy) rely on this to detect buttons
-				// see: https://wiki.nesdev.org/w/index.php?title=Open_bus_behavior
-				U8 result = 0x40 | (v & 1);
-				v >>= 1;
-				v |= 0b10000000;
-
-				return result;
-			};
-
 			if (addr == 0x4016)
-				return read_controller_next(controller1);
+				return nes->player1().read();
 			else
-				return read_controller_next(controller2);
+				return nes->player2().read();
 		}
 
 		// NES APU and I/O registers
@@ -161,8 +150,8 @@ namespace nesem
 			// It doesn't matter if we were already polling and this write keeps us in a poll mode
 			if (poll_input)
 			{
-				controller1 = nes->poll_player1();
-				controller2 = nes->poll_player2();
+				nes->player1().poll();
+				nes->player2().poll();
 			}
 
 			poll_input = (value & 1) == 1;

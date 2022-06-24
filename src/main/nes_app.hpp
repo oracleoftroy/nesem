@@ -1,4 +1,6 @@
 #pragma once
+
+#include <array>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -24,6 +26,8 @@ namespace app
 		fg_info,
 	};
 
+	constexpr auto nes_resolution = cm::Size{256, 240};
+
 	class NesApp
 	{
 	public:
@@ -40,7 +44,7 @@ namespace app
 		void on_error(std::string_view message);
 		void on_change_debug_mode(DebugMode mode);
 		void on_change_current_palette(nesem::U8 palette);
-		void on_nes_pixel(int x, int y, int color_index) noexcept;
+		void on_nes_pixel(int x, int y, nesem::U8 color_index) noexcept;
 		void on_nes_frame_ready() noexcept;
 
 		void tick(ui::App &app, ui::Renderer &canvas, double deltatime);
@@ -48,7 +52,11 @@ namespace app
 		void update(double deltatime);
 		void render(ui::Renderer &renderer);
 
-		nesem::Buttons read_controller(ui::App &app);
+		void draw_screen();
+
+		nesem::U8 read_controller(ui::App &app);
+		nesem::U8 read_zapper(ui::App &app);
+		bool sense_light(cm::Point2i pos) noexcept;
 
 		ui::Key button_a;
 		ui::Key button_b;
@@ -58,6 +66,11 @@ namespace app
 		ui::Key button_down;
 		ui::Key button_left;
 		ui::Key button_right;
+
+		// zapper state
+
+		// number of frames remaining for the zapper to be in triggered state.
+		int triggered_frame_counter = -1;
 
 		std::array<cm::Color, 64> nes_colors{
 			cm::Color{84,  84,  84 },
@@ -128,10 +141,8 @@ namespace app
 
 		int nes_scale = 3;
 
-		std::optional<ui::Canvas> nes_screen;
-
+		std::array<nesem::U8, nes_resolution.w * nes_resolution.h> nes_screen;
 		ui::Texture nes_screen_texture;
-		ui::Texture nes_pending_texture;
 
 		DebugMode debug_mode = DebugMode::none;
 		ui::Key debug_mode_none;
