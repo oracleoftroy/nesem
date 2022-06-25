@@ -94,7 +94,7 @@ constexpr bool operator!(E lhs) noexcept
 template <util::flags_enum E>
 constexpr bool all(E value, E flags) noexcept
 {
-	return value & flags == flags;
+	return (value & flags) == flags;
 }
 
 template <util::flags_enum E>
