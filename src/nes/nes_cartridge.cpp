@@ -2,8 +2,6 @@
 
 #include <utility>
 
-#include <util/logging.hpp>
-
 #include "mappers/nes_mapper_000.hpp"
 #include "mappers/nes_mapper_001.hpp"
 #include "mappers/nes_mapper_002.hpp"
@@ -11,8 +9,25 @@
 #include "mappers/nes_mapper_066.hpp"
 #include "mappers/nes_rom.hpp"
 
+#include <util/logging.hpp>
+
 namespace nesem
 {
+	NesCartridge::NesCartridge(mappers::NesRom &&rom) noexcept
+		: rom(std::move(rom))
+	{
+	}
+
+	const mappers::NesRom &NesCartridge::get_rom() noexcept
+	{
+		return rom;
+	}
+
+	bool NesCartridge::irq() noexcept
+	{
+		return irq_signaled;
+	}
+
 	std::unique_ptr<NesCartridge> load_cartridge(mappers::NesRom rom) noexcept
 	{
 		LOG_INFO("mapper: {}", mapper(rom));

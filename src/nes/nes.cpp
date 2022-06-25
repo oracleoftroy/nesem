@@ -93,7 +93,7 @@ namespace nesem
 		// signals irqs, but some mappers can request interrupts as well as I understand. It is the programmer's
 		// responsibility to figure out which device(s) signaled the interrupt and handle it appropriately.
 
-		return nes_apu.irq();
+		return (nes_cartridge && nes_cartridge->irq()) || nes_apu.irq();
 	}
 
 	void Nes::screen_out(int x, int y, U8 color_index) noexcept

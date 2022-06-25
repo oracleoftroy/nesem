@@ -11,7 +11,7 @@ namespace nesem::mappers
 	{
 	public:
 		static constexpr int ines_mapper = 1;
-		NesMapper001(NesRom &&rom) noexcept;
+		explicit NesMapper001(NesRom &&rom) noexcept;
 
 	private:
 		void reset() noexcept override;
@@ -25,7 +25,6 @@ namespace nesem::mappers
 		void load_complete(U16 addr) noexcept;
 		void update_state() noexcept;
 
-		NesRom rom;
 		std::vector<U8> prg_ram;
 
 		U8 load_counter;

@@ -9,7 +9,7 @@ namespace nesem::mappers
 	{
 	public:
 		static constexpr int ines_mapper = 0;
-		NesMapper000(NesRom &&rom) noexcept;
+		explicit NesMapper000(NesRom &&rom) noexcept;
 
 	private:
 		void reset() noexcept override;
@@ -18,7 +18,5 @@ namespace nesem::mappers
 		void cpu_write(U16 addr, U8 value) noexcept override;
 		std::optional<U8> ppu_read(U16 &addr) noexcept override;
 		bool ppu_write(U16 &addr, U8 value) noexcept override;
-
-		NesRom rom;
 	};
 }
