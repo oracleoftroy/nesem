@@ -161,6 +161,8 @@ namespace ui
 	{
 		static SdlLib init(uint32_t flags = SDL_INIT_EVERYTHING)
 		{
+			SDL_LogSetOutputFunction(on_sdl_message, nullptr);
+
 			if (SDL_Init(flags) != 0)
 			{
 				LOG_CRITICAL("Error initializing SDL: {}", SDL_GetError());
@@ -168,6 +170,98 @@ namespace ui
 			}
 
 			return SdlLib{true};
+		}
+
+		static void on_sdl_message([[maybe_unused]] void *userdata, int category, SDL_LogPriority priority, const char *message)
+		{
+			std::string_view category_str;
+			switch (category)
+			{
+			case SDL_LOG_CATEGORY_APPLICATION:
+				category_str = "application";
+				break;
+
+			case SDL_LOG_CATEGORY_ERROR:
+				category_str = "error";
+				break;
+
+			case SDL_LOG_CATEGORY_ASSERT:
+				category_str = "assert";
+				break;
+
+			case SDL_LOG_CATEGORY_SYSTEM:
+				category_str = "system";
+				break;
+
+			case SDL_LOG_CATEGORY_AUDIO:
+				category_str = "audio";
+				break;
+
+			case SDL_LOG_CATEGORY_VIDEO:
+				category_str = "video";
+				break;
+
+			case SDL_LOG_CATEGORY_RENDER:
+				category_str = "render";
+				break;
+
+			case SDL_LOG_CATEGORY_INPUT:
+				category_str = "input";
+				break;
+
+			case SDL_LOG_CATEGORY_TEST:
+				category_str = "test";
+				break;
+
+			case SDL_LOG_CATEGORY_RESERVED1:
+			case SDL_LOG_CATEGORY_RESERVED2:
+			case SDL_LOG_CATEGORY_RESERVED3:
+			case SDL_LOG_CATEGORY_RESERVED4:
+			case SDL_LOG_CATEGORY_RESERVED5:
+			case SDL_LOG_CATEGORY_RESERVED6:
+			case SDL_LOG_CATEGORY_RESERVED7:
+			case SDL_LOG_CATEGORY_RESERVED8:
+			case SDL_LOG_CATEGORY_RESERVED9:
+			case SDL_LOG_CATEGORY_RESERVED10:
+				category_str = "reserved";
+				break;
+
+			case SDL_LOG_CATEGORY_CUSTOM:
+			default: // all other categories should fall in the custom range
+				category_str = "custom";
+				break;
+			}
+
+			spdlog::level::level_enum level;
+			switch (priority)
+			{
+			case SDL_LOG_PRIORITY_VERBOSE:
+				level = spdlog::level::trace;
+				break;
+
+			case SDL_LOG_PRIORITY_DEBUG:
+				level = spdlog::level::debug;
+				break;
+
+			case SDL_LOG_PRIORITY_INFO:
+				level = spdlog::level::info;
+				break;
+
+			case SDL_LOG_PRIORITY_WARN:
+				level = spdlog::level::warn;
+				break;
+
+			case SDL_LOG_PRIORITY_ERROR:
+				level = spdlog::level::err;
+				break;
+
+			default:
+			case SDL_LOG_PRIORITY_CRITICAL:
+				level = spdlog::level::critical;
+				break;
+			}
+
+			spdlog::log(level, "SDL {}: {}", category_str, message);
 		}
 
 		~SdlLib()
