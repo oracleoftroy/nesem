@@ -5,17 +5,7 @@
 		"catch2",
 		"cryptopp",
 		"scottt-debugbreak",
-		{
-			"name": "sdl2",
-			"features": [
-				"x11"
-			],
-			"platform": "!windows"
-		},
-		{
-			"name": "sdl2",
-			"platform": "windows"
-		},
+		"sdl2",
 		"spdlog",
 		"tinyxml2"
 	]
