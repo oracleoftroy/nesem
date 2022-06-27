@@ -32,7 +32,9 @@ namespace ui
 
 #if defined(__cpp_lib_move_only_function)
 		// callback function, called each tick
-		std::move_only_function<void(App &app, Renderer &renderer, double deltatime)> on_update;
+		// I don't think reference_wrapper should be needed, but GCC 12 doesn't like incomplete types.
+		// TODO: remove when GCC is fixed or delete these comments if not a library bug
+		std::move_only_function<void(std::reference_wrapper<App> app, std::reference_wrapper<Renderer> renderer, double deltatime)> on_update;
 
 		// callback for handling dropped file
 		std::move_only_function<void(std::string_view filename)> on_file_drop;
