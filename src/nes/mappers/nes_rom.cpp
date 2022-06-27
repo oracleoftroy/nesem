@@ -29,20 +29,28 @@ namespace nesem::mappers
 		return ines_2::MirroringMode::horizontal;
 	}
 
-	int prgrom_banks(const NesRom &rom) noexcept
+	int prgrom_banks(const NesRom &rom, BankSize bank_size) noexcept
 	{
 		if (rom.v2)
-			return int(rom.v2->prgrom.size / 16384);
+			return int(rom.v2->prgrom.size / bank_size);
 
-		return rom.v1.prg_rom_size;
+		return (rom.v1.prg_rom_size * bank_16k) / bank_size;
 	}
 
-	int chrrom_banks(const NesRom &rom) noexcept
+	int chrrom_banks(const NesRom &rom, BankSize bank_size) noexcept
 	{
 		if (rom.v2)
-			return int(rom.v2->chrrom.has_value() ? (rom.v2->chrrom->size / 8192) : 0);
+			return int(rom.v2->chrrom.has_value() ? (rom.v2->chrrom->size / bank_size) : 0);
 
-		return rom.v1.chr_rom_size;
+		return (rom.v1.chr_rom_size * bank_8k) / bank_size;
+	}
+
+	int chr_banks(const NesRom &rom, BankSize bank_size) noexcept
+	{
+		if (has_chrram(rom))
+			return int(chrram_size(rom) / bank_size);
+
+		return chrrom_banks(rom, bank_size);
 	}
 
 	bool has_chrram(const NesRom &rom) noexcept
@@ -58,7 +66,7 @@ namespace nesem::mappers
 		if (rom.v2)
 			return rom.v2->chrram.has_value() ? rom.v2->chrram->size : 0;
 
-		return rom.v1.chr_rom_size == 0 ? 8192 : 0;
+		return rom.v1.chr_rom_size == 0 ? bank_8k : 0;
 	}
 
 	int mapper(const NesRom &rom) noexcept
@@ -67,13 +75,5 @@ namespace nesem::mappers
 			return rom.v2->pcb.mapper;
 
 		return rom.v1.mapper;
-	}
-
-	int chr_banks(const NesRom &rom) noexcept
-	{
-		if (has_chrram(rom))
-			return int(chrram_size(rom) / 8192);
-
-		return chrrom_banks(rom);
 	}
 }

@@ -159,16 +159,25 @@ namespace nesem::mappers
 		std::optional<ines_2::RomData> v2;
 	};
 
+	enum BankSize
+	{
+		bank_1k = 0x0400,
+		bank_2k = 0x0800,
+		bank_4k = 0x1000,
+		bank_8k = 0x2000,
+		bank_16k = 0x4000,
+		bank_32k = 0x8000,
+	};
+
 	// utility function for mappers representing physically soldered nametable maps
 	void apply_hardware_nametable_mapping(const NesRom &rom, U16 &addr) noexcept;
 	ines_2::MirroringMode mirroring_mode(const NesRom &rom) noexcept;
 
-	int prgrom_banks(const NesRom &rom) noexcept;
-	int chrrom_banks(const NesRom &rom) noexcept;
+	int prgrom_banks(const NesRom &rom, BankSize bank_size) noexcept;
+	int chrrom_banks(const NesRom &rom, BankSize bank_size) noexcept;
+	int chr_banks(const NesRom &rom, BankSize bank_size) noexcept;
 
 	bool has_chrram(const NesRom &rom) noexcept;
 	size_t chrram_size(const NesRom &rom) noexcept;
 	int mapper(const NesRom &rom) noexcept;
-
-	int chr_banks(const NesRom &rom) noexcept;
 }

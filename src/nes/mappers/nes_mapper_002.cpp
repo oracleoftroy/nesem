@@ -28,7 +28,7 @@ namespace nesem::mappers
 			return rom.prg_rom[bank_select * 0x4000 + (addr & 0x3FFF)];
 
 		// always fixed to the last 16K bank
-		return rom.prg_rom[(prgrom_banks(rom) - 1) * 0x4000 + (addr & 0x3FFF)];
+		return rom.prg_rom[(prgrom_banks(rom, bank_16k) - 1) * 0x4000 + (addr & 0x3FFF)];
 	}
 
 	void NesMapper002::cpu_write(U16 addr, U8 value) noexcept
@@ -40,7 +40,7 @@ namespace nesem::mappers
 		}
 
 		// writes, regardless of the address, adjust the current PRG-ROM bank we are reading from
-		bank_select = U8((value & 0x0F) % prgrom_banks(rom));
+		bank_select = U8((value & 0x0F) % prgrom_banks(rom, bank_16k));
 	}
 
 	std::optional<U8> NesMapper002::ppu_read(U16 &addr) noexcept

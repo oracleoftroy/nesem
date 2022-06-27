@@ -7,6 +7,7 @@
 #include <cryptopp/sha.h>
 #include <fmt/format.h>
 #include <tinyxml2.h>
+
 #include <util/logging.hpp>
 
 namespace nesem
@@ -305,15 +306,19 @@ namespace nesem
 			file.seekg(512, std::ios::cur);
 		}
 
-		std::vector<U8> prg_rom(prg_rom_size * 16384);
-		if (!file.read(reinterpret_cast<char *>(data(prg_rom)), size(prg_rom)))
+		auto result = mappers::NesRom{
+			.prg_rom = std::vector<U8>(prg_rom_size * mappers::bank_16k),
+			.chr_rom = std::vector<U8>(chr_rom_size * mappers::bank_8k),
+			.v1 = mappers::ines_1::RomData{mapper, mirroring, mirror_override, prg_rom_size, chr_rom_size, has_battery},
+		};
+
+		if (!file.read(reinterpret_cast<char *>(data(result.prg_rom)), size(result.prg_rom)))
 		{
 			LOG_WARN("Error reading PRG_ROM data");
 			return std::nullopt;
 		}
 
-		std::vector<U8> chr_rom(chr_rom_size * 8192);
-		if (!file.read(reinterpret_cast<char *>(data(chr_rom)), size(chr_rom)))
+		if (!file.read(reinterpret_cast<char *>(data(result.chr_rom)), size(result.chr_rom)))
 		{
 			LOG_WARN("Error reading CHR_ROM data");
 			return std::nullopt;
@@ -322,13 +327,7 @@ namespace nesem
 		if (has_inst_rom)
 			LOG_WARN("ROM has INST-ROM data, but we are ignoring it");
 
-		auto v2_data = find_rom_data(prg_rom, chr_rom);
-
-		auto result = mappers::NesRom{
-			std::move(prg_rom), std::move(chr_rom),
-			mappers::ines_1::RomData{mapper, mirroring, mirror_override, prg_rom_size, chr_rom_size, has_battery},
-			std::move(v2_data)
-        };
+		result.v2 = find_rom_data(result.prg_rom, result.chr_rom);
 
 		// TODO: this seems hacky, but for now, allocate space for chrram in chrrom
 		// This assumes that a cart never has both

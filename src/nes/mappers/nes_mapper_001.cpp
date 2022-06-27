@@ -26,7 +26,7 @@ namespace nesem::mappers
 		chr_bank_0 = 0;
 		chr_bank_1 = 0;
 		prg_bank_0 = 0;
-		prg_bank_1 = U8(prgrom_banks(rom) - 1);
+		prg_bank_1 = U8(prgrom_banks(rom, bank_16k) - 1);
 
 		if (rom.v2)
 		{
@@ -42,7 +42,8 @@ namespace nesem::mappers
 
 			prg_ram.resize(prg_ram_size);
 		}
-		else
+
+		if (prg_ram.empty())
 		{
 			// default to 32k.. why? because NesDev said it was a good default... but we only write here if in the 8k range of 6000-7FFF?
 			prg_ram.resize(32 * 1024);
@@ -218,12 +219,12 @@ namespace nesem::mappers
 		{
 			// 8k mode
 			// shifter value in 4k chunks, so ignore low bit to bring it to 8k
-			chr_bank_0 = U8((reg.chr_0 & 0b11110) % chr_banks(rom));
+			chr_bank_0 = U8((reg.chr_0 & 0b11110) % chr_banks(rom, bank_8k));
 		}
 		else
 		{
-			chr_bank_0 = U8(reg.chr_0 % (chr_banks(rom) * 2));
-			chr_bank_1 = U8(reg.chr_1 % (chr_banks(rom) * 2));
+			chr_bank_0 = U8(reg.chr_0 % chr_banks(rom, bank_4k));
+			chr_bank_1 = U8(reg.chr_1 % chr_banks(rom, bank_4k));
 		}
 
 		// calculate the prg_bank we will use. By default, it uses the first 4 bits written to prg,
@@ -231,7 +232,7 @@ namespace nesem::mappers
 		U8 prg_bank = reg.prg & 0xF;
 
 		// 512k PRG-ROM (32 banks @16k each)
-		if (prgrom_banks(rom) == 32)
+		if (prgrom_banks(rom, bank_16k) == 32)
 		{
 			auto high_bank = chr_mode == Chr::size_4k ? reg.chr_last : reg.chr_0;
 
@@ -247,19 +248,19 @@ namespace nesem::mappers
 			{
 				// fix first bank at $8000 and switch 16 KB bank at $C000;
 				prg_bank_0 = 0;
-				prg_bank_1 = U8(prg_bank % prgrom_banks(rom));
+				prg_bank_1 = U8(prg_bank % prgrom_banks(rom, bank_16k));
 			}
 			else if (mode == 1)
 			{
 				// fix last bank at $C000 and switch 16 KB bank at $8000)
-				prg_bank_0 = U8(prg_bank % prgrom_banks(rom));
-				prg_bank_1 = U8(prgrom_banks(rom) - 1);
+				prg_bank_0 = U8(prg_bank % prgrom_banks(rom, bank_16k));
+				prg_bank_1 = U8(prgrom_banks(rom, bank_16k) - 1);
 			}
 		}
 		else
 		{
 			// 32k mode - switch 32 KB at $8000, ignoring low bit of bank number
-			prg_bank_0 = U8((prg_bank % prgrom_banks(rom)) >> 1);
+			prg_bank_0 = U8(prg_bank % prgrom_banks(rom, bank_32k));
 		}
 	}
 }

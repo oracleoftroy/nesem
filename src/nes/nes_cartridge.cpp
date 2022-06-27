@@ -6,6 +6,7 @@
 #include "mappers/nes_mapper_001.hpp"
 #include "mappers/nes_mapper_002.hpp"
 #include "mappers/nes_mapper_003.hpp"
+#include "mappers/nes_mapper_004.hpp"
 #include "mappers/nes_mapper_066.hpp"
 #include "mappers/nes_rom.hpp"
 
@@ -49,8 +50,8 @@ namespace nesem
 			break;
 		}
 
-		LOG_INFO("PRG-ROM banks: {}", prgrom_banks(rom));
-		LOG_INFO("CHR-ROM banks: {}", chrrom_banks(rom));
+		LOG_INFO("PRG-ROM size: {0:X} ({0:L})", size(rom.prg_rom));
+		LOG_INFO("CHR-ROM size: {0:X} ({0:L})", size(rom.chr_rom));
 
 		switch (mapper(rom))
 		{
@@ -69,6 +70,9 @@ namespace nesem
 
 		case mappers::NesMapper003::ines_mapper:
 			return std::make_unique<mappers::NesMapper003>(std::move(rom));
+
+		case mappers::NesMapper004::ines_mapper:
+			return std::make_unique<mappers::NesMapper004>(std::move(rom));
 
 		case mappers::NesMapper066::ines_mapper:
 			return std::make_unique<mappers::NesMapper066>(std::move(rom));

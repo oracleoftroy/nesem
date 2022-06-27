@@ -24,7 +24,7 @@ namespace nesem::mappers
 		}
 
 		U16 addr_mask = 0x7FFF;
-		if (prgrom_banks(rom) == 1)
+		if (prgrom_banks(rom, bank_16k) == 1)
 			addr_mask = 0x3FFF;
 
 		return rom.prg_rom[addr & addr_mask];
