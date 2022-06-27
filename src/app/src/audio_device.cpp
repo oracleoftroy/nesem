@@ -5,6 +5,7 @@
 #include <numbers>
 
 #include <SDL2/SDL_audio.h>
+
 #include <util/logging.hpp>
 
 namespace ui
@@ -14,9 +15,21 @@ namespace ui
 	public:
 		AudioCore(SDL_AudioSpec &spec, bool &success) noexcept
 		{
+			for (int i = 0, len = SDL_GetNumAudioDevices(false); i < len; ++i)
+			{
+				LOG_INFO("SDL Audio Device #{}: {}", i, SDL_GetAudioDeviceName(i, false));
+			}
+
+			for (int i = 0, len = SDL_GetNumAudioDrivers(); i < len; ++i)
+			{
+				LOG_INFO("SDL Audio Driver #{}: {}", i, SDL_GetAudioDriver(i));
+			}
+
 			// TODO: we can open this in the create function
 			device = SDL_OpenAudioDevice(nullptr, false, &spec, &this->spec, 0);
 			success = device > 0;
+
+			LOG_INFO("Using audio driver: {}", SDL_GetCurrentAudioDriver());
 
 			LOG_INFO("Got audio: {} Hz, {} channels, {}-bit {}", this->spec.freq, this->spec.channels, SDL_AUDIO_BITSIZE(this->spec.format),
 				SDL_AUDIO_ISFLOAT(this->spec.format)        ? "float"

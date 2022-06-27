@@ -167,10 +167,6 @@ namespace ui
 				return SdlLib{};
 			}
 
-			SDL_version version;
-			SDL_GetVersion(&version);
-			LOG_INFO("SDL Version {}.{}.{} {}", version.major, version.minor, version.patch, SDL_GetRevision());
-
 			return SdlLib{true};
 		}
 
@@ -225,7 +221,20 @@ namespace ui
 
 	App App::create(const std::string &window_title, cm::Sizei window_size, cm::Sizei pixel_size) noexcept
 	{
+		{
+			SDL_version version;
+			SDL_GetVersion(&version);
+			LOG_INFO("SDL Version {}.{}.{} {}", version.major, version.minor, version.patch, SDL_GetRevision());
+		}
+
+		for (int i = 0, len = SDL_GetNumVideoDrivers(); i != len; ++i)
+		{
+			LOG_INFO("SDL Video driver #{}: {}", i, SDL_GetVideoDriver(i));
+		}
+
 		auto sdl = SdlLib::init();
+
+		LOG_INFO("Using video driver: {}", SDL_GetCurrentVideoDriver());
 
 		auto logical_size = window_size / pixel_size;
 
@@ -236,12 +245,27 @@ namespace ui
 			return {};
 		}
 
+		for (int i = 0, len = SDL_GetNumRenderDrivers(); i != len; ++i)
+		{
+			if (SDL_RendererInfo info{};
+				SDL_GetRenderDriverInfo(i, &info) == 0)
+			{
+				LOG_INFO("SDL renderer driver #{}: {}", i, info.name);
+			}
+		}
+
 		auto renderer = SdlRenderer(SDL_CreateRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED));
 
 		if (!renderer)
 		{
 			LOG_CRITICAL("Error creating renderer: {}", SDL_GetError());
 			return {};
+		}
+
+		if (SDL_RendererInfo info{};
+			SDL_GetRendererInfo(renderer.get(), &info) == 0)
+		{
+			LOG_INFO("Using renderer driver: {}", info.name);
 		}
 
 		if (SDL_RenderSetLogicalSize(renderer.get(), logical_size.w, logical_size.h) != 0)
