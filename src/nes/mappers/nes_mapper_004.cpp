@@ -77,12 +77,15 @@ namespace nesem::mappers
 	void NesMapper004::update_irq(U16 addr) noexcept
 	{
 		// counter decremented on the rising edge of address line 12
-		auto current_a12 = (addr >> 12) & 1;
+		auto old_a12 = std::exchange(a12, (addr >> 12) & 1);
 
-		if (a12 == 0 && current_a12 == 1)
+		if (old_a12 == 0 && a12 == 1)
 		{
 			if (irq_counter == 0 || irq_reload)
+			{
 				irq_counter = irq_latch;
+				irq_reload = false;
+			}
 			else
 				--irq_counter;
 
@@ -184,11 +187,11 @@ namespace nesem::mappers
 
 	std::optional<U8> NesMapper004::ppu_read(U16 &addr) noexcept
 	{
-		update_irq(addr);
-
 		if (addr < 0x2000)
+		{
+			update_irq(addr);
 			return rom.chr_rom[map_addr_ppu(addr)];
-
+		}
 		// reading from the nametable
 		else if (addr < 0x3F00)
 		{
@@ -212,10 +215,9 @@ namespace nesem::mappers
 
 	bool NesMapper004::ppu_write(U16 &addr, U8 value) noexcept
 	{
-		update_irq(addr);
-
 		if (addr < 0x2000)
 		{
+			update_irq(addr);
 			if (has_chrram(rom))
 			{
 				rom.chr_rom[map_addr_ppu(addr)] = value;
