@@ -195,14 +195,16 @@ namespace nesem::mappers
 
 	void NesMapper001::load_complete(U16 addr) noexcept
 	{
+		auto value = load_shifter & 0b11111;
+
 		if (addr < 0xA000)
-			reg.control = load_shifter & 0b11111;
+			reg.control = value;
 		else if (addr < 0xC000)
-			reg.chr_last = reg.chr_0 = load_shifter & 0b11111;
+			reg.chr_last = reg.chr_0 = value;
 		else if (addr < 0xE000)
-			reg.chr_last = reg.chr_1 = load_shifter & 0b11111;
+			reg.chr_last = reg.chr_1 = value;
 		else // E000-FFFF
-			reg.prg = load_shifter & 0b11111;
+			reg.prg = value;
 
 		update_state();
 	}
@@ -219,7 +221,7 @@ namespace nesem::mappers
 		{
 			// 8k mode
 			// shifter value in 4k chunks, so ignore low bit to bring it to 8k
-			chr_bank_0 = U8((reg.chr_0 & 0b11110) % chr_banks(rom, bank_8k));
+			chr_bank_0 = U8((reg.chr_0 >> 1) % chr_banks(rom, bank_8k));
 		}
 		else
 		{
