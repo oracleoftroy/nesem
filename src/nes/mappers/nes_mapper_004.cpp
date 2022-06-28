@@ -9,13 +9,14 @@ namespace nesem::mappers
 	NesMapper004::NesMapper004(NesRom &&rom) noexcept
 		: NesCartridge(std::move(rom))
 	{
+		prg_ram.resize(bank_8k);
 	}
 
 	void NesMapper004::reset() noexcept
 	{
 	}
 
-	U16 NesMapper004::map_addr_cpu(U16 addr) noexcept
+	size_t NesMapper004::map_addr_cpu(U16 addr) noexcept
 	{
 		if (addr < 0x8000)
 			LOG_CRITICAL("Address is out of range!");
@@ -42,7 +43,7 @@ namespace nesem::mappers
 		return static_cast<U16>(bank * bank_8k + (addr & (bank_8k - 1)));
 	}
 
-	U16 NesMapper004::map_addr_ppu(U16 addr) noexcept
+	size_t NesMapper004::map_addr_ppu(U16 addr) noexcept
 	{
 		if (addr >= 0x2000)
 			LOG_CRITICAL("Address is out of range!");
@@ -98,12 +99,9 @@ namespace nesem::mappers
 			return 0;
 		}
 
+		// prg-ram
 		if (addr < 0x8000)
-		{
-			// prg-ram
-			// TODO: implement
-			return 0;
-		}
+			return prg_ram[addr & (bank_8k - 1)];
 
 		// address >= 8000
 		return rom.prg_rom[map_addr_cpu(addr)];
@@ -117,15 +115,15 @@ namespace nesem::mappers
 			return;
 		}
 
+		// prg-ram
 		if (addr < 0x8000)
 		{
-			// prg-ram
-			// TODO: implement
+			prg_ram[addr & (bank_8k - 1)] = value;
 			return;
 		}
 
 		// writes to
-		U16 reg = ((addr >> 13) & 0b110) | (addr & 1);
+		U16 reg = ((addr >> 12) & 0b110) | (addr & 1);
 
 		switch (reg)
 		{
@@ -152,7 +150,7 @@ namespace nesem::mappers
 			else if (index < 8)
 				bank &= 0b00111111;
 
-			bank_map[bank_select & 7] = value;
+			bank_map[index] = bank;
 			break;
 		}
 		case 2:

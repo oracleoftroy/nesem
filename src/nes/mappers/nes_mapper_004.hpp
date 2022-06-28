@@ -16,8 +16,8 @@ namespace nesem::mappers
 	private:
 		void reset() noexcept override;
 
-		U16 map_addr_cpu(U16 addr) noexcept;
-		U16 map_addr_ppu(U16 addr) noexcept;
+		size_t map_addr_cpu(U16 addr) noexcept;
+		size_t map_addr_ppu(U16 addr) noexcept;
 
 		void update_irq(U16 addr) noexcept;
 
@@ -27,6 +27,8 @@ namespace nesem::mappers
 		bool ppu_write(U16 &addr, U8 value) noexcept override;
 
 	private:
+		std::vector<U8> prg_ram;
+
 		// registers
 		U8 bank_select = 0; // 8000-9FFE even
 		std::array<U8, 8> bank_map{}; // 8001-9FFF odd
