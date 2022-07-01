@@ -74,6 +74,9 @@ namespace nesem
 					return MirroringMode::one_screen;
 				if (m == "4")
 					return MirroringMode::four_screen;
+
+				LOG_CRITICAL("Unexpected mirroring mode {}", m);
+				return MirroringMode::horizontal;
 			};
 
 			return {

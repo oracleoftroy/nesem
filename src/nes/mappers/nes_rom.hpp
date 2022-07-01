@@ -180,4 +180,6 @@ namespace nesem::mappers
 	bool has_chrram(const NesRom &rom) noexcept;
 	size_t chrram_size(const NesRom &rom) noexcept;
 	int mapper(const NesRom &rom) noexcept;
+
+	size_t prgram_size(const NesRom &rom) noexcept;
 }

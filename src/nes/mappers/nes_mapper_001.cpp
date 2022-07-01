@@ -6,10 +6,28 @@
 
 namespace nesem::mappers
 {
-	NesMapper001::NesMapper001(NesRom &&rom) noexcept
-		: NesCartridge(std::move(rom))
+	NesMapper001::NesMapper001(const Nes &nes, NesRom &&rom_data) noexcept
+		: NesCartridge(nes, std::move(rom_data))
 	{
 		CHECK(rom.v1.mapper == ines_mapper, "Wrong mapper!");
+
+		// the amount of chr data is a multiple of 8k
+		// this calculates a mask for the significant bits of chr_bank_x for a 4k bank size
+		//   8k >> 12 - 1 == 0b00001
+		//  16k >> 12 - 1 == 0b00011
+		//  32k >> 12 - 1 == 0b00111
+		//  64k >> 12 - 1 == 0b01111
+		// 128k >> 12 - 1 == 0b11111
+		chr_bank_mask = U8((size(rom.chr_rom) >> 12) - 1);
+
+		prg_ram.resize(prgram_size(rom));
+
+		// SZROM has 8K of PRG RAM, 8K of PRG NV RAM, and 16K or more of CHR.
+		if (rom.v2 && rom.v2->prgram && rom.v2->prgnvram &&
+			rom.v2->prgram->size == bank_8k && rom.v2->prgnvram->size == bank_8k &&
+			size(rom.chr_rom) >= bank_16k)
+			prg_ram_mode = PrgRamMode::SZROM;
+
 		reset();
 	}
 
@@ -17,39 +35,10 @@ namespace nesem::mappers
 	{
 		load_counter = 0;
 		load_shifter = 0;
-		reg.control = 0x0C;
-		reg.chr_0 = 0;
-		reg.chr_1 = 0;
-		reg.chr_last = 0;
-		reg.prg = 0;
-
+		control |= 0x0C;
 		chr_bank_0 = 0;
 		chr_bank_1 = 0;
-		prg_bank_0 = 0;
-		prg_bank_1 = U8(prgrom_banks(rom, bank_16k) - 1);
-
-		if (rom.v2)
-		{
-			size_t prg_ram_size = 0;
-			if (rom.v2->prgram)
-				prg_ram_size += rom.v2->prgram->size;
-
-			if (rom.v2->prgnvram)
-				prg_ram_size += rom.v2->prgnvram->size;
-
-			if (prg_ram_size > 0x2000)
-				LOG_WARN("Allocating more than 8k RAM, but we currently don't support handling that much!");
-
-			prg_ram.resize(prg_ram_size);
-		}
-
-		if (prg_ram.empty())
-		{
-			// default to 32k.. why? because NesDev said it was a good default... but we only write here if in the 8k range of 6000-7FFF?
-			prg_ram.resize(32 * 1024);
-		}
-
-		update_state();
+		prg_bank = 0;
 	}
 
 	U8 NesMapper001::cpu_read(U16 addr) noexcept
@@ -62,29 +51,13 @@ namespace nesem::mappers
 
 		if (addr < 0x8000)
 		{
-			// TODO: some carts have both battery backed and non-battery backed ram and need special handling of chr for bank switching between them
-			// currently we are treating all ram the same, but at some point we need to properly handle battery backed ram and savestates
-			if (prg_ram_enabled)
-				return prg_ram[addr & 0x1FFF];
-			else
-			{
-				LOG_WARN("PRG-RAM write while disabled?");
-				return 0;
-			}
+			if (!prg_ram.empty())
+				return prg_ram[map_prgram_addr(addr)];
+
+			return 0;
 		}
 
-		if (prg_mode == Prg::size_16k)
-		{
-			// 16k mode - low address
-			if (addr < 0xC000)
-				return rom.prg_rom[prg_bank_0 * 0x4000 + (addr & 0x3FFF)];
-
-			// 16k mode - high address
-			return rom.prg_rom[prg_bank_1 * 0x4000 + (addr & 0x3FFF)];
-		}
-
-		// 32k mode
-		return rom.prg_rom[prg_bank_0 * 0x8000 + (addr & 0x7FFF)];
+		return rom.prg_rom[map_prgrom_addr(addr)];
 	}
 
 	void NesMapper001::cpu_write(U16 addr, U8 value) noexcept
@@ -97,49 +70,45 @@ namespace nesem::mappers
 
 		if (addr < 0x8000)
 		{
-			prg_ram[addr & 0x1FFF] = value;
+			if (!prg_ram.empty())
+				prg_ram[map_prgram_addr(addr)] = value;
+
 			return;
 		}
 
-		// a value with the high bit set means reset
-		if (value & 0b1000'0000)
+		if (auto load = shift(value);
+			load.has_value())
 		{
-			load_counter = 0;
-			load_shifter = 0;
-			reg.control |= 0x0C;
-			return;
-		}
+			// we have the value we want to load, so store it
+			switch (addr & 0xE000)
+			{
+			default:
+				LOG_CRITICAL("BUG, all address ranges above $8000 should be handled, but address ${:04X} got here?", addr);
+				break;
 
-		// shift the lsb of value into place from left to right, that is, as load_counter increases
-		// from 0-4, it shifts the lsb into the 4th, 3rd, 2nd, 1st, and 0th position
-		load_shifter |= (value & 1) << load_counter;
-		++load_counter;
+			case 0x8000: // address between [8000-A000)
+				control = *load;
+				break;
 
-		if (load_counter == 5)
-		{
-			load_complete(addr);
+			case 0xA000: // address between [A000-C000)
+				chr_bank_0 = *load;
+				break;
 
-			// reset the shift register so we are ready to load more data
-			load_counter = 0;
-			load_shifter = 0;
+			case 0xC000: // address between [C000-E000)
+				chr_bank_1 = *load;
+				break;
+
+			case 0xE000: // address between [E000-10000)
+				prg_bank = *load;
+				break;
+			}
 		}
 	}
 
 	std::optional<U8> NesMapper001::ppu_read(U16 &addr) noexcept
 	{
 		if (addr < 0x2000)
-		{
-			if (chr_mode == Chr::size_4k)
-			{
-				if (addr < 0x1000)
-					return rom.chr_rom[chr_bank_0 * 0x1000 + (addr & 0x0FFF)];
-
-				return rom.chr_rom[chr_bank_1 * 0x1000 + (addr & 0x0FFF)];
-			}
-
-			// 8K mode
-			return rom.chr_rom[chr_bank_0 * 0x2000 + (addr & 0x1FFF)];
-		}
+			return rom.chr_rom[map_ppu_addr(addr)];
 
 		// reading from the nametable
 		else if (addr < 0x3F00)
@@ -154,7 +123,7 @@ namespace nesem::mappers
 		{
 			if (has_chrram(rom))
 			{
-				rom.chr_rom[addr] = value;
+				rom.chr_rom[map_ppu_addr(addr)] = value;
 				return true;
 			}
 
@@ -169,7 +138,7 @@ namespace nesem::mappers
 
 	void NesMapper001::nt_mirroring(U16 &addr) noexcept
 	{
-		auto mode = reg.control & 3;
+		auto mode = control & 3;
 		switch (mode)
 		{
 		case 0:
@@ -193,76 +162,121 @@ namespace nesem::mappers
 		}
 	}
 
-	void NesMapper001::load_complete(U16 addr) noexcept
+	std::optional<U8> NesMapper001::shift(U8 value) noexcept
 	{
-		auto value = load_shifter & 0b11111;
+		std::optional<U8> result = std::nullopt;
 
-		if (addr < 0xA000)
-			reg.control = value;
-		else if (addr < 0xC000)
-			reg.chr_last = reg.chr_0 = value;
-		else if (addr < 0xE000)
-			reg.chr_last = reg.chr_1 = value;
-		else // E000-FFFF
-			reg.prg = value;
+		// reset the shifter if the high bit is set
+		if (value & 0x80)
+		{
+			load_counter = 0;
+			load_shifter = 0;
+			control |= 0x0C;
+		}
+		else
+		{
+			load_shifter |= (value & 1) << load_counter;
+			++load_counter;
 
-		update_state();
+			if (load_counter == 5)
+			{
+				result = std::exchange(load_shifter, U8(0));
+				load_counter = 0;
+			}
+		}
+
+		return result;
 	}
 
-	void NesMapper001::update_state() noexcept
+	size_t NesMapper001::map_prgram_addr(U16 addr) const noexcept
 	{
-		prg_ram_enabled = (reg.prg & 0b10000) == 0;
-
-		prg_mode = (reg.control & 0b01000) ? Prg::size_16k : Prg::size_32k;
-		chr_mode = (reg.control & 0b10000) ? Chr::size_4k : Chr::size_8k;
-
-		// update CHR-ROM banks
-		if (chr_mode == Chr::size_8k)
+		if (addr < 0x6000 || addr >= 0x8000) [[unlikely]]
 		{
-			// 8k mode
-			// shifter value in 4k chunks, so ignore low bit to bring it to 8k
-			chr_bank_0 = U8((reg.chr_0 >> 1) % chr_banks(rom, bank_8k));
+			LOG_CRITICAL("BUG, this should only be called with prg ram addresses, but was called with {:04X}", addr);
+			return 0;
+		}
+
+		size_t bank = 0;
+
+		if (prg_ram_mode == PrgRamMode::SZROM)
+			bank = (chr_bank_0 >> 4) & 1;
+		else if (size(prg_ram) == bank_16k)
+			bank = (chr_bank_0 >> 3) & 1;
+		else if (size(prg_ram) == bank_32k)
+			bank = (chr_bank_0 >> 2) & 3;
+
+		return bank * bank_8k + (addr & (bank_8k - 1));
+	}
+
+	size_t NesMapper001::map_prgrom_addr(U16 addr) const noexcept
+	{
+		if (addr < 0x8000) [[unlikely]]
+		{
+			LOG_CRITICAL("BUG, this should only be called with prg rom addresses, but was called with {:04X}", addr);
+			return 0;
+		}
+
+		auto bank_mode = (control >> 2) & 3;
+		auto bank = prg_bank & 0b01111;
+
+		// prg_bank can address up to 256k. A 512k cart stores an extra bit in chr_bank_0 and chr_bank_1.
+		// NesDev wiki indicates that a game should always store the same value in both bits, so we'll
+		// assume it is always safe to just use chr_bank_0
+
+		// 512k prg-rom
+		if (size(rom.prg_rom) == 0x80000)
+			bank |= (chr_bank_0 & 0b10000);
+
+		switch (bank_mode)
+		{
+		default:
+			LOG_CRITICAL("This should never happen!");
+			return 0;
+
+		case 0:
+		case 1:
+			//	32k at $8000
+			bank >>= 1;
+			return bank * bank_32k + (addr & (bank_32k - 1));
+
+			//  2: fix first bank at $8000 and switch 16 KB bank at $C000;
+		case 2:
+			if (addr < 0xC000)
+				bank = 0;
+
+			return bank * bank_16k + (addr & (bank_16k - 1));
+
+			//  3: fix last bank at $C000 and switch 16 KB bank at $8000)
+		case 3:
+
+			if (addr >= 0xC000)
+				bank = prgrom_banks(rom, bank_16k) - 1;
+
+			return bank * bank_16k + (addr & (bank_16k - 1));
+		}
+	}
+
+	size_t NesMapper001::map_ppu_addr(U16 addr) const noexcept
+	{
+		if (addr >= 0x2000) [[unlikely]]
+		{
+			LOG_CRITICAL("BUG, this should only be called with chr rom/ram addresses, but was called with {:04X}", addr);
+			return 0;
+		}
+
+		auto bank_mode = (control >> 4) & 1;
+
+		if (bank_mode == 0)
+		{
+			auto bank = (chr_bank_0 & chr_bank_mask) >> 1;
+			return bank * bank_8k + (addr & (bank_8k - 1));
 		}
 		else
 		{
-			chr_bank_0 = U8(reg.chr_0 % chr_banks(rom, bank_4k));
-			chr_bank_1 = U8(reg.chr_1 % chr_banks(rom, bank_4k));
-		}
+			auto bank = addr >= 0x1000 ? chr_bank_1 : chr_bank_0;
+			bank &= chr_bank_mask;
 
-		// calculate the prg_bank we will use. By default, it uses the first 4 bits written to prg,
-		// but larger carts use extra bits written to the chr registers
-		U8 prg_bank = reg.prg & 0xF;
-
-		// 512k PRG-ROM (32 banks @16k each)
-		if (prgrom_banks(rom, bank_16k) == 32)
-		{
-			auto high_bank = chr_mode == Chr::size_4k ? reg.chr_last : reg.chr_0;
-
-			// 512kb carts use bit 5 of chr reg to select page
-			prg_bank |= (high_bank & 0x10);
-		}
-
-		// update PRG-ROM
-		if (prg_mode == Prg::size_16k)
-		{
-			auto mode = (reg.control >> 2) & 0x01;
-			if (mode == 0)
-			{
-				// fix first bank at $8000 and switch 16 KB bank at $C000;
-				prg_bank_0 = 0;
-				prg_bank_1 = U8(prg_bank % prgrom_banks(rom, bank_16k));
-			}
-			else if (mode == 1)
-			{
-				// fix last bank at $C000 and switch 16 KB bank at $8000)
-				prg_bank_0 = U8(prg_bank % prgrom_banks(rom, bank_16k));
-				prg_bank_1 = U8(prgrom_banks(rom, bank_16k) - 1);
-			}
-		}
-		else
-		{
-			// 32k mode - switch 32 KB at $8000, ignoring low bit of bank number
-			prg_bank_0 = U8(prg_bank % prgrom_banks(rom, bank_32k));
+			return bank * bank_4k + (addr & (bank_4k - 1));
 		}
 	}
 }

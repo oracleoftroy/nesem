@@ -147,6 +147,7 @@ namespace nesem
 		reg.fine_x = 0;
 		reg.ppudata = 0;
 
+		tick = 0;
 		frame = 0;
 		cycle = 0;
 		scanline = 0;
@@ -157,12 +158,17 @@ namespace nesem
 		this->cartridge = cart;
 	}
 
-	int NesPpu::current_scanline() noexcept
+	U64 NesPpu::current_tick() const noexcept
+	{
+		return tick;
+	}
+
+	int NesPpu::current_scanline() const noexcept
 	{
 		return scanline;
 	}
 
-	int NesPpu::current_cycle() noexcept
+	int NesPpu::current_cycle() const noexcept
 	{
 		return cycle;
 	}
@@ -552,6 +558,8 @@ namespace nesem
 		}
 
 		// increment counters
+		++tick;
+
 		if (++cycle > 340)
 		{
 			cycle = 0;

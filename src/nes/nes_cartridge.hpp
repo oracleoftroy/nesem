@@ -8,10 +8,12 @@
 
 namespace nesem
 {
+	class Nes;
+
 	class NesCartridge
 	{
 	public:
-		explicit NesCartridge(mappers::NesRom &&rom) noexcept;
+		explicit NesCartridge(const Nes &nes, mappers::NesRom &&rom) noexcept;
 
 		virtual ~NesCartridge() = default;
 
@@ -27,9 +29,10 @@ namespace nesem
 		bool irq() noexcept;
 
 	protected:
+		const Nes *nes = nullptr;
 		mappers::NesRom rom;
 		bool irq_signaled = false;
 	};
 
-	std::unique_ptr<NesCartridge> load_cartridge(mappers::NesRom rom) noexcept;
+	std::unique_ptr<NesCartridge> load_cartridge(const Nes &nes, mappers::NesRom rom) noexcept;
 }

@@ -170,9 +170,10 @@ namespace nesem
 
 		NesCartridge *cartridge = nullptr;
 
-		U64 frame = 0;
-		int cycle = 0;
-		int scanline = 0;
+		U64 tick = 0; // number of times PPU has been clocked since last reset
+		U64 frame = 0; // number of full frames completed
+		int cycle = 0; // current cycle within the current scanline (roughly acts as an x coordinate)
+		int scanline = 0; // current scanline (roughly acts as a y coordinate)
 
 		// buffer for read/write during rendering
 		U8 next_tile_id = 0;
@@ -216,8 +217,9 @@ namespace nesem
 			U8 nt;
 		};
 
-		int current_scanline() noexcept;
-		int current_cycle() noexcept;
+		U64 current_tick() const noexcept;
+		int current_scanline() const noexcept;
+		int current_cycle() const noexcept;
 		ScrollInfo get_scroll_info() const noexcept;
 		const std::array<U8, 256> &get_oam() const noexcept;
 		const std::array<OAMSprite, 8> &get_active_sprites() const noexcept;

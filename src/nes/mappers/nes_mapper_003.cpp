@@ -4,8 +4,8 @@
 
 namespace nesem::mappers
 {
-	NesMapper003::NesMapper003(NesRom &&rom) noexcept
-		: NesCartridge(std::move(rom))
+	NesMapper003::NesMapper003(const Nes &nes, NesRom &&rom_data) noexcept
+		: NesCartridge(nes, std::move(rom_data))
 	{
 		CHECK(rom.v1.mapper == ines_mapper, "Wrong mapper!");
 	}

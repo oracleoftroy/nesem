@@ -46,10 +46,25 @@ namespace nesem
 		NesInputDevice &player1() noexcept;
 		NesInputDevice &player2() noexcept;
 
-		NesBus &bus() noexcept;
-		NesCpu &cpu() noexcept;
-		NesPpu &ppu() noexcept;
-		NesApu &apu() noexcept;
+		auto &bus(this auto &&self) noexcept
+		{
+			return self.nes_bus;
+		}
+
+		auto &cpu(this auto &&self) noexcept
+		{
+			return self.nes_cpu;
+		}
+
+		auto &ppu(this auto &&self) noexcept
+		{
+			return self.nes_ppu;
+		}
+
+		auto &apu(this auto &&self) noexcept
+		{
+			return self.nes_apu;
+		}
 
 	private:
 		ErrorFn on_error;

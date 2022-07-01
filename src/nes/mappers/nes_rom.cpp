@@ -76,4 +76,20 @@ namespace nesem::mappers
 
 		return rom.v1.mapper;
 	}
+
+	size_t prgram_size(const NesRom &rom) noexcept
+	{
+		size_t size = 0;
+
+		if (rom.v2)
+		{
+			size += rom.v2->prgram.has_value() ? rom.v2->prgram->size : 0;
+			size += rom.v2->prgnvram.has_value() ? rom.v2->prgnvram->size : 0;
+		}
+		else
+			size = bank_32k;
+
+		return size;
+	}
+
 }

@@ -9,7 +9,7 @@ namespace nesem::mappers
 	{
 	public:
 		static constexpr int ines_mapper = 3;
-		explicit NesMapper003(NesRom &&rom) noexcept;
+		explicit NesMapper003(const Nes &nes, NesRom &&rom) noexcept;
 
 	private:
 		void reset() noexcept override;

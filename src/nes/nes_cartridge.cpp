@@ -14,8 +14,8 @@
 
 namespace nesem
 {
-	NesCartridge::NesCartridge(mappers::NesRom &&rom) noexcept
-		: rom(std::move(rom))
+	NesCartridge::NesCartridge(const Nes &nes, mappers::NesRom &&rom) noexcept
+		: nes(&nes), rom(std::move(rom))
 	{
 	}
 
@@ -29,7 +29,7 @@ namespace nesem
 		return irq_signaled;
 	}
 
-	std::unique_ptr<NesCartridge> load_cartridge(mappers::NesRom rom) noexcept
+	std::unique_ptr<NesCartridge> load_cartridge(const Nes &nes, mappers::NesRom rom) noexcept
 	{
 		LOG_INFO("mapper: {}", mapper(rom));
 
@@ -60,22 +60,22 @@ namespace nesem
 			return {};
 
 		case mappers::NesMapper000::ines_mapper:
-			return std::make_unique<mappers::NesMapper000>(std::move(rom));
+			return std::make_unique<mappers::NesMapper000>(nes, std::move(rom));
 
-		case mappers::NesMapper001::ines_mapper:
-			return std::make_unique<mappers::NesMapper001>(std::move(rom));
+		case mappers::NesMapper001_v2::ines_mapper:
+			return std::make_unique<mappers::NesMapper001_v2>(nes, std::move(rom));
 
 		case mappers::NesMapper002::ines_mapper:
-			return std::make_unique<mappers::NesMapper002>(std::move(rom));
+			return std::make_unique<mappers::NesMapper002>(nes, std::move(rom));
 
 		case mappers::NesMapper003::ines_mapper:
-			return std::make_unique<mappers::NesMapper003>(std::move(rom));
+			return std::make_unique<mappers::NesMapper003>(nes, std::move(rom));
 
 		case mappers::NesMapper004::ines_mapper:
-			return std::make_unique<mappers::NesMapper004>(std::move(rom));
+			return std::make_unique<mappers::NesMapper004>(nes, std::move(rom));
 
 		case mappers::NesMapper066::ines_mapper:
-			return std::make_unique<mappers::NesMapper066>(std::move(rom));
+			return std::make_unique<mappers::NesMapper066>(nes, std::move(rom));
 		}
 	}
 }

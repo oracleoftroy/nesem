@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <vector>
 
 #include "../nes_cartridge.hpp"
@@ -7,11 +8,18 @@
 
 namespace nesem::mappers
 {
+
 	class NesMapper001 final : public NesCartridge
 	{
+		enum class PrgRamMode
+		{
+			Normal,
+			SZROM,
+		};
+
 	public:
 		static constexpr int ines_mapper = 1;
-		explicit NesMapper001(NesRom &&rom) noexcept;
+		explicit NesMapper001(const Nes &nes, NesRom &&rom) noexcept;
 
 	private:
 		void reset() noexcept override;
@@ -22,42 +30,23 @@ namespace nesem::mappers
 		bool ppu_write(U16 &addr, U8 value) noexcept override;
 
 		void nt_mirroring(U16 &addr) noexcept;
-		void load_complete(U16 addr) noexcept;
-		void update_state() noexcept;
+		std::optional<U8> shift(U8 value) noexcept;
 
+		size_t map_prgram_addr(U16 addr) const noexcept;
+		size_t map_prgrom_addr(U16 addr) const noexcept;
+		size_t map_ppu_addr(U16 addr) const noexcept;
+
+	private:
+		PrgRamMode prg_ram_mode = PrgRamMode::Normal;
 		std::vector<U8> prg_ram;
 
-		U8 load_counter;
-		U8 load_shifter;
+		U8 load_counter = 0;
+		U8 load_shifter = 0;
 
-		struct Registers
-		{
-			U8 control;
-			U8 chr_0;
-			U8 chr_1;
-			U8 prg;
-			U8 chr_last; // copy of the last written chr_0 or chr_1 value for some cart specific bank switching rules
-		} reg;
-
-		enum class Prg
-		{
-			size_16k,
-			size_32k,
-		};
-		Prg prg_mode;
-
-		enum class Chr
-		{
-			size_4k,
-			size_8k,
-		};
-		Chr chr_mode;
-
-		U8 chr_bank_0;
-		U8 chr_bank_1;
-		U8 prg_bank_0;
-		U8 prg_bank_1;
-
-		bool prg_ram_enabled;
+		U8 control = 0;
+		U8 chr_bank_mask = 0;
+		U8 chr_bank_0 = 0; // bank for ppu [0000 - 1000), or entire address range [0000 - 2000) if 8k mode
+		U8 chr_bank_1 = 0; // bank for ppu [1000 - 2000)
+		U8 prg_bank = 0;
 	};
 }

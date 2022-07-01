@@ -29,7 +29,7 @@ namespace nesem
 		if (!rom)
 			return false;
 
-		auto cart = load_cartridge(*rom);
+		auto cart = load_cartridge(*this, *rom);
 		if (!cart)
 			return false;
 
@@ -122,25 +122,5 @@ namespace nesem
 			LOG_ERROR("No input device for player 2?");
 
 		return *player2_input;
-	}
-
-	NesBus &Nes::bus() noexcept
-	{
-		return nes_bus;
-	}
-
-	NesCpu &Nes::cpu() noexcept
-	{
-		return nes_cpu;
-	}
-
-	NesPpu &Nes::ppu() noexcept
-	{
-		return nes_ppu;
-	}
-
-	NesApu &Nes::apu() noexcept
-	{
-		return nes_apu;
 	}
 }

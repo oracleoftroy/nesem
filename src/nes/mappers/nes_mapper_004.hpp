@@ -11,7 +11,7 @@ namespace nesem::mappers
 	{
 	public:
 		static constexpr int ines_mapper = 4;
-		explicit NesMapper004(NesRom &&rom) noexcept;
+		explicit NesMapper004(const Nes &nes, NesRom &&rom) noexcept;
 
 	private:
 		void reset() noexcept override;
@@ -44,5 +44,6 @@ namespace nesem::mappers
 		bool irq_enabled = false;
 
 		U16 a12 = 0;
+		U64 cycle_low = 0;
 	};
 }

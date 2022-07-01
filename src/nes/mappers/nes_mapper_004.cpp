@@ -2,18 +2,35 @@
 
 #include <utility>
 
+#include "nes.hpp"
+
 #include <util/logging.hpp>
 
 namespace nesem::mappers
 {
-	NesMapper004::NesMapper004(NesRom &&rom) noexcept
-		: NesCartridge(std::move(rom))
+	NesMapper004::NesMapper004(const Nes &nes, NesRom &&rom_data) noexcept
+		: NesCartridge(nes, std::move(rom_data))
 	{
 		prg_ram.resize(bank_8k);
+		reset();
 	}
 
 	void NesMapper004::reset() noexcept
 	{
+		bank_select = 0;
+		bank_map = {};
+
+		mirroring = 0;
+		prg_ram_protect = 0;
+
+		irq_latch = 255;
+		irq_reload = false;
+		irq_counter = 255;
+
+		irq_enabled = false;
+
+		a12 = 1;
+		cycle_low = 0;
 	}
 
 	size_t NesMapper004::map_addr_cpu(U16 addr) noexcept
@@ -79,7 +96,7 @@ namespace nesem::mappers
 		// counter decremented on the rising edge of address line 12
 		auto old_a12 = std::exchange(a12, (addr >> 12) & 1);
 
-		if (old_a12 == 0 && a12 == 1)
+		if (old_a12 == 0 && a12 == 1 && (nes->ppu().current_tick() - cycle_low) > 10)
 		{
 			if (irq_counter == 0 || irq_reload)
 			{
@@ -91,6 +108,10 @@ namespace nesem::mappers
 
 			if (irq_counter == 0 && irq_enabled)
 				irq_signaled = true;
+		}
+		else if (old_a12 == 1 && a12 == 0)
+		{
+			cycle_low = nes->ppu().current_tick();
 		}
 	}
 
