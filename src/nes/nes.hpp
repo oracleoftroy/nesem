@@ -46,22 +46,22 @@ namespace nesem
 		NesInputDevice &player1() noexcept;
 		NesInputDevice &player2() noexcept;
 
-		auto &bus(this auto &&self) noexcept
+		auto &bus(this auto &self) noexcept
 		{
 			return self.nes_bus;
 		}
 
-		auto &cpu(this auto &&self) noexcept
+		auto &cpu(this auto &self) noexcept
 		{
 			return self.nes_cpu;
 		}
 
-		auto &ppu(this auto &&self) noexcept
+		auto &ppu(this auto &self) noexcept
 		{
 			return self.nes_ppu;
 		}
 
-		auto &apu(this auto &&self) noexcept
+		auto &apu(this auto &self) noexcept
 		{
 			return self.nes_apu;
 		}
