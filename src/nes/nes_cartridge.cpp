@@ -62,8 +62,8 @@ namespace nesem
 		case mappers::NesMapper000::ines_mapper:
 			return std::make_unique<mappers::NesMapper000>(nes, std::move(rom));
 
-		case mappers::NesMapper001_v2::ines_mapper:
-			return std::make_unique<mappers::NesMapper001_v2>(nes, std::move(rom));
+		case mappers::NesMapper001::ines_mapper:
+			return std::make_unique<mappers::NesMapper001>(nes, std::move(rom));
 
 		case mappers::NesMapper002::ines_mapper:
 			return std::make_unique<mappers::NesMapper002>(nes, std::move(rom));
