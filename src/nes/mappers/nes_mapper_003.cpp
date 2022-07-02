@@ -7,7 +7,7 @@ namespace nesem::mappers
 	NesMapper003::NesMapper003(const Nes &nes, NesRom &&rom_data) noexcept
 		: NesCartridge(nes, std::move(rom_data))
 	{
-		CHECK(rom.v1.mapper == ines_mapper, "Wrong mapper!");
+		CHECK(rom().v1.mapper == ines_mapper, "Wrong mapper!");
 	}
 
 	void NesMapper003::reset() noexcept
@@ -24,10 +24,10 @@ namespace nesem::mappers
 		}
 
 		U16 addr_mask = 0x7FFF;
-		if (prgrom_banks(rom, bank_16k) == 1)
+		if (prgrom_banks(rom(), bank_16k) == 1)
 			addr_mask = 0x3FFF;
 
-		return rom.prg_rom[addr & addr_mask];
+		return rom().prg_rom[addr & addr_mask];
 	}
 
 	void NesMapper003::cpu_write(U16 addr, U8 value) noexcept
@@ -39,37 +39,29 @@ namespace nesem::mappers
 		}
 
 		// writes, regardless of the address, adjust the current CHR-ROM bank we are reading from
-		bank_select = U8((value & 0x03) % chr_banks(rom, bank_8k));
+		bank_select = U8((value & 0x03) % chr_banks(rom(), bank_8k));
 	}
 
 	std::optional<U8> NesMapper003::ppu_read(U16 &addr) noexcept
 	{
 		// return value based on the selected CHR-ROM bank
 		if (addr < 0x2000)
-			return rom.chr_rom[bank_select * 0x2000 + addr];
+			return chr_read(bank_select * bank_8k + addr);
 
 		// reading from the nametable
 		else if (addr < 0x3F00)
-			apply_hardware_nametable_mapping(rom, addr);
+			apply_hardware_nametable_mapping(rom(), addr);
 
 		return std::nullopt;
 	}
 
-	bool NesMapper003::ppu_write(U16 &addr, [[maybe_unused]] U8 value) noexcept
+	bool NesMapper003::ppu_write(U16 &addr, U8 value) noexcept
 	{
 		if (addr < 0x2000)
-		{
-			if (has_chrram(rom))
-			{
-				rom.chr_rom[addr] = value;
-				return true;
-			}
+			return chr_write(bank_select * bank_8k + addr, value);
 
-			// This shouldn't happen....
-			LOG_WARN("PPU write to CHR-ROM, ignoring");
-		}
 		else if (addr < 0x3F00)
-			apply_hardware_nametable_mapping(rom, addr);
+			apply_hardware_nametable_mapping(rom(), addr);
 
 		return false;
 	}

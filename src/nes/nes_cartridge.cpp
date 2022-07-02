@@ -14,19 +14,49 @@
 
 namespace nesem
 {
-	NesCartridge::NesCartridge(const Nes &nes, mappers::NesRom &&rom) noexcept
-		: nes(&nes), rom(std::move(rom))
+	NesCartridge::NesCartridge(const Nes &nes, mappers::NesRom &&rom_data) noexcept
+		: nes(&nes), nes_rom(std::move(rom_data))
 	{
+		if (has_chrram(rom()))
+		{
+			if (!rom().chr_rom.empty())
+				LOG_WARN("CHR-ROM not empty, but we assume CHR-ROM and CHR-RAM are mutually exclusive!");
+
+			chr_ram.resize(chrram_size(rom()));
+		}
 	}
 
-	const mappers::NesRom &NesCartridge::get_rom() noexcept
+	const mappers::NesRom &NesCartridge::rom() const noexcept
 	{
-		return rom;
+		return nes_rom;
 	}
 
 	bool NesCartridge::irq() noexcept
 	{
 		return irq_signaled;
+	}
+
+	U8 NesCartridge::chr_read(size_t addr) const noexcept
+	{
+		if (has_chrram(nes_rom))
+			return chr_ram[addr];
+
+		return nes_rom.chr_rom[addr];
+	}
+
+	bool NesCartridge::chr_write(size_t addr, U8 value) noexcept
+	{
+		if (has_chrram(nes_rom))
+			chr_ram[addr] = value;
+		else
+			LOG_ERROR("Write to CHR-ROM not allowed");
+
+		return true;
+	}
+
+	void NesCartridge::signal_irq(bool signal) noexcept
+	{
+		irq_signaled = signal;
 	}
 
 	std::unique_ptr<NesCartridge> load_cartridge(const Nes &nes, mappers::NesRom rom) noexcept

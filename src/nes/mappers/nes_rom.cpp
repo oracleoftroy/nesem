@@ -198,6 +198,17 @@ namespace nesem::mappers
 		return rom.v1.mapper;
 	}
 
+	bool has_prgram(const NesRom &rom) noexcept
+	{
+		// TODO: should we report true if there is a battery but not prgnvram or chrnvram?
+		// I see 18 entries in nesdb that have a battery but don't report any sort of ram at all
+		// and 104 without nv ram, but have some prg or chr ram
+		if (rom.v2)
+			return rom.v2->prgram.has_value() || rom.v2->prgnvram.has_value();
+
+		return rom.v1.has_battery;
+	}
+
 	size_t prgram_size(const NesRom &rom) noexcept
 	{
 		size_t size = 0;
@@ -207,8 +218,8 @@ namespace nesem::mappers
 			size += rom.v2->prgram.has_value() ? rom.v2->prgram->size : 0;
 			size += rom.v2->prgnvram.has_value() ? rom.v2->prgnvram->size : 0;
 		}
-		else
-			size = bank_32k;
+		else if (rom.v1.has_battery)
+			size = bank_8k;
 
 		return size;
 	}

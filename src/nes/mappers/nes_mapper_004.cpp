@@ -11,6 +11,8 @@ namespace nesem::mappers
 	NesMapper004::NesMapper004(const Nes &nes, NesRom &&rom_data) noexcept
 		: NesCartridge(nes, std::move(rom_data))
 	{
+		CHECK(rom().v1.mapper == ines_mapper, "Wrong mapper!");
+
 		prg_ram.resize(bank_8k);
 		reset();
 	}
@@ -28,6 +30,7 @@ namespace nesem::mappers
 		irq_counter = 255;
 
 		irq_enabled = false;
+		signal_irq(false);
 
 		a12 = 1;
 		cycle_low = 0;
@@ -41,7 +44,7 @@ namespace nesem::mappers
 		// 0 or 1
 		int mode = (bank_select >> 6) & 1;
 
-		auto num_banks = prgrom_banks(rom, bank_8k);
+		auto num_banks = prgrom_banks(rom(), bank_8k);
 
 		// everything from E000 - FFFF uses the last bank.
 		auto bank = num_banks - 1;
@@ -66,7 +69,7 @@ namespace nesem::mappers
 			LOG_CRITICAL("Address is out of range!");
 
 		auto mode = (bank_select >> 7) & 1;
-		auto num_banks = chr_banks(rom, bank_1k);
+		auto num_banks = chr_banks(rom(), bank_1k);
 		size_t bank = 0;
 
 		if (addr < 0x0400)
@@ -107,7 +110,7 @@ namespace nesem::mappers
 				--irq_counter;
 
 			if (irq_counter == 0 && irq_enabled)
-				irq_signaled = true;
+				signal_irq(true);
 		}
 		else if (old_a12 == 1 && a12 == 0)
 		{
@@ -128,7 +131,7 @@ namespace nesem::mappers
 			return prg_ram[addr & (bank_8k - 1)];
 
 		// address >= 8000
-		return rom.prg_rom[map_addr_cpu(addr)];
+		return rom().prg_rom[map_addr_cpu(addr)];
 	}
 
 	void NesMapper004::cpu_write(U16 addr, U8 value) noexcept
@@ -196,7 +199,7 @@ namespace nesem::mappers
 
 		case 6:
 			// this disables interrupts and acknowledges any pending interrupts... I guess a game has to disable and then enable interrupts to acknowledge them?
-			irq_signaled = false;
+			signal_irq(false);
 			irq_enabled = false;
 			break;
 
@@ -211,14 +214,14 @@ namespace nesem::mappers
 		if (addr < 0x2000)
 		{
 			update_irq(addr);
-			return rom.chr_rom[map_addr_ppu(addr)];
+			return chr_read(map_addr_ppu(addr));
 		}
 		// reading from the nametable
 		else if (addr < 0x3F00)
 		{
-			if (auto mode = mirroring_mode(rom);
+			if (auto mode = mirroring_mode(rom());
 				mode == ines_2::MirroringMode::one_screen || mode == ines_2::MirroringMode::four_screen)
-				apply_hardware_nametable_mapping(rom, addr);
+				apply_hardware_nametable_mapping(rom(), addr);
 			else
 			{
 				// if currently configured for horizontal mapping
@@ -239,20 +242,13 @@ namespace nesem::mappers
 		if (addr < 0x2000)
 		{
 			update_irq(addr);
-			if (has_chrram(rom))
-			{
-				rom.chr_rom[map_addr_ppu(addr)] = value;
-				return true;
-			}
-
-			// This shouldn't happen....
-			LOG_WARN("PPU write to CHR-ROM, ignoring");
+			return chr_write(map_addr_ppu(addr), value);
 		}
 		else if (addr < 0x3F00)
 		{
-			if (auto mode = mirroring_mode(rom);
+			if (auto mode = mirroring_mode(rom());
 				mode == ines_2::MirroringMode::one_screen || mode == ines_2::MirroringMode::four_screen)
-				apply_hardware_nametable_mapping(rom, addr);
+				apply_hardware_nametable_mapping(rom(), addr);
 			else
 			{
 				// if currently configured for horizontal mapping

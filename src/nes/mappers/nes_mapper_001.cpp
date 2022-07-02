@@ -11,7 +11,7 @@ namespace nesem::mappers
 	NesMapper001::NesMapper001(const Nes &nes, NesRom &&rom_data) noexcept
 		: NesCartridge(nes, std::move(rom_data))
 	{
-		CHECK(rom.v1.mapper == ines_mapper, "Wrong mapper!");
+		CHECK(rom().v1.mapper == ines_mapper, "Wrong mapper!");
 
 		// the amount of chr data is a multiple of 8k
 		// this calculates a mask for the significant bits of chr_bank_x for a 4k bank size
@@ -20,14 +20,14 @@ namespace nesem::mappers
 		//  32k >> 12 - 1 == 0b00111
 		//  64k >> 12 - 1 == 0b01111
 		// 128k >> 12 - 1 == 0b11111
-		chr_bank_mask = U8((size(rom.chr_rom) >> 12) - 1);
+		chr_bank_mask = U8((size(rom().chr_rom) >> 12) - 1);
 
-		prg_ram.resize(prgram_size(rom));
+		prg_ram.resize(prgram_size(rom()));
 
 		// SZROM has 8K of PRG RAM, 8K of PRG NV RAM, and 16K or more of CHR.
-		if (rom.v2 && rom.v2->prgram && rom.v2->prgnvram &&
-			rom.v2->prgram->size == bank_8k && rom.v2->prgnvram->size == bank_8k &&
-			size(rom.chr_rom) >= bank_16k)
+		if (rom().v2 && rom().v2->prgram && rom().v2->prgnvram &&
+			rom().v2->prgram->size == bank_8k && rom().v2->prgnvram->size == bank_8k &&
+			size(rom().chr_rom) >= bank_16k)
 			prg_ram_mode = PrgRamMode::SZROM;
 
 		reset();
@@ -60,7 +60,7 @@ namespace nesem::mappers
 			return 0;
 		}
 
-		return rom.prg_rom[map_prgrom_addr(addr)];
+		return rom().prg_rom[map_prgrom_addr(addr)];
 	}
 
 	void NesMapper001::cpu_write(U16 addr, U8 value) noexcept
@@ -111,7 +111,7 @@ namespace nesem::mappers
 	std::optional<U8> NesMapper001::ppu_read(U16 &addr) noexcept
 	{
 		if (addr < 0x2000)
-			return rom.chr_rom[map_ppu_addr(addr)];
+			return chr_read(map_ppu_addr(addr));
 
 		// reading from the nametable
 		else if (addr < 0x3F00)
@@ -123,16 +123,8 @@ namespace nesem::mappers
 	bool NesMapper001::ppu_write(U16 &addr, U8 value) noexcept
 	{
 		if (addr < 0x2000)
-		{
-			if (has_chrram(rom))
-			{
-				rom.chr_rom[map_ppu_addr(addr)] = value;
-				return true;
-			}
+			return chr_write(map_ppu_addr(addr), value);
 
-			LOG_WARN("PPU write to CHR-ROM??");
-			return false;
-		}
 		else if (addr < 0x3F00)
 			nt_mirroring(addr);
 
@@ -233,7 +225,7 @@ namespace nesem::mappers
 		// assume it is always safe to just use chr_bank_0
 
 		// 512k prg-rom
-		if (size(rom.prg_rom) == 0x80000)
+		if (size(rom().prg_rom) == 0x80000)
 		{
 			auto bank_ext = (chr_bank_0 & 0b10000);
 			first_bank |= bank_ext;
@@ -264,7 +256,7 @@ namespace nesem::mappers
 		case 3:
 
 			if (addr >= 0xC000)
-				bank = (prgrom_banks(rom, bank_16k) - 1) & last_bank_mask;
+				bank = (prgrom_banks(rom(), bank_16k) - 1) & last_bank_mask;
 
 			return bank * bank_16k + (addr & (bank_16k - 1));
 		}

@@ -332,16 +332,6 @@ namespace nesem
 
 		result.v2 = find_rom_data(result.prg_rom, result.chr_rom);
 
-		// TODO: this seems hacky, but for now, allocate space for chrram in chrrom
-		// This assumes that a cart never has both
-		if (has_chrram(result))
-		{
-			if (!result.chr_rom.empty())
-				LOG_WARN("CHR-ROM not empty, but we assume CHR-ROM and CHR-RAM are mutually exclusive!");
-
-			result.chr_rom.resize(chrram_size(result));
-		}
-
 		return result;
 	}
 
