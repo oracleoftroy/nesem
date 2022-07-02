@@ -2,6 +2,8 @@
 
 #include <algorithm>
 
+#include "nes.hpp"
+
 #include <util/logging.hpp>
 
 namespace nesem::mappers
@@ -39,6 +41,7 @@ namespace nesem::mappers
 		chr_bank_0 = 0;
 		chr_bank_1 = 0;
 		prg_bank = 0;
+		last_write_cycle = 0;
 	}
 
 	U8 NesMapper001::cpu_read(U16 addr) noexcept
@@ -175,13 +178,17 @@ namespace nesem::mappers
 		}
 		else
 		{
-			load_shifter |= (value & 1) << load_counter;
-			++load_counter;
-
-			if (load_counter == 5)
+			auto prev = std::exchange(last_write_cycle, nes->cpu().current_cycle());
+			if (prev + 1 < last_write_cycle)
 			{
-				result = std::exchange(load_shifter, U8(0));
-				load_counter = 0;
+				load_shifter |= (value & 1) << load_counter;
+				++load_counter;
+
+				if (load_counter == 5)
+				{
+					result = std::exchange(load_shifter, U8(0));
+					load_counter = 0;
+				}
 			}
 		}
 
@@ -218,6 +225,8 @@ namespace nesem::mappers
 
 		auto bank_mode = (control >> 2) & 3;
 		auto bank = prg_bank & 0b01111;
+		auto first_bank = 0;
+		auto last_bank_mask = 0b1111;
 
 		// prg_bank can address up to 256k. A 512k cart stores an extra bit in chr_bank_0 and chr_bank_1.
 		// NesDev wiki indicates that a game should always store the same value in both bits, so we'll
@@ -225,7 +234,12 @@ namespace nesem::mappers
 
 		// 512k prg-rom
 		if (size(rom.prg_rom) == 0x80000)
-			bank |= (chr_bank_0 & 0b10000);
+		{
+			auto bank_ext = (chr_bank_0 & 0b10000);
+			first_bank |= bank_ext;
+			last_bank_mask |= bank_ext;
+		}
+		auto chr_bank_mode = (control >> 4) & 1;
 
 		switch (bank_mode)
 		{
@@ -242,7 +256,7 @@ namespace nesem::mappers
 			//  2: fix first bank at $8000 and switch 16 KB bank at $C000;
 		case 2:
 			if (addr < 0xC000)
-				bank = 0;
+				bank = first_bank;
 
 			return bank * bank_16k + (addr & (bank_16k - 1));
 
@@ -250,7 +264,7 @@ namespace nesem::mappers
 		case 3:
 
 			if (addr >= 0xC000)
-				bank = prgrom_banks(rom, bank_16k) - 1;
+				bank = (prgrom_banks(rom, bank_16k) - 1) & last_bank_mask;
 
 			return bank * bank_16k + (addr & (bank_16k - 1));
 		}

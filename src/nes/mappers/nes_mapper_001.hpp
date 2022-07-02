@@ -40,13 +40,16 @@ namespace nesem::mappers
 		PrgRamMode prg_ram_mode = PrgRamMode::Normal;
 		std::vector<U8> prg_ram;
 
+		// registers
 		U8 load_counter = 0;
 		U8 load_shifter = 0;
+		U64 last_write_cycle = 0;
 
 		U8 control = 0;
-		U8 chr_bank_mask = 0;
 		U8 chr_bank_0 = 0; // bank for ppu [0000 - 1000), or entire address range [0000 - 2000) if 8k mode
-		U8 chr_bank_1 = 0; // bank for ppu [1000 - 2000)
+		U8 chr_bank_1 = 0; // bank for ppu [1000 - 2000), or ignored in 8k mode
 		U8 prg_bank = 0;
+
+		U8 chr_bank_mask = 0;
 	};
 }

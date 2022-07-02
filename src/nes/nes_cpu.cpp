@@ -2437,4 +2437,10 @@ namespace nesem
 		CHECK(false, "We shouldn't reach here");
 		return AddressStatus::complete;
 	}
+
+	U64 NesCpu::current_cycle() const noexcept
+	{
+		return cycles;
+	}
+
 }

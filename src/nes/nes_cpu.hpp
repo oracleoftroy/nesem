@@ -19,6 +19,9 @@ namespace nesem
 
 		bool clock() noexcept;
 
+		// get information about the current state
+		U64 current_cycle() const noexcept;
+
 	private:
 		// helper functions
 
