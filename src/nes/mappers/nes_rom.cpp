@@ -1,5 +1,126 @@
 #include "nes_rom.hpp"
 
+namespace nesem::mappers::ines_2
+{
+	std::string_view expansion_device_name(Expansion expansion) noexcept
+	{
+		using namespace std::string_view_literals;
+		// names from https://www.nesdev.org/wiki/NES_2.0#Default_Expansion_Device
+		switch (expansion.type)
+		{
+		default:
+			return "Unknown device"sv;
+		case 0x00:
+			return "Unspecified"sv;
+		case 0x01:
+			return "Standard NES/Famicom controllers"sv;
+		case 0x02:
+			return "NES Four Score/Satellite with two additional standard controllers"sv;
+		case 0x03:
+			return "Famicom Four Players Adapter with two additional standard controllers"sv;
+		case 0x04:
+			return "Vs. System"sv;
+		case 0x05:
+			return "Vs. System with reversed inputs"sv;
+		case 0x06:
+			return "Vs. Pinball (Japan)"sv;
+		case 0x07:
+			return "Vs. Zapper"sv;
+		case 0x08:
+			return "Zapper ($4017)"sv;
+		case 0x09:
+			return "Two Zappers"sv;
+		case 0x0A:
+			return "Bandai Hyper Shot Lightgun"sv;
+		case 0x0B:
+			return "Power Pad Side A"sv;
+		case 0x0C:
+			return "Power Pad Side B"sv;
+		case 0x0D:
+			return "Family Trainer Side A"sv;
+		case 0x0E:
+			return "Family Trainer Side B"sv;
+		case 0x0F:
+			return "Arkanoid Vaus Controller (NES)"sv;
+		case 0x10:
+			return "Arkanoid Vaus Controller (Famicom)"sv;
+		case 0x11:
+			return "Two Vaus Controllers plus Famicom Data Recorder"sv;
+		case 0x12:
+			return "Konami Hyper Shot Controller"sv;
+		case 0x13:
+			return "Coconuts Pachinko Controller"sv;
+		case 0x14:
+			return "Exciting Boxing Punching Bag (Blowup Doll)"sv;
+		case 0x15:
+			return "Jissen Mahjong Controller"sv;
+		case 0x16:
+			return "Party Tap "sv;
+		case 0x17:
+			return "Oeka Kids Tablet"sv;
+		case 0x18:
+			return "Sunsoft Barcode Battler"sv;
+		case 0x19:
+			return "Miracle Piano Keyboard"sv;
+		case 0x1A:
+			return "Pokkun Moguraa (Whack-a-Mole Mat and Mallet)"sv;
+		case 0x1B:
+			return "Top Rider (Inflatable Bicycle)"sv;
+		case 0x1C:
+			return "Double-Fisted (Requires or allows use of two controllers by one player)"sv;
+		case 0x1D:
+			return "Famicom 3D System"sv;
+		case 0x1E:
+			return "Doremikko Keyboard"sv;
+		case 0x1F:
+			return "R.O.B. Gyro Set"sv;
+		case 0x20:
+			return "Famicom Data Recorder (don't emulate keyboard)"sv;
+		case 0x21:
+			return "ASCII Turbo File"sv;
+		case 0x22:
+			return "IGS Storage Battle Box"sv;
+		case 0x23:
+			return "Family BASIC Keyboard plus Famicom Data Recorder"sv;
+		case 0x24:
+			return "Dongda PEC-586 Keyboard"sv;
+		case 0x25:
+			return "Bit Corp. Bit-79 Keyboard"sv;
+		case 0x26:
+			return "Subor Keyboard"sv;
+		case 0x27:
+			return "Subor Keyboard plus mouse (3x8-bit protocol)"sv;
+		case 0x28:
+			return "Subor Keyboard plus mouse (24-bit protocol)"sv;
+		case 0x29:
+			return "SNES Mouse (case 0x40:17.d0)"sv;
+		case 0x2A:
+			return "Multicart"sv;
+		case 0x2B:
+			return "Two SNES controllers replacing the two standard NES controllers"sv;
+		case 0x2C:
+			return "RacerMate Bicycle"sv;
+		case 0x2D:
+			return "U-Force"sv;
+		case 0x2E:
+			return "R.O.B. Stack-Up"sv;
+		case 0x2F:
+			return "City Patrolman Lightgun"sv;
+		case 0x30:
+			return "Sharp C1 Cassette Interface"sv;
+		case 0x31:
+			return "Standard Controller with swapped Left-Right/Up-Down/B-A"sv;
+		case 0x32:
+			return "Excalibor Sudoku Pad"sv;
+		case 0x33:
+			return "ABL Pinball"sv;
+		case 0x34:
+			return "Golden Nugget Casino extra buttons"sv;
+		}
+	}
+
+}
+
 namespace nesem::mappers
 {
 	void apply_hardware_nametable_mapping(const NesRom &rom, U16 &addr) noexcept

@@ -50,8 +50,35 @@ namespace nesem
 			break;
 		}
 
-		LOG_INFO("PRG-ROM size: {0:X} ({0:L})", size(rom.prg_rom));
-		LOG_INFO("CHR-ROM size: {0:X} ({0:L})", size(rom.chr_rom));
+		LOG_INFO("PRG-ROM size: {0}K ({1:L})", size(rom.prg_rom) / 1024, size(rom.prg_rom));
+		LOG_INFO("CHR-ROM size: {0}K ({1:L})", size(rom.chr_rom) / 1024, size(rom.chr_rom));
+
+		if (rom.v2)
+		{
+			LOG_INFO("iNES2 info");
+
+			LOG_INFO("Console region: {0}, type: {1}", rom.v2->console.region, rom.v2->console.type);
+			LOG_INFO("Expansion device: {0}", expansion_device_name(rom.v2->expansion));
+			LOG_INFO("mapper: {0}, submapper: {1}", rom.v2->pcb.mapper, rom.v2->pcb.submapper);
+			LOG_INFO("has battery: {0}", rom.v2->pcb.battery);
+
+			LOG_INFO("PRG ROM size: {0}K ({1:L})", rom.v2->prgrom.size / 1024, rom.v2->prgrom.size);
+
+			if (rom.v2->prgram)
+				LOG_INFO("PRG RAM size: {0}K ({1:L})", rom.v2->prgram->size / 1024, rom.v2->prgram->size);
+
+			if (rom.v2->prgnvram)
+				LOG_INFO("PRG NVRAM size: {0}K ({1:L})", rom.v2->prgnvram->size / 1024, rom.v2->prgnvram->size);
+
+			if (rom.v2->chrrom)
+				LOG_INFO("CHR-ROM size: {0}K ({1:L})", rom.v2->chrrom->size / 1024, rom.v2->chrrom->size);
+
+			if (rom.v2->chrram)
+				LOG_INFO("CHR-RAM size: {0}K ({1:L})", rom.v2->chrram->size / 1024, rom.v2->chrram->size);
+
+			if (rom.v2->chrnvram)
+				LOG_INFO("CHR NVRAM size: {0}K ({1:L})", rom.v2->chrnvram->size / 1024, rom.v2->chrnvram->size);
+		}
 
 		switch (mapper(rom))
 		{

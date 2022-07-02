@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "../nes_types.hpp"
@@ -118,6 +119,8 @@ namespace nesem::mappers
 			std::optional<ChrNvram> chrnvram;
 			std::optional<Trainer> trainer;
 		};
+
+		std::string_view expansion_device_name(Expansion expansion) noexcept;
 	}
 
 	namespace ines_1
