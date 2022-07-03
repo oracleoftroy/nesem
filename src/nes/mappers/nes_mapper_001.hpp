@@ -23,6 +23,7 @@ namespace nesem::mappers
 
 	private:
 		void reset() noexcept override;
+		Banks report_cpu_mapping() const noexcept override;
 
 		U8 cpu_read(U16 addr) noexcept override;
 		void cpu_write(U16 addr, U8 value) noexcept override;
@@ -32,6 +33,14 @@ namespace nesem::mappers
 		void nt_mirroring(U16 &addr) noexcept;
 		std::optional<U8> shift(U8 value) noexcept;
 
+		struct PrgRomBanks
+		{
+			U8 bank;
+			U8 first_bank;
+			U8 last_bank;
+		};
+
+		PrgRomBanks calculate_banks() const noexcept;
 		size_t map_prgram_addr(U16 addr) const noexcept;
 		size_t map_prgrom_addr(U16 addr) const noexcept;
 		size_t map_ppu_addr(U16 addr) const noexcept;

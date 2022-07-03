@@ -36,6 +36,14 @@ namespace nesem
 		return irq_signaled;
 	}
 
+	size_t NesCartridge::chr_size() const noexcept
+	{
+		if (has_chrram(nes_rom))
+			return size(chr_ram);
+
+		return size(nes_rom.chr_rom);
+	}
+
 	U8 NesCartridge::chr_read(size_t addr) const noexcept
 	{
 		if (has_chrram(nes_rom))
@@ -101,10 +109,10 @@ namespace nesem
 				LOG_INFO("PRG NVRAM size: {0}K ({1:L})", rom.v2->prgnvram->size / 1024, rom.v2->prgnvram->size);
 
 			if (rom.v2->chrrom)
-				LOG_INFO("CHR-ROM size: {0}K ({1:L})", rom.v2->chrrom->size / 1024, rom.v2->chrrom->size);
+				LOG_INFO("CHR ROM size: {0}K ({1:L})", rom.v2->chrrom->size / 1024, rom.v2->chrrom->size);
 
 			if (rom.v2->chrram)
-				LOG_INFO("CHR-RAM size: {0}K ({1:L})", rom.v2->chrram->size / 1024, rom.v2->chrram->size);
+				LOG_INFO("CHR RAM size: {0}K ({1:L})", rom.v2->chrram->size / 1024, rom.v2->chrram->size);
 
 			if (rom.v2->chrnvram)
 				LOG_INFO("CHR NVRAM size: {0}K ({1:L})", rom.v2->chrnvram->size / 1024, rom.v2->chrnvram->size);

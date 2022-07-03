@@ -1,5 +1,7 @@
 #include "side_bar.hpp"
 
+#include <numbers>
+
 #include <fmt/format.h>
 
 #include "nes_app.hpp"
@@ -19,6 +21,191 @@ namespace app
 	}
 
 	void SideBar::update(DebugMode mode, nesem::Nes &nes, NesApp &app)
+	{
+		switch (mode)
+		{
+			using enum DebugMode;
+		case none:
+			break;
+
+		case bg_info:
+		case fg_info:
+			draw_ppu_info(mode, nes, app);
+			break;
+
+		case cpu_info:
+			draw_cpu_info(nes);
+			break;
+		}
+	}
+
+	void SideBar::draw_cpu_info(nesem::Nes &nes)
+	{
+		const auto state = nes.cpu().state();
+
+		auto [canvas, lock] = texture.lock();
+		canvas.fill({22, 22, 22});
+
+		auto pos = cm::Point2{4, 4};
+		draw_string(canvas, {255, 255, 255}, "CPU Registers", pos);
+
+		pos.y += 14;
+		{
+			using enum nesem::ProcessorStatus;
+			// C | Z | I | D | B | E | V | N
+			// draw_string(canvas, {255, 255, 255}, fmt::format("PC: {:04X}  Flags:  {}{}{}{}{}{}{}{}", state.PC, (state.P & N) == N ? 'N' : '-', (state.P & V) == V ? 'V' : '-', (state.P & E) == E ? 'E' : '-', (state.P & B) == B ? 'B' : '-', (state.P & D) == D ? 'D' : '-', (state.P & I) == I ? 'I' : '-', (state.P & Z) == Z ? 'Z' : '-', (state.P & C) == C ? 'C' : '-'), pos);
+			draw_string(canvas, {255, 255, 255}, fmt::format("Flags:  {} {} {} {} {} {} {} {}  S: {:02X}", (state.P & N) == N ? 'N' : '-', (state.P & V) == V ? 'V' : '-', (state.P & E) == E ? 'E' : '-', (state.P & B) == B ? 'B' : '-', (state.P & D) == D ? 'D' : '-', (state.P & I) == I ? 'I' : '-', (state.P & Z) == Z ? 'Z' : '-', (state.P & C) == C ? 'C' : '-', state.S), pos);
+		}
+
+		pos.y += 14;
+		// draw_string(canvas, {255, 255, 255}, fmt::format("A:  {:02X}   X:  {:02X}   Y:  {:02X}  S: {:02X}", state.A, state.X, state.Y, state.S), pos);
+		draw_string(canvas, {255, 255, 255}, fmt::format("PC: {:04X}   A: {:02X}  X: {:02X}  Y: {:02X}", state.PC, state.A, state.X, state.Y), pos);
+
+		pos.y += 16;
+
+		const auto canvas_size = canvas.size();
+		canvas.draw_line({222, 222, 222}, pos, pos + cm::Point2{canvas_size.w - pos.x, 0});
+
+		if (const auto *cartridge = nes.cartridge();
+			!cartridge)
+		{
+			pos.y += 16;
+			draw_string(canvas, {255, 255, 255}, "No Cartridge loaded", pos);
+		}
+		else
+		{
+			if (cartridge->rom().v2)
+			{
+				const auto &v2 = *cartridge->rom().v2;
+
+				pos.y += 16;
+				draw_string(canvas, {255, 255, 255}, fmt::format("Mapper: {:03}  Submapper: {}", v2.pcb.mapper, v2.pcb.submapper), pos);
+
+				pos.y += 12;
+				draw_string(canvas, {255, 255, 255}, fmt::format("PRG ROM size: {0}K ({1:L})", v2.prgrom.size / 1024, v2.prgrom.size), pos);
+
+				if (v2.prgram)
+				{
+					pos.y += 12;
+					draw_string(canvas, {255, 255, 255}, fmt::format("PRG RAM size: {0}K ({1:L})", v2.prgram->size / 1024, v2.prgram->size), pos);
+				}
+				if (v2.prgnvram)
+				{
+					pos.y += 12;
+					draw_string(canvas, {255, 255, 255}, fmt::format("PRG NVRAM size: {0}K ({1:L})", v2.prgnvram->size / 1024, v2.prgnvram->size), pos);
+				}
+				if (v2.chrrom)
+				{
+					pos.y += 12;
+					draw_string(canvas, {255, 255, 255}, fmt::format("CHR ROM size: {0}K ({1:L})", v2.chrrom->size / 1024, v2.chrrom->size), pos);
+				}
+				if (v2.chrram)
+				{
+					pos.y += 12;
+					draw_string(canvas, {255, 255, 255}, fmt::format("CHR RAM size: {0}K ({1:L})", v2.chrram->size / 1024, v2.chrram->size), pos);
+				}
+				if (v2.chrnvram)
+				{
+					pos.y += 12;
+					draw_string(canvas, {255, 255, 255}, fmt::format("CHR NVRAM size: {0}K ({1:L})", v2.chrnvram->size / 1024, v2.chrnvram->size), pos);
+				}
+			}
+			else
+			{
+				const auto &v1 = cartridge->rom().v1;
+
+				pos.y += 16;
+				draw_string(canvas, {255, 255, 255}, fmt::format("Mapper: {:03}", v1.mapper), pos);
+
+				pos.y += 12;
+				draw_string(canvas, {255, 255, 255}, fmt::format("PRG ROM size: {0}K ({1:L})", v1.prg_rom_size * 16, v1.prg_rom_size * nesem::mappers::bank_16k), pos);
+
+				if (v1.chr_rom_size == 0)
+				{
+					pos.y += 12;
+					draw_string(canvas, {255, 255, 255}, fmt::format("CHR RAM size: 8K ({:L})", nesem::mappers::bank_8k), pos);
+				}
+				else
+				{
+					pos.y += 12;
+					draw_string(canvas, {255, 255, 255}, fmt::format("CHR ROM size: {0}K ({1:L})", v1.chr_rom_size * 8, v1.chr_rom_size * nesem::mappers::bank_8k), pos);
+				}
+			}
+
+			constexpr auto bank_color = [](auto bank) {
+				constexpr auto phi = std::numbers::phi_v<float>;
+				constexpr auto golden_angle = 360.0f / (phi * phi);
+				constexpr auto start_hue = 120.0f;
+				return to_color(to_rgb(cm::ColorHSL{.h = start_hue + bank * golden_angle, .s = 0.75f, .l = 0.75f}));
+			};
+
+			auto prgsize = size(cartridge->rom().prg_rom);
+
+			// pos.y += 16;
+			// auto prg_sys_area = cm::Recti{pos.x, pos.y, (canvas_size.w - (pos.x + 8)) / 2, canvas_size.h - (pos.y + 4)};
+			auto prg_sys_area = cm::Recti{pos.x + 16, canvas_size.h - 512 - 4, (canvas_size.w - (pos.x + 48)) / 2, 512};
+			auto prg_rom_area = prg_sys_area + cm::Point2{prg_sys_area.w + 16};
+
+			auto mem_label_area = prg_sys_area;
+			mem_label_area.y -= 16;
+			mem_label_area.h = 8;
+			auto rom_label_area = prg_rom_area;
+			rom_label_area.y -= 16;
+			rom_label_area.h = 8;
+			draw_string_centered(canvas, {255, 255, 255}, "CPU MEM", mem_label_area);
+			draw_string_centered(canvas, {255, 255, 255}, "PRG-ROM", rom_label_area);
+
+			canvas.fill_rect({88, 88, 88}, prg_sys_area);
+			canvas.draw_rect({222, 222, 222}, prg_sys_area);
+			canvas.fill_rect({88, 88, 88}, prg_rom_area);
+			canvas.draw_rect({222, 222, 222}, prg_rom_area);
+
+			auto map = cartridge->report_cpu_mapping();
+			constexpr auto sys_prg_size = nesem::mappers::bank_32k;
+
+			for (auto bank : map)
+			{
+				auto mem_multiplier = sys_prg_size / bank.size;
+				auto mem_bank_rect = prg_sys_area;
+				mem_bank_rect.h /= mem_multiplier;
+				mem_bank_rect.y += mem_bank_rect.h * ((bank.addr - 0x8000) / bank.size);
+
+				auto rom_multiplier = prgsize / bank.size;
+				auto rom_bank_rect = prg_rom_area;
+				rom_bank_rect.h = int(rom_bank_rect.h / rom_multiplier);
+				rom_bank_rect.y += rom_bank_rect.h * bank.bank;
+
+				canvas.fill_rect(bank_color(bank.bank), mem_bank_rect);
+				canvas.draw_rect({222, 222, 222}, mem_bank_rect);
+				auto bank_txt = fmt::format("{}", bank.bank);
+				draw_string_centered(canvas, {0, 0, 0}, bank_txt, mem_bank_rect + cm::Point2{-1, -1});
+				draw_string_centered(canvas, {0, 0, 0}, bank_txt, mem_bank_rect + cm::Point2{-1, 1});
+				draw_string_centered(canvas, {0, 0, 0}, bank_txt, mem_bank_rect + cm::Point2{1, -1});
+				draw_string_centered(canvas, {0, 0, 0}, bank_txt, mem_bank_rect + cm::Point2{1, 1});
+				draw_string_centered(canvas, {255, 255, 255}, bank_txt, mem_bank_rect);
+
+				mem_bank_rect.h = 16;
+				auto addr_txt = fmt::format("${:04X}", bank.addr);
+				draw_string_centered(canvas, {0, 0, 0}, addr_txt, mem_bank_rect + cm::Point2{-1, -1});
+				draw_string_centered(canvas, {0, 0, 0}, addr_txt, mem_bank_rect + cm::Point2{-1, 1});
+				draw_string_centered(canvas, {0, 0, 0}, addr_txt, mem_bank_rect + cm::Point2{1, -1});
+				draw_string_centered(canvas, {0, 0, 0}, addr_txt, mem_bank_rect + cm::Point2{1, 1});
+				draw_string_centered(canvas, {255, 255, 255}, addr_txt, mem_bank_rect);
+
+				canvas.fill_rect(bank_color(bank.bank), rom_bank_rect);
+				canvas.draw_rect({222, 222, 222}, rom_bank_rect);
+				draw_string_centered(canvas, {0, 0, 0}, bank_txt, rom_bank_rect + cm::Point2{-1, -1});
+				draw_string_centered(canvas, {0, 0, 0}, bank_txt, rom_bank_rect + cm::Point2{-1, 1});
+				draw_string_centered(canvas, {0, 0, 0}, bank_txt, rom_bank_rect + cm::Point2{1, -1});
+				draw_string_centered(canvas, {0, 0, 0}, bank_txt, rom_bank_rect + cm::Point2{1, 1});
+				draw_string_centered(canvas, {255, 255, 255}, bank_txt, rom_bank_rect);
+			}
+
+			pos.y += 16;
+		}
+	}
+
+	void SideBar::draw_ppu_info(DebugMode mode, nesem::Nes &nes, NesApp &app)
 	{
 		if (mode == DebugMode::none)
 			return;
@@ -181,13 +368,17 @@ namespace app
 		if (mode != DebugMode::none)
 		{
 			renderer.blit(top_left(area), texture);
-			for (size_t i = 0; i < size(nes_pattern_textures); ++i)
-				renderer.blit(nes_pattern_pos[i], nes_pattern_textures[i]);
 
-			if (mode == DebugMode::bg_info)
+			if (mode == DebugMode::bg_info || mode == DebugMode::fg_info)
 			{
-				for (size_t i = 0; i < size(nes_nametable_textures); ++i)
-					renderer.blit(nes_nametable_pos[i], nes_nametable_textures[i]);
+				for (size_t i = 0; i < size(nes_pattern_textures); ++i)
+					renderer.blit(nes_pattern_pos[i], nes_pattern_textures[i]);
+
+				if (mode == DebugMode::bg_info)
+				{
+					for (size_t i = 0; i < size(nes_nametable_textures); ++i)
+						renderer.blit(nes_nametable_pos[i], nes_nametable_textures[i]);
+				}
 			}
 		}
 	}

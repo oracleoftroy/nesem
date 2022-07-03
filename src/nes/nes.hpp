@@ -46,6 +46,8 @@ namespace nesem
 		NesInputDevice &player1() noexcept;
 		NesInputDevice &player2() noexcept;
 
+		const NesCartridge *cartridge() const noexcept;
+
 		auto &bus(this auto &self) noexcept
 		{
 			return self.nes_bus;

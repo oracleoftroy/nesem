@@ -13,6 +13,7 @@ namespace nesem::mappers
 
 	private:
 		void reset() noexcept override;
+		Banks report_cpu_mapping() const noexcept override;
 
 		U8 cpu_read(U16 addr) noexcept override;
 		void cpu_write(U16 addr, U8 value) noexcept override;

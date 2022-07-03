@@ -6,6 +6,16 @@ namespace nesem
 {
 	class Nes;
 
+	struct NesCpuState
+	{
+		U16 PC;
+		U8 S;
+		ProcessorStatus P;
+		U8 A;
+		U8 X;
+		U8 Y;
+	};
+
 	// The NES used a Ricoh 2A03, a custom 6502 CPU with decimal mode disabled and an integrated audio processing unit
 	class NesCpu final
 	{
@@ -21,6 +31,7 @@ namespace nesem
 
 		// get information about the current state
 		U64 current_cycle() const noexcept;
+		NesCpuState state() noexcept;
 
 	private:
 		// helper functions

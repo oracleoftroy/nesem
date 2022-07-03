@@ -15,6 +15,7 @@ namespace nesem::mappers
 
 	private:
 		void reset() noexcept override;
+		Banks report_cpu_mapping() const noexcept override;
 
 		size_t map_addr_cpu(U16 addr) noexcept;
 		size_t map_addr_ppu(U16 addr) noexcept;

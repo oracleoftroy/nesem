@@ -15,6 +15,21 @@ namespace nesem::mappers
 		bank_select = 0;
 	}
 
+	Banks NesMapper003::report_cpu_mapping() const noexcept
+	{
+		if (prgrom_banks(rom(), bank_16k) == 1)
+		{
+			return {
+				.size = 2,
+				.banks = {Bank{.addr = 0x8000, .bank = 0, .size = bank_16k},
+						  Bank{.addr = 0xC000, .bank = 0, .size = bank_16k}}
+            };
+		}
+		return {
+			.size = 1,
+			.banks = {Bank{.addr = 0x8000, .bank = 0, .size = bank_32k}}};
+	}
+
 	U8 NesMapper003::cpu_read(U16 addr) noexcept
 	{
 		if (addr < 0x8000)

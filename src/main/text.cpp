@@ -169,3 +169,11 @@ void draw_string(ui::Canvas &canvas, cm::Color color, std::string_view text, cm:
 		pos.x += 8;
 	}
 }
+
+void draw_string_centered(ui::Canvas &canvas, cm::Color color, std::string_view text, cm::Recti area)
+{
+	auto text_width = int(text.size() * 8);
+	auto string_pos = cm::Point2{area.x + (area.w / 2 - (text_width / 2)), area.y + (area.h / 2 - 4)};
+
+	draw_string(canvas, color, text, string_pos);
+}

@@ -784,6 +784,18 @@ namespace nesem
 		return instruction_complete;
 	}
 
+	NesCpuState NesCpu::state() noexcept
+	{
+		return {
+			.PC = PC,
+			.S = S,
+			.P = P,
+			.A = A,
+			.X = X,
+			.Y = Y,
+		};
+	}
+
 	void NesCpu::push(U8 value) noexcept
 	{
 		nes->bus().write(0x0100 | S, value);

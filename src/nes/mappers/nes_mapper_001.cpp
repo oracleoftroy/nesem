@@ -20,7 +20,21 @@ namespace nesem::mappers
 		//  32k >> 12 - 1 == 0b00111
 		//  64k >> 12 - 1 == 0b01111
 		// 128k >> 12 - 1 == 0b11111
-		chr_bank_mask = U8((size(rom().chr_rom) >> 12) - 1);
+		chr_bank_mask = U8((chr_size() >> 12) - 1);
+		switch (chr_bank_mask)
+		{
+		case 0b00001:
+		case 0b00011:
+		case 0b00111:
+		case 0b01111:
+		case 0b11111:
+			// all valid masks
+			break;
+
+		default:
+			LOG_CRITICAL("Invalid CHR-ROM mask!");
+			break;
+		}
 
 		prg_ram.resize(prgram_size(rom()));
 
@@ -42,6 +56,46 @@ namespace nesem::mappers
 		chr_bank_1 = 0;
 		prg_bank = 0;
 		last_write_cycle = 0;
+	}
+
+	Banks NesMapper001::report_cpu_mapping() const noexcept
+	{
+		auto [bank, first_bank, last_bank] = calculate_banks();
+
+		auto bank_mode = (control >> 2) & 3;
+
+		switch (bank_mode)
+		{
+		default:
+			LOG_CRITICAL("This should never happen!");
+			return {};
+
+		case 0:
+		case 1:
+			//	32k at $8000
+			return Banks{
+				.size = 1,
+				.banks{Bank{.addr = 0x8000, .bank = U16(bank >> 1), .size = bank_32k}},
+			};
+
+			//  2: fix first bank at $8000 and switch 16 KB bank at $C000;
+		case 2:
+			return Banks{
+				.size = 2,
+				.banks{
+					   Bank{.addr = 0x8000, .bank = first_bank, .size = bank_16k},
+					   Bank{.addr = 0xC000, .bank = bank, .size = bank_16k}},
+			};
+
+			//  3: fix last bank at $C000 and switch 16 KB bank at $8000)
+		case 3:
+			return Banks{
+				.size = 2,
+				.banks{
+					   Bank{.addr = 0x8000, .bank = bank, .size = bank_16k},
+					   Bank{.addr = 0xC000, .bank = last_bank, .size = bank_16k}},
+			};
+		}
 	}
 
 	U8 NesMapper001::cpu_read(U16 addr) noexcept
@@ -187,6 +241,32 @@ namespace nesem::mappers
 		return result;
 	}
 
+	auto NesMapper001::calculate_banks() const noexcept -> PrgRomBanks
+	{
+		U8 bank = prg_bank & 0b01111;
+		U8 first_bank = 0;
+		U8 last_bank_mask = 0b1111;
+
+		// prg_bank can address up to 256k. A 512k cart stores an extra bit in chr_bank_0 and chr_bank_1.
+		// NesDev wiki indicates that a game should always store the same value in both bits, so we'll
+		// assume it is always safe to just use chr_bank_0
+
+		// 512k prg-rom
+		if (size(rom().prg_rom) == 0x80000)
+		{
+			auto bank_ext = (chr_bank_0 & 0b10000);
+			bank |= bank_ext;
+			first_bank |= bank_ext;
+			last_bank_mask |= bank_ext;
+		}
+
+		return PrgRomBanks{
+			.bank = bank,
+			.first_bank = first_bank,
+			.last_bank = U8((prgrom_banks(rom(), bank_16k) - 1) & last_bank_mask),
+		};
+	}
+
 	size_t NesMapper001::map_prgram_addr(U16 addr) const noexcept
 	{
 		if (addr < 0x6000 || addr >= 0x8000) [[unlikely]]
@@ -215,23 +295,9 @@ namespace nesem::mappers
 			return 0;
 		}
 
+		auto [bank, first_bank, last_bank] = calculate_banks();
+
 		auto bank_mode = (control >> 2) & 3;
-		auto bank = prg_bank & 0b01111;
-		auto first_bank = 0;
-		auto last_bank_mask = 0b1111;
-
-		// prg_bank can address up to 256k. A 512k cart stores an extra bit in chr_bank_0 and chr_bank_1.
-		// NesDev wiki indicates that a game should always store the same value in both bits, so we'll
-		// assume it is always safe to just use chr_bank_0
-
-		// 512k prg-rom
-		if (size(rom().prg_rom) == 0x80000)
-		{
-			auto bank_ext = (chr_bank_0 & 0b10000);
-			first_bank |= bank_ext;
-			last_bank_mask |= bank_ext;
-		}
-		auto chr_bank_mode = (control >> 4) & 1;
 
 		switch (bank_mode)
 		{
@@ -256,7 +322,7 @@ namespace nesem::mappers
 		case 3:
 
 			if (addr >= 0xC000)
-				bank = (prgrom_banks(rom(), bank_16k) - 1) & last_bank_mask;
+				bank = last_bank;
 
 			return bank * bank_16k + (addr & (bank_16k - 1));
 		}

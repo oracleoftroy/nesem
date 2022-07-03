@@ -395,7 +395,7 @@ namespace cm
 		return result;
 	}
 
-	constexpr Colorf to_rgb(ColorHSL c)
+	constexpr Colorf to_rgb(ColorHSL c) noexcept
 	{
 		while (c.h < 0.0f)
 			c.h += 360.0f;

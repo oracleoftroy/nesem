@@ -24,6 +24,7 @@ namespace app
 		none,
 		bg_info,
 		fg_info,
+		cpu_info,
 	};
 
 	constexpr auto nes_resolution = cm::Size{256, 240};
@@ -148,6 +149,7 @@ namespace app
 		ui::Key debug_mode_none;
 		ui::Key debug_mode_bg;
 		ui::Key debug_mode_fg;
+		ui::Key debug_mode_cpu;
 
 		bool system_break = false;
 		ui::Key break_key;

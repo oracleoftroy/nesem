@@ -123,4 +123,9 @@ namespace nesem
 
 		return *player2_input;
 	}
+
+	const NesCartridge *Nes::cartridge() const noexcept
+	{
+		return nes_cartridge.get();
+	}
 }

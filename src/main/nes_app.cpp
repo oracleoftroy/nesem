@@ -87,6 +87,7 @@ namespace app
 			debug_mode_none = app.key_from_name("0");
 			debug_mode_bg = app.key_from_name("1");
 			debug_mode_fg = app.key_from_name("2");
+			debug_mode_cpu = app.key_from_name("3");
 
 			break_key = app.key_from_name("Pause");
 			run_key = app.key_from_name("F5");
@@ -226,6 +227,12 @@ namespace app
 		if (app.key_pressed(debug_mode_fg))
 		{
 			on_change_debug_mode(DebugMode::fg_info);
+			LOG_INFO("Debug mode now: {}", int(debug_mode));
+		}
+
+		if (app.key_pressed(debug_mode_cpu))
+		{
+			on_change_debug_mode(DebugMode::cpu_info);
 			LOG_INFO("Debug mode now: {}", int(debug_mode));
 		}
 

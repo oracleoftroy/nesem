@@ -31,6 +31,10 @@ namespace app
 		void render(ui::Renderer &renderer, DebugMode mode);
 
 	private:
+		void draw_cpu_info(nesem::Nes &nes);
+		void draw_ppu_info(DebugMode mode, nesem::Nes &nes, NesApp &app);
+
+	private:
 		ui::Texture texture;
 		std::array<ui::Texture, 2> nes_pattern_textures;
 		std::array<cm::Point2i, 2> nes_pattern_pos;

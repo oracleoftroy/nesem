@@ -15,6 +15,16 @@ namespace nesem::mappers
 		bank_select = 0;
 	}
 
+	Banks NesMapper002::report_cpu_mapping() const noexcept
+	{
+		auto last_bank = U16(prgrom_banks(rom(), bank_16k) - 1);
+		return {
+			.size = 2,
+			.banks = {Bank{.addr = 0x8000, .bank = bank_select, .size = bank_16k},
+					  Bank{.addr = 0xC000, .bank = last_bank, .size = bank_16k}}
+        };
+	}
+
 	U8 NesMapper002::cpu_read(U16 addr) noexcept
 	{
 		if (addr < 0x8000)
@@ -25,10 +35,10 @@ namespace nesem::mappers
 
 		// bank switched ROM
 		if (addr < 0xC000)
-			return rom().prg_rom[bank_select * 0x4000 + (addr & 0x3FFF)];
+			return rom().prg_rom[bank_select * bank_16k + (addr & 0x3FFF)];
 
 		// always fixed to the last 16K bank
-		return rom().prg_rom[(prgrom_banks(rom(), bank_16k) - 1) * 0x4000 + (addr & 0x3FFF)];
+		return rom().prg_rom[(prgrom_banks(rom(), bank_16k) - 1) * bank_16k + (addr & (bank_16k - 1))];
 	}
 
 	void NesMapper002::cpu_write(U16 addr, U8 value) noexcept

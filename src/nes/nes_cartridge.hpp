@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <filesystem>
 #include <optional>
 #include <vector>
@@ -10,6 +11,30 @@
 namespace nesem
 {
 	class Nes;
+
+	struct Bank
+	{
+		U16 addr; // starting address in chr / prg memory
+		U16 bank; // the bank number in
+		U32 size;
+	};
+
+	struct Banks
+	{
+		static constexpr size_t N = 5;
+		size_t size;
+		std::array<Bank, N> banks;
+
+		auto &&begin(this auto &&self) noexcept
+		{
+			return std::begin(self.banks);
+		}
+
+		auto &&end(this auto &&self) noexcept
+		{
+			return std::begin(self.banks) + self.size;
+		}
+	};
 
 	class NesCartridge
 	{
@@ -26,10 +51,13 @@ namespace nesem
 		virtual std::optional<U8> ppu_read(U16 &addr) noexcept = 0;
 		virtual bool ppu_write(U16 &addr, U8 value) noexcept = 0;
 
+		virtual Banks report_cpu_mapping() const noexcept = 0;
+
 		const mappers::NesRom &rom() const noexcept;
 		bool irq() noexcept;
 
 	protected:
+		size_t chr_size() const noexcept;
 		U8 chr_read(size_t addr) const noexcept;
 		bool chr_write(size_t addr, U8 value) noexcept;
 

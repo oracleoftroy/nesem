@@ -36,6 +36,30 @@ namespace nesem::mappers
 		cycle_low = 0;
 	}
 
+	Banks NesMapper004::report_cpu_mapping() const noexcept
+	{
+		int mode = (bank_select >> 6) & 1;
+		auto num_banks = prgrom_banks(rom(), bank_8k);
+
+		U16 bank0 = bank_map[6];
+		U16 bank1 = bank_map[7];
+		U16 bank2 = num_banks - 2;
+		U16 bank3 = num_banks - 1;
+
+		if (mode == 1)
+			std::swap(bank0, bank2);
+
+		return {
+			.size = 4,
+			.banks = {
+					  Bank{.addr = 0x8000, .bank = bank0, .size = bank_8k},
+					  Bank{.addr = 0xA000, .bank = bank1, .size = bank_8k},
+					  Bank{.addr = 0xC000, .bank = bank2, .size = bank_8k},
+					  Bank{.addr = 0xE000, .bank = bank3, .size = bank_8k},
+					  }
+        };
+	}
+
 	size_t NesMapper004::map_addr_cpu(U16 addr) noexcept
 	{
 		if (addr < 0x8000)
@@ -57,8 +81,6 @@ namespace nesem::mappers
 
 		else if (addr < 0xE000)
 			bank = mode == 0 ? num_banks - 2 : bank_map[6];
-
-		bank %= num_banks;
 
 		return static_cast<U16>(bank * bank_8k + (addr & (bank_8k - 1)));
 	}
@@ -149,20 +171,21 @@ namespace nesem::mappers
 			return;
 		}
 
-		// writes to
-		U16 reg = ((addr >> 12) & 0b110) | (addr & 1);
+		// mask off the unimportant bits of the address so we can switch to the correct register
+		// each 4k region has an even and odd register
+		U16 reg = addr & 0b11000000'00000001;
 
 		switch (reg)
 		{
 		default:
-			LOG_CRITICAL("Unexpected write to {:04X} with value {}, switch should be exhaustive", addr, value);
+			LOG_CRITICAL("Unexpected write to reg {:04X} addr {:04X} with value {}, switch should be exhaustive", reg, addr, value);
 			break;
 
-		case 0:
+		case 0x8000:
 			bank_select = value;
 			break;
 
-		case 1:
+		case 0x8001:
 		{
 			auto bank = value;
 			auto index = bank_select & 7;
@@ -175,35 +198,35 @@ namespace nesem::mappers
 
 			// banks 6-7 are prg-rom banks. According to the NESdev wiki, the MMC3 only has 6 prg-rom address lines, so the high bits are ignored. Some romhacks use all 8.
 			else if (index < 8)
-				bank &= 0b00111111;
+				bank &= prgrom_banks(rom(), bank_8k) - 1;
 
 			bank_map[index] = bank;
 			break;
 		}
-		case 2:
+		case 0xA000:
 			mirroring = value;
 			break;
 
-		case 3:
+		case 0xA001:
 			prg_ram_protect = value;
 			break;
 
-		case 4:
+		case 0xC000:
 			irq_latch = value;
 			break;
 
-		case 5:
+		case 0xC001:
 			// irq reload
 			irq_reload = true;
 			break;
 
-		case 6:
+		case 0xE000:
 			// this disables interrupts and acknowledges any pending interrupts... I guess a game has to disable and then enable interrupts to acknowledge them?
 			signal_irq(false);
 			irq_enabled = false;
 			break;
 
-		case 7:
+		case 0xE001:
 			irq_enabled = true;
 			break;
 		}
