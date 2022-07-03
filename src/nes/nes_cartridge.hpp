@@ -52,6 +52,7 @@ namespace nesem
 		virtual bool ppu_write(U16 &addr, U8 value) noexcept = 0;
 
 		virtual Banks report_cpu_mapping() const noexcept = 0;
+		virtual mappers::MirroringMode mirroring() const noexcept;
 
 		const mappers::NesRom &rom() const noexcept;
 		bool irq() noexcept;

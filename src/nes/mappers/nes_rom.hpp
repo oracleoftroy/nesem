@@ -9,16 +9,34 @@
 
 namespace nesem::mappers
 {
+	enum class MirroringMode : U8
+	{
+		horizontal,
+		vertical,
+		one_screen,
+		four_screen,
+	};
+
+	constexpr std::string_view to_string(MirroringMode mode) noexcept
+	{
+		using enum MirroringMode;
+		switch (mode)
+		{
+		case four_screen:
+			return "four-screen";
+		case one_screen:
+			return "one-screen";
+		case horizontal:
+			return "horizontal";
+		case vertical:
+			return "vertical";
+		}
+
+		return "*** UNKNOWN ***";
+	}
+
 	namespace ines_2
 	{
-		enum class MirroringMode : U8
-		{
-			horizontal,
-			vertical,
-			one_screen,
-			four_screen,
-		};
-
 		struct PrgRom
 		{
 			size_t size;
@@ -125,22 +143,13 @@ namespace nesem::mappers
 
 	namespace ines_1
 	{
-		enum class Mirroring
-		{
-			horizontal,
-			vertical,
-		};
-
 		struct RomData
 		{
 			// iNES mapper id, see: https://wiki.nesdev.org/w/index.php?title=Mapper
 			int mapper;
 
 			// nametable mirroring mode
-			Mirroring mirroring;
-
-			// indicates special handling of mirroring, exact handling varies by mapper
-			bool mirror_override;
+			MirroringMode mirroring;
 
 			// size in 16K units
 			int prg_rom_size;
@@ -173,8 +182,10 @@ namespace nesem::mappers
 	};
 
 	// utility function for mappers representing physically soldered nametable maps
-	void apply_hardware_nametable_mapping(const NesRom &rom, U16 &addr) noexcept;
-	ines_2::MirroringMode mirroring_mode(const NesRom &rom) noexcept;
+	// this handles one and four screen modes as selecting the first or last nametable
+	// roms that provide additional nametable memory need to provide custom handling
+	void apply_hardware_nametable_mapping(MirroringMode mode, U16 &addr) noexcept;
+	MirroringMode mirroring_mode(const NesRom &rom) noexcept;
 
 	int prgrom_banks(const NesRom &rom, BankSize bank_size) noexcept;
 	int chrrom_banks(const NesRom &rom, BankSize bank_size) noexcept;

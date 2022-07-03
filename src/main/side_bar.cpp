@@ -314,6 +314,14 @@ namespace app
 
 			auto pos = cm::Point2{2, palette_start_pos.y - 12};
 
+			if (auto cartridge = nes.cartridge();
+				cartridge != nullptr)
+			{
+				auto mirror_mode = cartridge->mirroring();
+				draw_string(canvas, {255, 255, 255}, fmt::format("mirror mode: {}", to_string(mirror_mode)), pos);
+				pos.y -= 10;
+			}
+
 			draw_string(canvas, {255, 255, 255}, fmt::format("nametable: {}", nt), pos);
 			pos.y -= 10;
 			draw_string(canvas, {255, 255, 255}, fmt::format("coarse x,y: {:>2}, {:>2}", coarse_x, coarse_y), pos);

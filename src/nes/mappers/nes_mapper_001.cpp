@@ -185,30 +185,27 @@ namespace nesem::mappers
 		return false;
 	}
 
-	void NesMapper001::nt_mirroring(U16 &addr) noexcept
+	MirroringMode NesMapper001::mirroring() const noexcept
 	{
+		using enum MirroringMode;
+
 		auto mode = control & 3;
 		switch (mode)
 		{
 		case 0:
+			return one_screen;
 		case 1:
-			// one-screen, lower bank
-			// one-screen, upper bank
-			addr = (addr & ~0b0'000'11'00000'00000) | (mode << 10);
-			break;
+			return four_screen;
 		case 2:
-			// vertical - nothing to do
-			break;
+			return vertical;
 		case 3:
-			// horizontal
-			// exchange the nt_x and nt_y bits
-			// we assume vertical mirroring by default, so this flips the 2400-27ff
-			// range with the 2800-2BFF range to achieve a horizontal mirror
-			addr = (addr & ~0b0'000'11'00000'00000) |
-				((addr & 0b0'000'10'00000'00000) >> 1) |
-				((addr & 0b0'000'01'00000'00000) << 1);
-			break;
+			return horizontal;
 		}
+	}
+
+	void NesMapper001::nt_mirroring(U16 &addr) noexcept
+	{
+		apply_hardware_nametable_mapping(mirroring(), addr);
 	}
 
 	std::optional<U8> NesMapper001::shift(U8 value) noexcept

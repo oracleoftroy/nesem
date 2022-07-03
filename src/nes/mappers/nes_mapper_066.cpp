@@ -56,7 +56,7 @@ namespace nesem::mappers
 
 		// reading from the nametable
 		else if (addr < 0x3F00)
-			apply_hardware_nametable_mapping(rom(), addr);
+			apply_hardware_nametable_mapping(mirroring(), addr);
 
 		return std::nullopt;
 	}
@@ -66,7 +66,7 @@ namespace nesem::mappers
 		if (addr < 0x2000)
 			return chr_write(chr_bank_select * 0x2000 + addr, value);
 		else if (addr < 0x3F00)
-			apply_hardware_nametable_mapping(rom(), addr);
+			apply_hardware_nametable_mapping(mirroring(), addr);
 
 		return false;
 	}

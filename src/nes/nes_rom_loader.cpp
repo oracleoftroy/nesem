@@ -66,17 +66,18 @@ namespace nesem
 				return {};
 
 			constexpr auto mirroring = [](std::string_view m) {
+				using enum mappers::MirroringMode;
 				if (m == "H")
-					return MirroringMode::horizontal;
+					return horizontal;
 				if (m == "V")
-					return MirroringMode::vertical;
+					return vertical;
 				if (m == "1")
-					return MirroringMode::one_screen;
+					return one_screen;
 				if (m == "4")
-					return MirroringMode::four_screen;
+					return four_screen;
 
 				LOG_CRITICAL("Unexpected mirroring mode {}", m);
-				return MirroringMode::horizontal;
+				return horizontal;
 			};
 
 			return {
@@ -292,8 +293,7 @@ namespace nesem
 
 		int mapper = (header[7] & 0xF0) | (header[6] >> 4);
 
-		auto mirroring = (header[6] & 0b0001) ? mappers::ines_1::Mirroring::vertical : mappers::ines_1::Mirroring::horizontal;
-		bool mirror_override = (header[6] & 0b1000) != 0;
+		auto mirroring = mappers::MirroringMode((header[6] & 0b0001) | ((header[6] & 0b1000) >> 2));
 
 		bool has_battery = (header[6] & 0b00000010) > 0;
 
@@ -312,7 +312,7 @@ namespace nesem
 		auto result = mappers::NesRom{
 			.prg_rom = std::vector<U8>(prg_rom_size * mappers::bank_16k),
 			.chr_rom = std::vector<U8>(chr_rom_size * mappers::bank_8k),
-			.v1 = mappers::ines_1::RomData{mapper, mirroring, mirror_override, prg_rom_size, chr_rom_size, has_battery},
+			.v1 = mappers::ines_1::RomData{mapper, mirroring, prg_rom_size, chr_rom_size, has_battery},
 		};
 
 		if (!file.read(reinterpret_cast<char *>(data(result.prg_rom)), size(result.prg_rom)))

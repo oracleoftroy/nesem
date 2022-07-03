@@ -30,6 +30,7 @@ namespace nesem::mappers
 		std::optional<U8> ppu_read(U16 &addr) noexcept override;
 		bool ppu_write(U16 &addr, U8 value) noexcept override;
 
+		MirroringMode mirroring() const noexcept override;
 		void nt_mirroring(U16 &addr) noexcept;
 		std::optional<U8> shift(U8 value) noexcept;
 

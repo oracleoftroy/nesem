@@ -22,7 +22,7 @@ namespace nesem::mappers
 		bank_select = 0;
 		bank_map = {};
 
-		mirroring = 0;
+		mirror = 0;
 		prg_ram_protect = 0;
 
 		irq_latch = 255;
@@ -58,6 +58,26 @@ namespace nesem::mappers
 					  Bank{.addr = 0xE000, .bank = bank3, .size = bank_8k},
 					  }
         };
+	}
+
+	MirroringMode NesMapper004::mirroring() const noexcept
+	{
+		using enum MirroringMode;
+
+		auto hw_mode = mirroring_mode(rom());
+
+		switch (hw_mode)
+		{
+		case one_screen:
+		case four_screen:
+			return hw_mode;
+
+		default:
+			// runtime configured H or V
+			// bit-0 controls mirroring with 1 == H and 0 == V
+			// this is inverted from the iNES format, so invert the bit first
+			return MirroringMode((~mirror) & 1);
+		}
 	}
 
 	size_t NesMapper004::map_addr_cpu(U16 addr) noexcept
@@ -204,7 +224,7 @@ namespace nesem::mappers
 			break;
 		}
 		case 0xA000:
-			mirroring = value;
+			mirror = value;
 			break;
 
 		case 0xA001:
@@ -242,19 +262,7 @@ namespace nesem::mappers
 		// reading from the nametable
 		else if (addr < 0x3F00)
 		{
-			if (auto mode = mirroring_mode(rom());
-				mode == ines_2::MirroringMode::one_screen || mode == ines_2::MirroringMode::four_screen)
-				apply_hardware_nametable_mapping(rom(), addr);
-			else
-			{
-				// if currently configured for horizontal mapping
-				if ((mirroring & 1) == 1)
-				{
-					addr = (addr & ~0b0'000'11'00000'00000) |
-						((addr & 0b0'000'10'00000'00000) >> 1) |
-						((addr & 0b0'000'01'00000'00000) << 1);
-				}
-			}
+			apply_hardware_nametable_mapping(mirroring(), addr);
 		}
 
 		return std::nullopt;
@@ -269,19 +277,7 @@ namespace nesem::mappers
 		}
 		else if (addr < 0x3F00)
 		{
-			if (auto mode = mirroring_mode(rom());
-				mode == ines_2::MirroringMode::one_screen || mode == ines_2::MirroringMode::four_screen)
-				apply_hardware_nametable_mapping(rom(), addr);
-			else
-			{
-				// if currently configured for horizontal mapping
-				if ((mirroring & 1) == 1)
-				{
-					addr = (addr & ~0b0'000'11'00000'00000) |
-						((addr & 0b0'000'10'00000'00000) >> 1) |
-						((addr & 0b0'000'01'00000'00000) << 1);
-				}
-			}
+			apply_hardware_nametable_mapping(mirroring(), addr);
 		}
 		return false;
 	}

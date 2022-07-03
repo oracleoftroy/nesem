@@ -26,6 +26,12 @@ namespace nesem
 		}
 	}
 
+	mappers::MirroringMode NesCartridge::mirroring() const noexcept
+	{
+		// default implementation returns whatever the ROM tells us
+		return mirroring_mode(nes_rom);
+	}
+
 	const mappers::NesRom &NesCartridge::rom() const noexcept
 	{
 		return nes_rom;
@@ -69,31 +75,9 @@ namespace nesem
 
 	std::unique_ptr<NesCartridge> load_cartridge(const Nes &nes, mappers::NesRom rom) noexcept
 	{
-		LOG_INFO("mapper: {}", mapper(rom));
-
-		switch (mirroring_mode(rom))
-		{
-			using enum mappers::ines_2::MirroringMode;
-		case four_screen:
-			LOG_INFO("mirroring: four-screen");
-			break;
-		case one_screen:
-			LOG_INFO("mirroring: one-screen");
-			break;
-		case horizontal:
-			LOG_INFO("mirroring: horizontal");
-			break;
-		case vertical:
-			LOG_INFO("mirroring: vertical");
-			break;
-		}
-
-		LOG_INFO("PRG-ROM size: {0}K ({1:L})", size(rom.prg_rom) / 1024, size(rom.prg_rom));
-		LOG_INFO("CHR-ROM size: {0}K ({1:L})", size(rom.chr_rom) / 1024, size(rom.chr_rom));
-
 		if (rom.v2)
 		{
-			LOG_INFO("iNES2 info");
+			LOG_INFO("iNES 2 info");
 
 			LOG_INFO("Console region: {0}, type: {1}", rom.v2->console.region, rom.v2->console.type);
 			LOG_INFO("Expansion device: {0}", expansion_device_name(rom.v2->expansion));
@@ -116,6 +100,15 @@ namespace nesem
 
 			if (rom.v2->chrnvram)
 				LOG_INFO("CHR NVRAM size: {0}K ({1:L})", rom.v2->chrnvram->size / 1024, rom.v2->chrnvram->size);
+
+			LOG_INFO("mirroring: {}", to_string(mirroring_mode(rom)));
+		}
+		else
+		{
+			LOG_INFO("iNES 1 info");
+			LOG_INFO("mapper: {}", mapper(rom));
+			LOG_INFO("PRG-ROM size: {0}K ({1:L})", size(rom.prg_rom) / 1024, size(rom.prg_rom));
+			LOG_INFO("CHR-ROM size: {0}K ({1:L})", size(rom.chr_rom) / 1024, size(rom.chr_rom));
 		}
 
 		switch (mapper(rom))

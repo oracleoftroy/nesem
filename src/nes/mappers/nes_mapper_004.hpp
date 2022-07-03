@@ -16,6 +16,7 @@ namespace nesem::mappers
 	private:
 		void reset() noexcept override;
 		Banks report_cpu_mapping() const noexcept override;
+		MirroringMode mirroring() const noexcept;
 
 		size_t map_addr_cpu(U16 addr) noexcept;
 		size_t map_addr_ppu(U16 addr) noexcept;
@@ -34,7 +35,7 @@ namespace nesem::mappers
 		U8 bank_select = 0; // 8000-9FFE even
 		std::array<U8, 8> bank_map{}; // 8001-9FFF odd
 
-		U8 mirroring = 0; // A000-BFFE even
+		U8 mirror = 0; // A000-BFFE even
 		U8 prg_ram_protect = 0; // A001-BFFF odd
 
 		U8 irq_latch = 0; // C000-DFFE even
