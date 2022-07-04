@@ -25,6 +25,8 @@ namespace nesem
 
 			chr_ram.resize(chrram_size(rom()));
 		}
+
+		emulate_bus_conflicts = has_bus_conflicts(nes_rom);
 	}
 
 	mappers::MirroringMode NesCartridge::mirroring() const noexcept
@@ -40,6 +42,9 @@ namespace nesem
 
 	void NesCartridge::cpu_write(U16 addr, U8 value) noexcept
 	{
+		if (emulate_bus_conflicts)
+			value &= cpu_read(addr);
+
 		on_cpu_write(addr, value);
 	}
 
@@ -94,6 +99,11 @@ namespace nesem
 		irq_signaled = signal;
 	}
 
+	void NesCartridge::enable_bus_conflicts(bool enable) noexcept
+	{
+		emulate_bus_conflicts = enable;
+	}
+
 	std::unique_ptr<NesCartridge> load_cartridge(const Nes &nes, mappers::NesRom rom) noexcept
 	{
 		if (rom.v2)
@@ -121,8 +131,6 @@ namespace nesem
 
 			if (rom.v2->chrnvram)
 				LOG_INFO("CHR NVRAM size: {0}K ({1:L})", rom.v2->chrnvram->size / 1024, rom.v2->chrnvram->size);
-
-			LOG_INFO("mirroring: {}", to_string(mirroring_mode(rom)));
 		}
 		else
 		{
@@ -131,6 +139,9 @@ namespace nesem
 			LOG_INFO("PRG-ROM size: {0}K ({1:L})", size(rom.prg_rom) / 1024, size(rom.prg_rom));
 			LOG_INFO("CHR-ROM size: {0}K ({1:L})", size(rom.chr_rom) / 1024, size(rom.chr_rom));
 		}
+
+		LOG_INFO("mirroring: {}", to_string(mirroring_mode(rom)));
+		LOG_INFO("has bus conflicts: {}", has_bus_conflicts(rom));
 
 		switch (mapper(rom))
 		{

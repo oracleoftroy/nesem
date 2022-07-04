@@ -236,4 +236,92 @@ namespace nesem::mappers
 		return size;
 	}
 
+	bool has_bus_conflicts(const NesRom &rom) noexcept
+	{
+		// https://www.nesdev.org/wiki/Category:Mappers_with_bus_conflicts
+		// INES Mapper 003
+		// INES Mapper 034
+		// INES Mapper 152
+		// INES Mapper 185
+		// INES Mapper 188
+		// AxROM (Mapper 007)
+		// BNROM (Mapper 034)
+		// Color Dreams (Mapper 011)
+		// CPROM (Mapper 013)
+		// GxROM (Mapper 066)
+		// UNROM 512 (Mapper 030)
+		// UxROM (Mapper 002, 094, 180)
+
+		if (rom.v2)
+		{
+			// iNES 2 Mappers 2, 3, and 7 designate submappers for whether the cart has bus conflicts
+			// From https://www.nesdev.org/wiki/NES_2.0_submappers#002,_003,_007:_UxROM,_CNROM,_AxROM
+
+			// 0: Default iNES behaviour (Emulators should warn the user and/or enforce bus conflicts for mappers 2 and 3, and should warn the user and/or fail to enforce bus conflicts for mapper 7)
+			// 1: Bus conflicts do not occur
+			// 2: Bus conflicts occur, producing the bitwise AND of the written value and the value in ROM
+
+			switch (rom.v2->pcb.mapper)
+			{
+			case 2:
+			case 3:
+				if (rom.v2->pcb.submapper == 0)
+					return true;
+
+				[[fallthrough]];
+			case 7:
+				if (rom.v2->pcb.submapper == 2)
+					return true;
+
+				return false;
+
+			case 34:
+				// iNES 2 submapper distinguishes the NINA-001 (no conflicts) and BNROM (conflicts), so use that if we have it
+
+				// NINA-001 - always no
+				if (rom.v2->pcb.submapper == 1)
+					return false;
+
+				// BNROM - always yes
+				if (rom.v2->pcb.submapper == 2)
+					return true;
+			}
+		}
+
+		switch (mapper(rom))
+		{
+		case 34:
+			// We did not have a more precise submapper, either because it is 0 or because we only have iNES 1 info
+
+			// From: https://www.nesdev.org/wiki/NES_2.0_submappers#034:_BNROM_/_NINA-001
+
+			// To disambiguate the two mappers, emulators have taken various approaches:
+			// The presense of CHR larger than 8 KiB unambiguously requires NINA-001, as BNROM has no CHR banking.
+			if (chr_banks(rom, bank_8k) > 1)
+				return false;
+
+			// The presence of CHR-RAM is taken to imply BNROM, because both extant BNROM games use CHR-RAM.
+			if (has_chrram(rom))
+				return true;
+
+			// All explicit and implicit heuristics failed, we'll err on the side of no conflicts
+			return false;
+
+			// assume these all have bus conflicts if we got to this point
+		case 2:
+		case 3:
+		case 11:
+		case 13:
+		case 30:
+		case 66:
+		case 94:
+		case 152:
+		case 180:
+		case 185:
+		case 188:
+			return true;
+		}
+
+		return false;
+	}
 }

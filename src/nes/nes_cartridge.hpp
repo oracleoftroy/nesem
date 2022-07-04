@@ -76,6 +76,8 @@ namespace nesem
 
 		void signal_irq(bool signal) noexcept;
 
+		void enable_bus_conflicts(bool enable) noexcept;
+
 	protected:
 		const Nes *nes = nullptr;
 
@@ -84,6 +86,7 @@ namespace nesem
 
 		std::vector<U8> chr_ram;
 		bool irq_signaled = false;
+		bool emulate_bus_conflicts = false;
 	};
 
 	std::unique_ptr<NesCartridge> load_cartridge(const Nes &nes, mappers::NesRom rom) noexcept;
