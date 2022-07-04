@@ -33,6 +33,26 @@ namespace nesem
 		return mirroring_mode(nes_rom);
 	}
 
+	U8 NesCartridge::cpu_read(U16 addr) noexcept
+	{
+		return on_cpu_read(addr);
+	}
+
+	void NesCartridge::cpu_write(U16 addr, U8 value) noexcept
+	{
+		on_cpu_write(addr, value);
+	}
+
+	std::optional<U8> NesCartridge::ppu_read(U16 &addr) noexcept
+	{
+		return on_ppu_read(addr);
+	}
+
+	bool NesCartridge::ppu_write(U16 &addr, U8 value) noexcept
+	{
+		return on_ppu_write(addr, value);
+	}
+
 	const mappers::NesRom &NesCartridge::rom() const noexcept
 	{
 		return nes_rom;

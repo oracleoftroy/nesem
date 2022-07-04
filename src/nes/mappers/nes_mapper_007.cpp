@@ -42,7 +42,7 @@ namespace nesem::mappers
 			return MirroringMode::one_screen;
 	}
 
-	U8 NesMapper007::cpu_read(U16 addr) noexcept
+	U8 NesMapper007::on_cpu_read(U16 addr) noexcept
 	{
 		if (addr < 0x6000)
 		{
@@ -64,7 +64,7 @@ namespace nesem::mappers
 		return rom().prg_rom[bank * bank_32k + (addr & (bank_32k - 1))];
 	}
 
-	void NesMapper007::cpu_write(U16 addr, U8 value) noexcept
+	void NesMapper007::on_cpu_write(U16 addr, U8 value) noexcept
 	{
 		if (addr < 0x6000)
 		{
@@ -79,7 +79,7 @@ namespace nesem::mappers
 		bank_select = value;
 	}
 
-	std::optional<U8> NesMapper007::ppu_read(U16 &addr) noexcept
+	std::optional<U8> NesMapper007::on_ppu_read(U16 &addr) noexcept
 	{
 		if (addr < 0x2000)
 			return chr_read(addr);
@@ -91,7 +91,7 @@ namespace nesem::mappers
 		return std::nullopt;
 	}
 
-	bool NesMapper007::ppu_write(U16 &addr, U8 value) noexcept
+	bool NesMapper007::on_ppu_write(U16 &addr, U8 value) noexcept
 	{
 		if (addr < 0x2000)
 			return chr_write(addr, value);

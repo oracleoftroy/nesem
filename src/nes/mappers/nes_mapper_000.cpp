@@ -48,7 +48,7 @@ namespace nesem::mappers
         };
 	}
 
-	U8 NesMapper000::cpu_read(U16 addr) noexcept
+	U8 NesMapper000::on_cpu_read(U16 addr) noexcept
 	{
 		if (addr < 0x8000)
 		{
@@ -63,7 +63,7 @@ namespace nesem::mappers
 		return rom().prg_rom[addr & addr_mask];
 	}
 
-	void NesMapper000::cpu_write([[maybe_unused]] U16 addr, [[maybe_unused]] U8 value) noexcept
+	void NesMapper000::on_cpu_write([[maybe_unused]] U16 addr, [[maybe_unused]] U8 value) noexcept
 	{
 		if (has_prgram(rom()))
 			LOG_WARN("Write to PRG-RAM not implemented!");
@@ -71,7 +71,7 @@ namespace nesem::mappers
 			LOG_WARN("Write to PRG-ROM not allowed!");
 	}
 
-	std::optional<U8> NesMapper000::ppu_read(U16 &addr) noexcept
+	std::optional<U8> NesMapper000::on_ppu_read(U16 &addr) noexcept
 	{
 		if (addr < 0x2000)
 			return chr_read(addr);
@@ -83,7 +83,7 @@ namespace nesem::mappers
 		return std::nullopt;
 	}
 
-	bool NesMapper000::ppu_write(U16 &addr, U8 value) noexcept
+	bool NesMapper000::on_ppu_write(U16 &addr, U8 value) noexcept
 	{
 		if (addr < 0x2000)
 			return chr_write(addr, value);

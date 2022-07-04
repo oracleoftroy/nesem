@@ -48,20 +48,27 @@ namespace nesem
 
 		virtual void reset() noexcept = 0;
 
-		virtual U8 cpu_read(U16 addr) noexcept = 0;
-		virtual void cpu_write(U16 addr, U8 value) noexcept = 0;
-
-		virtual std::optional<U8> ppu_read(U16 &addr) noexcept = 0;
-		virtual bool ppu_write(U16 &addr, U8 value) noexcept = 0;
-
 		virtual Banks report_cpu_mapping() const noexcept = 0;
 		virtual Banks report_ppu_mapping() const noexcept = 0;
 		virtual mappers::MirroringMode mirroring() const noexcept;
+
+		U8 cpu_read(U16 addr) noexcept;
+		void cpu_write(U16 addr, U8 value) noexcept;
+
+		std::optional<U8> ppu_read(U16 &addr) noexcept;
+		bool ppu_write(U16 &addr, U8 value) noexcept;
 
 		const mappers::NesRom &rom() const noexcept;
 		bool irq() noexcept;
 
 		size_t chr_size() const noexcept;
+
+	private:
+		virtual U8 on_cpu_read(U16 addr) noexcept = 0;
+		virtual void on_cpu_write(U16 addr, U8 value) noexcept = 0;
+
+		virtual std::optional<U8> on_ppu_read(U16 &addr) noexcept = 0;
+		virtual bool on_ppu_write(U16 &addr, U8 value) noexcept = 0;
 
 	protected:
 		U8 chr_read(size_t addr) const noexcept;

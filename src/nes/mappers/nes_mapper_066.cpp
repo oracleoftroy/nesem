@@ -32,7 +32,7 @@ namespace nesem::mappers
         };
 	}
 
-	U8 NesMapper066::cpu_read(U16 addr) noexcept
+	U8 NesMapper066::on_cpu_read(U16 addr) noexcept
 	{
 		if (addr < 0x8000)
 		{
@@ -43,7 +43,7 @@ namespace nesem::mappers
 		return rom().prg_rom[prg_bank_select * 0x8000 + (addr & 0x7FFF)];
 	}
 
-	void NesMapper066::cpu_write(U16 addr, U8 value) noexcept
+	void NesMapper066::on_cpu_write(U16 addr, U8 value) noexcept
 	{
 		if (addr < 0x8000)
 		{
@@ -56,7 +56,7 @@ namespace nesem::mappers
 		chr_bank_select = U8(((value >> 0) & 3) % chr_banks(rom(), bank_8k));
 	}
 
-	std::optional<U8> NesMapper066::ppu_read(U16 &addr) noexcept
+	std::optional<U8> NesMapper066::on_ppu_read(U16 &addr) noexcept
 	{
 		// return value based on the selected CHR-ROM bank
 		if (addr < 0x2000)
@@ -69,7 +69,7 @@ namespace nesem::mappers
 		return std::nullopt;
 	}
 
-	bool NesMapper066::ppu_write(U16 &addr, [[maybe_unused]] U8 value) noexcept
+	bool NesMapper066::on_ppu_write(U16 &addr, [[maybe_unused]] U8 value) noexcept
 	{
 		if (addr < 0x2000)
 			return chr_write(chr_bank_select * 0x2000 + addr, value);
