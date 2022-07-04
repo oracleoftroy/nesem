@@ -11,7 +11,7 @@ namespace nesem::mappers
 	NesMapper004::NesMapper004(const Nes &nes, NesRom &&rom_data) noexcept
 		: NesCartridge(nes, std::move(rom_data))
 	{
-		CHECK(rom().v1.mapper == ines_mapper, "Wrong mapper!");
+		CHECK(mapper(rom()) == ines_mapper, "Wrong mapper!");
 
 		prg_ram.resize(bank_8k);
 		reset();
