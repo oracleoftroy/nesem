@@ -25,6 +25,14 @@ namespace nesem::mappers
         };
 	}
 
+	Banks NesMapper002::report_ppu_mapping() const noexcept
+	{
+		return {
+			.size = 1,
+			.banks = Bank{.addr = 0x0000, .bank = 0, .size = bank_8k}
+        };
+	}
+
 	U8 NesMapper002::cpu_read(U16 addr) noexcept
 	{
 		if (addr < 0x8000)
@@ -68,9 +76,8 @@ namespace nesem::mappers
 	bool NesMapper002::ppu_write(U16 &addr, U8 value) noexcept
 	{
 		if (addr < 0x2000)
-		{
 			return chr_write(addr, value);
-		}
+
 		else if (addr < 0x3F00)
 			apply_hardware_nametable_mapping(mirroring(), addr);
 

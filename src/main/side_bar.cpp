@@ -64,7 +64,7 @@ namespace app
 		pos.y += 16;
 
 		const auto canvas_size = canvas.size();
-		canvas.draw_line({222, 222, 222}, pos, pos + cm::Point2{canvas_size.w - pos.x, 0});
+		canvas.draw_line({222, 222, 222}, pos, pos + cm::Point2{canvas_size.w - pos.x - 4, 0});
 
 		if (const auto *cartridge = nes.cartridge();
 			!cartridge)
@@ -132,75 +132,166 @@ namespace app
 				}
 			}
 
-			constexpr auto bank_color = [](auto bank) {
-				constexpr auto phi = std::numbers::phi_v<float>;
-				constexpr auto golden_angle = 360.0f / (phi * phi);
-				constexpr auto start_hue = 120.0f;
-				return to_color(to_rgb(cm::ColorHSL{.h = start_hue + bank * golden_angle, .s = 0.75f, .l = 0.75f}));
-			};
+			auto cpu_rom_area = cm::Recti{pos.x, canvas_size.h - 512 - 4, (canvas_size.w - (pos.x + 48)) / 4, 512};
+			auto prg_rom_area = cpu_rom_area + cm::Point2{cpu_rom_area.w + 12};
+			auto ppu_chr_area = prg_rom_area + cm::Point2{prg_rom_area.w + 20};
+			auto rom_chr_area = ppu_chr_area + cm::Point2{ppu_chr_area.w + 12};
 
-			auto prgsize = size(cartridge->rom().prg_rom);
+			{
+				auto label_area = cpu_rom_area;
+				label_area.y -= 12;
+				label_area.h = 8;
+				draw_string_centered(canvas, {255, 255, 255}, "CPU", label_area);
+			}
+			{
+				auto label_area = prg_rom_area;
+				label_area.y -= 12;
+				label_area.h = 8;
+				draw_string_centered(canvas, {255, 255, 255}, "Cart", label_area);
+			}
+			{
+				auto cpu_label_area = cm::rect(top_left(cpu_rom_area), bottom_right(prg_rom_area));
+				cpu_label_area.y -= 32;
+				cpu_label_area.h = 16;
+				draw_string_centered(canvas, {255, 255, 255}, "PRG-ROM", cpu_label_area);
+				canvas.draw_line({222, 222, 222}, bottom_left(cpu_label_area), bottom_right(cpu_label_area));
+			}
 
-			// pos.y += 16;
-			// auto prg_sys_area = cm::Recti{pos.x, pos.y, (canvas_size.w - (pos.x + 8)) / 2, canvas_size.h - (pos.y + 4)};
-			auto prg_sys_area = cm::Recti{pos.x + 16, canvas_size.h - 512 - 4, (canvas_size.w - (pos.x + 48)) / 2, 512};
-			auto prg_rom_area = prg_sys_area + cm::Point2{prg_sys_area.w + 16};
+			{
+				auto label_area = ppu_chr_area;
+				label_area.y -= 12;
+				label_area.h = 8;
+				draw_string_centered(canvas, {255, 255, 255}, "PPU", label_area);
+			}
+			{
+				auto label_area = rom_chr_area;
+				label_area.y -= 12;
+				label_area.h = 8;
+				draw_string_centered(canvas, {255, 255, 255}, "Cart", label_area);
+			}
+			{
+				auto ppu_label_area = cm::rect(top_left(ppu_chr_area), bottom_right(rom_chr_area));
+				ppu_label_area.y -= 32;
+				ppu_label_area.h = 16;
+				draw_string_centered(canvas, {255, 255, 255}, "CHR memory", ppu_label_area);
+				canvas.draw_line({222, 222, 222}, bottom_left(ppu_label_area), bottom_right(ppu_label_area));
+			}
 
-			auto mem_label_area = prg_sys_area;
-			mem_label_area.y -= 16;
-			mem_label_area.h = 8;
-			auto rom_label_area = prg_rom_area;
-			rom_label_area.y -= 16;
-			rom_label_area.h = 8;
-			draw_string_centered(canvas, {255, 255, 255}, "CPU MEM", mem_label_area);
-			draw_string_centered(canvas, {255, 255, 255}, "PRG-ROM", rom_label_area);
+			canvas.fill_rect({88, 88, 88}, cpu_rom_area);
+			canvas.draw_rect({222, 222, 222}, cpu_rom_area);
 
-			canvas.fill_rect({88, 88, 88}, prg_sys_area);
-			canvas.draw_rect({222, 222, 222}, prg_sys_area);
 			canvas.fill_rect({88, 88, 88}, prg_rom_area);
 			canvas.draw_rect({222, 222, 222}, prg_rom_area);
 
-			auto map = cartridge->report_cpu_mapping();
-			constexpr auto sys_prg_size = nesem::mappers::bank_32k;
+			canvas.fill_rect({88, 88, 88}, ppu_chr_area);
+			canvas.draw_rect({222, 222, 222}, ppu_chr_area);
 
-			for (auto bank : map)
+			canvas.fill_rect({88, 88, 88}, rom_chr_area);
+			canvas.draw_rect({222, 222, 222}, rom_chr_area);
+
+			constexpr auto prg_bank_color = [](auto bank, float l = 0.75) {
+				constexpr auto phi = std::numbers::phi_v<float>;
+				constexpr auto golden_angle = 360.0f / (phi * phi);
+				constexpr auto start_hue = 120.0f;
+				return to_color(to_rgb(cm::ColorHSL{.h = start_hue + bank * golden_angle, .s = 0.75f, .l = l}));
+			};
+			constexpr auto chr_bank_color = [](auto bank, float l = 0.75) {
+				constexpr auto phi = std::numbers::phi_v<float>;
+				constexpr auto golden_angle = 360.0f / (phi * phi);
+				constexpr auto start_hue = 220.0f;
+				return to_color(to_rgb(cm::ColorHSL{.h = start_hue + bank * golden_angle, .s = 0.65f, .l = l}));
+			};
+
 			{
-				auto mem_multiplier = sys_prg_size / bank.size;
-				auto mem_bank_rect = prg_sys_area;
-				mem_bank_rect.h /= mem_multiplier;
-				mem_bank_rect.y += mem_bank_rect.h * ((bank.addr - 0x8000) / bank.size);
+				auto cpu_map = cartridge->report_cpu_mapping();
+				constexpr auto sys_prg_size = nesem::mappers::bank_32k;
+				auto prgsize = size(cartridge->rom().prg_rom);
 
-				auto rom_multiplier = prgsize / bank.size;
-				auto rom_bank_rect = prg_rom_area;
-				rom_bank_rect.h = int(rom_bank_rect.h / rom_multiplier);
-				rom_bank_rect.y += rom_bank_rect.h * bank.bank;
+				for (auto bank : cpu_map)
+				{
+					auto mem_multiplier = sys_prg_size / bank.size;
+					auto mem_bank_rect = cpu_rom_area;
+					mem_bank_rect.h /= mem_multiplier;
+					mem_bank_rect.y += mem_bank_rect.h * ((bank.addr - 0x8000) / bank.size);
 
-				canvas.fill_rect(bank_color(bank.bank), mem_bank_rect);
-				canvas.draw_rect({222, 222, 222}, mem_bank_rect);
-				auto bank_txt = fmt::format("{}", bank.bank);
-				draw_string_centered(canvas, {0, 0, 0}, bank_txt, mem_bank_rect + cm::Point2{-1, -1});
-				draw_string_centered(canvas, {0, 0, 0}, bank_txt, mem_bank_rect + cm::Point2{-1, 1});
-				draw_string_centered(canvas, {0, 0, 0}, bank_txt, mem_bank_rect + cm::Point2{1, -1});
-				draw_string_centered(canvas, {0, 0, 0}, bank_txt, mem_bank_rect + cm::Point2{1, 1});
-				draw_string_centered(canvas, {255, 255, 255}, bank_txt, mem_bank_rect);
+					auto rom_multiplier = prgsize / bank.size;
+					auto rom_bank_rect = prg_rom_area;
+					rom_bank_rect.h = int(rom_bank_rect.h / rom_multiplier);
+					rom_bank_rect.y += rom_bank_rect.h * bank.bank;
 
-				mem_bank_rect.h = 16;
-				auto addr_txt = fmt::format("${:04X}", bank.addr);
-				draw_string_centered(canvas, {0, 0, 0}, addr_txt, mem_bank_rect + cm::Point2{-1, -1});
-				draw_string_centered(canvas, {0, 0, 0}, addr_txt, mem_bank_rect + cm::Point2{-1, 1});
-				draw_string_centered(canvas, {0, 0, 0}, addr_txt, mem_bank_rect + cm::Point2{1, -1});
-				draw_string_centered(canvas, {0, 0, 0}, addr_txt, mem_bank_rect + cm::Point2{1, 1});
-				draw_string_centered(canvas, {255, 255, 255}, addr_txt, mem_bank_rect);
+					canvas.fill_rect(prg_bank_color(bank.bank), mem_bank_rect);
+					canvas.draw_rect(prg_bank_color(bank.bank, 0.25f), mem_bank_rect);
+					auto bank_txt = fmt::format("{}", bank.bank);
+					draw_string_centered(canvas, {0, 0, 0}, bank_txt, mem_bank_rect + cm::Point2{-1, -1});
+					draw_string_centered(canvas, {0, 0, 0}, bank_txt, mem_bank_rect + cm::Point2{-1, 1});
+					draw_string_centered(canvas, {0, 0, 0}, bank_txt, mem_bank_rect + cm::Point2{1, -1});
+					draw_string_centered(canvas, {0, 0, 0}, bank_txt, mem_bank_rect + cm::Point2{1, 1});
+					draw_string_centered(canvas, {255, 255, 255}, bank_txt, mem_bank_rect);
 
-				canvas.fill_rect(bank_color(bank.bank), rom_bank_rect);
-				canvas.draw_rect({222, 222, 222}, rom_bank_rect);
-				draw_string_centered(canvas, {0, 0, 0}, bank_txt, rom_bank_rect + cm::Point2{-1, -1});
-				draw_string_centered(canvas, {0, 0, 0}, bank_txt, rom_bank_rect + cm::Point2{-1, 1});
-				draw_string_centered(canvas, {0, 0, 0}, bank_txt, rom_bank_rect + cm::Point2{1, -1});
-				draw_string_centered(canvas, {0, 0, 0}, bank_txt, rom_bank_rect + cm::Point2{1, 1});
-				draw_string_centered(canvas, {255, 255, 255}, bank_txt, rom_bank_rect);
+					mem_bank_rect.h = 16;
+					auto addr_txt = fmt::format("${:04X}", bank.addr);
+					draw_string_centered(canvas, {0, 0, 0}, addr_txt, mem_bank_rect + cm::Point2{-1, -1});
+					draw_string_centered(canvas, {0, 0, 0}, addr_txt, mem_bank_rect + cm::Point2{-1, 1});
+					draw_string_centered(canvas, {0, 0, 0}, addr_txt, mem_bank_rect + cm::Point2{1, -1});
+					draw_string_centered(canvas, {0, 0, 0}, addr_txt, mem_bank_rect + cm::Point2{1, 1});
+					draw_string_centered(canvas, {255, 255, 255}, addr_txt, mem_bank_rect);
+
+					canvas.fill_rect(prg_bank_color(bank.bank), rom_bank_rect);
+					canvas.draw_rect(prg_bank_color(bank.bank, 0.25f), rom_bank_rect);
+					draw_string_centered(canvas, {0, 0, 0}, bank_txt, rom_bank_rect + cm::Point2{-1, -1});
+					draw_string_centered(canvas, {0, 0, 0}, bank_txt, rom_bank_rect + cm::Point2{-1, 1});
+					draw_string_centered(canvas, {0, 0, 0}, bank_txt, rom_bank_rect + cm::Point2{1, -1});
+					draw_string_centered(canvas, {0, 0, 0}, bank_txt, rom_bank_rect + cm::Point2{1, 1});
+					draw_string_centered(canvas, {255, 255, 255}, bank_txt, rom_bank_rect);
+				}
 			}
 
+			{
+				auto ppu_map = cartridge->report_ppu_mapping();
+				constexpr auto ppu_chr_size = nesem::mappers::bank_8k;
+				auto chrsize = cartridge->chr_size();
+
+				for (auto bank : ppu_map)
+				{
+					auto mem_multiplier = ppu_chr_size / bank.size;
+					auto mem_bank_rect = ppu_chr_area;
+					mem_bank_rect.h /= mem_multiplier;
+					mem_bank_rect.y += mem_bank_rect.h * (bank.addr / bank.size);
+
+					auto rom_multiplier = chrsize / bank.size;
+					auto rom_bank_rect = rom_chr_area;
+					rom_bank_rect.h = int(rom_bank_rect.h / rom_multiplier);
+					rom_bank_rect.y += rom_bank_rect.h * bank.bank;
+
+					canvas.fill_rect(chr_bank_color(bank.bank), mem_bank_rect);
+					canvas.draw_rect(chr_bank_color(bank.bank, 0.25f), mem_bank_rect);
+
+					canvas.fill_rect(chr_bank_color(bank.bank), rom_bank_rect);
+					canvas.draw_rect(chr_bank_color(bank.bank, 0.25f), rom_bank_rect);
+
+					auto bank_txt = fmt::format("{}", bank.bank);
+					draw_string_centered(canvas, {0, 0, 0}, bank_txt, mem_bank_rect + cm::Point2{-1, -1});
+					draw_string_centered(canvas, {0, 0, 0}, bank_txt, mem_bank_rect + cm::Point2{-1, 1});
+					draw_string_centered(canvas, {0, 0, 0}, bank_txt, mem_bank_rect + cm::Point2{1, -1});
+					draw_string_centered(canvas, {0, 0, 0}, bank_txt, mem_bank_rect + cm::Point2{1, 1});
+					draw_string_centered(canvas, {255, 255, 255}, bank_txt, mem_bank_rect);
+
+					mem_bank_rect.h = 16;
+
+					auto addr_txt = fmt::format("${:04X}", bank.addr);
+					draw_string_centered(canvas, {0, 0, 0}, addr_txt, mem_bank_rect + cm::Point2{-1, -1});
+					draw_string_centered(canvas, {0, 0, 0}, addr_txt, mem_bank_rect + cm::Point2{-1, 1});
+					draw_string_centered(canvas, {0, 0, 0}, addr_txt, mem_bank_rect + cm::Point2{1, -1});
+					draw_string_centered(canvas, {0, 0, 0}, addr_txt, mem_bank_rect + cm::Point2{1, 1});
+					draw_string_centered(canvas, {255, 255, 255}, addr_txt, mem_bank_rect);
+
+					draw_string_centered(canvas, {0, 0, 0}, bank_txt, rom_bank_rect + cm::Point2{-1, -1});
+					draw_string_centered(canvas, {0, 0, 0}, bank_txt, rom_bank_rect + cm::Point2{-1, 1});
+					draw_string_centered(canvas, {0, 0, 0}, bank_txt, rom_bank_rect + cm::Point2{1, -1});
+					draw_string_centered(canvas, {0, 0, 0}, bank_txt, rom_bank_rect + cm::Point2{1, 1});
+					draw_string_centered(canvas, {255, 255, 255}, bank_txt, rom_bank_rect);
+				}
+			}
 			pos.y += 16;
 		}
 	}

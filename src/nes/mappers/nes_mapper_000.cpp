@@ -17,7 +17,8 @@ namespace nesem::mappers
 
 	Banks NesMapper000::report_cpu_mapping() const noexcept
 	{
-		if (size(rom().prg_rom) == bank_16k)
+		auto prgrom_size = size(rom().prg_rom);
+		if (prgrom_size == bank_16k)
 		{
 			return Banks{
 				.size = 2,
@@ -25,7 +26,7 @@ namespace nesem::mappers
 					   Bank{.addr = 0xC000, .bank = 0, .size = bank_16k}},
 			};
 		}
-		else if (size(rom().prg_rom) == bank_32k)
+		else if (prgrom_size == bank_32k)
 		{
 			return Banks{
 				.size = 1,
@@ -37,6 +38,14 @@ namespace nesem::mappers
 			LOG_ERROR("There should only be 16k and 32k modes....");
 			return {};
 		}
+	}
+
+	Banks NesMapper000::report_ppu_mapping() const noexcept
+	{
+		return {
+			.size = 1,
+			.banks = Bank{.addr = 0x0000, .bank = 0, .size = bank_8k}
+        };
 	}
 
 	U8 NesMapper000::cpu_read(U16 addr) noexcept

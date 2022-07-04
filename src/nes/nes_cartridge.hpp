@@ -21,7 +21,10 @@ namespace nesem
 
 	struct Banks
 	{
-		static constexpr size_t N = 5;
+		// using a fixed size array to hold the bank configuration to avoid dynamic memory allocation
+		// RVO should completely eliminate any copying. Bank is 8 bytes, and 8 * 8 + 8 == 72 bytes
+		//  on the stack doesn't seem too much for a typical desktop
+		static constexpr size_t N = 8;
 		size_t size;
 		std::array<Bank, N> banks;
 
@@ -52,13 +55,15 @@ namespace nesem
 		virtual bool ppu_write(U16 &addr, U8 value) noexcept = 0;
 
 		virtual Banks report_cpu_mapping() const noexcept = 0;
+		virtual Banks report_ppu_mapping() const noexcept = 0;
 		virtual mappers::MirroringMode mirroring() const noexcept;
 
 		const mappers::NesRom &rom() const noexcept;
 		bool irq() noexcept;
 
-	protected:
 		size_t chr_size() const noexcept;
+
+	protected:
 		U8 chr_read(size_t addr) const noexcept;
 		bool chr_write(size_t addr, U8 value) noexcept;
 

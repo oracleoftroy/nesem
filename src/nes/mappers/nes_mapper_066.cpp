@@ -24,6 +24,14 @@ namespace nesem::mappers
 			.banks{Bank{.addr = 0x8000, .bank = prg_bank_select, .size = bank_32k}}};
 	}
 
+	Banks NesMapper066::report_ppu_mapping() const noexcept
+	{
+		return {
+			.size = 1,
+			.banks = Bank{.addr = 0x0000, .bank = chr_bank_select, .size = bank_8k}
+        };
+	}
+
 	U8 NesMapper066::cpu_read(U16 addr) noexcept
 	{
 		if (addr < 0x8000)

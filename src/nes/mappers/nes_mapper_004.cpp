@@ -60,6 +60,44 @@ namespace nesem::mappers
         };
 	}
 
+	Banks NesMapper004::report_ppu_mapping() const noexcept
+	{
+		auto mode = (bank_select >> 7) & 1;
+
+		if (mode == 0)
+		{
+			return {
+				.size = 8,
+				.banks = {
+						  Bank{.addr = 0x0000, .bank = U16(bank_map[0] + 0), .size = bank_1k},
+						  Bank{.addr = 0x0400, .bank = U16(bank_map[0] + 1), .size = bank_1k},
+						  Bank{.addr = 0x0800, .bank = U16(bank_map[1] + 0), .size = bank_1k},
+						  Bank{.addr = 0x0C00, .bank = U16(bank_map[1] + 1), .size = bank_1k},
+						  Bank{.addr = 0x1000, .bank = U16(bank_map[2]), .size = bank_1k},
+						  Bank{.addr = 0x1400, .bank = U16(bank_map[3]), .size = bank_1k},
+						  Bank{.addr = 0x1800, .bank = U16(bank_map[4]), .size = bank_1k},
+						  Bank{.addr = 0x1C00, .bank = U16(bank_map[5]), .size = bank_1k},
+						  }
+            };
+		}
+		else
+		{
+			return {
+				.size = 8,
+				.banks = {
+						  Bank{.addr = 0x0000, .bank = U16(bank_map[2]), .size = bank_1k},
+						  Bank{.addr = 0x0400, .bank = U16(bank_map[3]), .size = bank_1k},
+						  Bank{.addr = 0x0800, .bank = U16(bank_map[4]), .size = bank_1k},
+						  Bank{.addr = 0x0C00, .bank = U16(bank_map[5]), .size = bank_1k},
+						  Bank{.addr = 0x1000, .bank = U16(bank_map[0] + 0), .size = bank_1k},
+						  Bank{.addr = 0x1400, .bank = U16(bank_map[0] + 1), .size = bank_1k},
+						  Bank{.addr = 0x1800, .bank = U16(bank_map[1] + 0), .size = bank_1k},
+						  Bank{.addr = 0x1C00, .bank = U16(bank_map[1] + 1), .size = bank_1k},
+						  }
+            };
+		}
+	}
+
 	MirroringMode NesMapper004::mirroring() const noexcept
 	{
 		using enum MirroringMode;
@@ -111,7 +149,6 @@ namespace nesem::mappers
 			LOG_CRITICAL("Address is out of range!");
 
 		auto mode = (bank_select >> 7) & 1;
-		auto num_banks = chr_banks(rom(), bank_1k);
 		size_t bank = 0;
 
 		if (addr < 0x0400)
@@ -130,8 +167,6 @@ namespace nesem::mappers
 			bank = mode == 0 ? bank_map[4] : bank_map[1];
 		else if (addr < 0x2000)
 			bank = mode == 0 ? bank_map[5] : bank_map[1] + 1;
-
-		bank %= num_banks;
 
 		return static_cast<U16>(bank_1k * bank + (addr & (bank_1k - 1)));
 	}
@@ -193,7 +228,7 @@ namespace nesem::mappers
 
 		// mask off the unimportant bits of the address so we can switch to the correct register
 		// each 4k region has an even and odd register
-		U16 reg = addr & 0b11000000'00000001;
+		U16 reg = addr & 0b11100000'00000001;
 
 		switch (reg)
 		{
@@ -210,17 +245,21 @@ namespace nesem::mappers
 			auto bank = value;
 			auto index = bank_select & 7;
 
-			// banks at 0 and 1 are 2K chr-rom banks. Only even numbered banks are allowed, and the hardware ignores the low bit
-			if (index < 2)
-				bank &= 0xFE;
+			U8 bank_mask;
 
-			// banks at 2-5 are 1K chr-rom banks, nothing to do
+			// banks at 2-5 are 1K chr-rom banks
+			if (index < 6)
+				bank_mask = U8(chr_banks(rom(), bank_1k) - 1);
 
 			// banks 6-7 are prg-rom banks. According to the NESdev wiki, the MMC3 only has 6 prg-rom address lines, so the high bits are ignored. Some romhacks use all 8.
 			else if (index < 8)
-				bank &= prgrom_banks(rom(), bank_8k) - 1;
+				bank_mask = U8(prgrom_banks(rom(), bank_8k) - 1);
 
-			bank_map[index] = bank;
+			// banks at 0 and 1 are 2K chr-rom banks. Only even numbered banks are allowed, and the hardware ignores the low bit
+			if (index < 2)
+				bank_mask &= 0xFE;
+
+			bank_map[index] = bank & bank_mask;
 			break;
 		}
 		case 0xA000:
