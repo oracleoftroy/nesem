@@ -9,6 +9,7 @@ include(cmake/CompilerWarnings.cmake)
 add_library(project_options INTERFACE)
 target_compile_features(project_options INTERFACE cxx_std_23)
 set_project_warnings(project_options)
+target_compile_definitions(project_options INTERFACE "$<$<CONFIG:Debug,RelWithDebInfo>:DEBUG>")
 
 add_subdirectory(src)
 

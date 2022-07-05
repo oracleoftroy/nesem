@@ -40,7 +40,7 @@
 #define LOG_ERROR_ONCE(...) LOG_ONCE(LOG_ERROR, __VA_ARGS__)
 #define LOG_CRITICAL_ONCE(...) LOG_ONCE(LOG_CRITICAL, __VA_ARGS__)
 
-#if defined(NDEBUG)
+#if !defined(DEBUG)
 #	define VERIFY(condition, reason) condition
 #	define CHECK(condition, reason)
 #	define DEBUG_BREAK()
