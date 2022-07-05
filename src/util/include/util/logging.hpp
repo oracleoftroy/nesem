@@ -48,23 +48,23 @@
 #else
 #	define DEBUG_BREAK() debug_break()
 
-#	define CHECK(condition, reason)                                      \
-		[&](bool debug_check_condition) {                                 \
-			if (!debug_check_condition)                                   \
-			{                                                             \
-				SPDLOG_WARN("Check '{}' failed: {}", #condition, reason); \
-				DEBUG_BREAK();                                            \
-			}                                                             \
-		}(condition)
-
-#	define VERIFY(condition, reason)                                      \
+#	define CHECK(condition, reason)                                       \
 		[&](bool debug_check_condition) {                                  \
-			if (!debug_check_condition)                                    \
+			if (!debug_check_condition) [[unlikely]]                       \
 			{                                                              \
-				SPDLOG_WARN("Verify '{}' failed: {}", #condition, reason); \
+				LOG_CRITICAL("Check '{}' failed: {}", #condition, reason); \
 				DEBUG_BREAK();                                             \
 			}                                                              \
-			return debug_check_condition;                                  \
+		}(condition)
+
+#	define VERIFY(condition, reason)                                    \
+		[&](bool debug_check_condition) {                                \
+			if (!debug_check_condition) [[unlikely]]                     \
+			{                                                            \
+				LOG_ERROR("Verify '{}' failed: {}", #condition, reason); \
+				DEBUG_BREAK();                                           \
+			}                                                            \
+			return debug_check_condition;                                \
 		}(condition)
 
 #endif
