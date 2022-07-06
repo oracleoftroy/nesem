@@ -53,7 +53,7 @@ namespace nesem::mappers
 		if (addr < 0x8000)
 		{
 			LOG_ERROR("Read from invalid address ${:04X}, ignoring", addr);
-			return 0;
+			return open_bus_read();
 		}
 
 		U16 addr_mask = 0x7FFF;

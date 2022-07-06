@@ -10,6 +10,7 @@
 #include "mappers/nes_mapper_007.hpp"
 #include "mappers/nes_mapper_066.hpp"
 #include "mappers/nes_rom.hpp"
+#include "nes.hpp"
 
 #include <util/logging.hpp>
 
@@ -122,6 +123,11 @@ namespace nesem
 	void NesCartridge::enable_bus_conflicts(bool enable) noexcept
 	{
 		emulate_bus_conflicts = enable;
+	}
+
+	U8 NesCartridge::open_bus_read() const noexcept
+	{
+		return nes->bus().open_bus_read();
 	}
 
 	std::unique_ptr<NesCartridge> load_cartridge(const Nes &nes, mappers::NesRom rom) noexcept

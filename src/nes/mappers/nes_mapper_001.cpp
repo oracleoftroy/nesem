@@ -133,7 +133,7 @@ namespace nesem::mappers
 			if (!prg_ram.empty())
 				return prg_ram[map_prgram_addr(addr)];
 
-			return 0;
+			return open_bus_read();
 		}
 
 		return rom().prg_rom[map_prgrom_addr(addr)];

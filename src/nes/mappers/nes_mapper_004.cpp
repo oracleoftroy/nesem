@@ -200,7 +200,7 @@ namespace nesem::mappers
 		if (addr < 0x6000)
 		{
 			LOG_ERROR("Read to invalid address ${:04X}, ignoring", addr);
-			return 0;
+			return open_bus_read();
 		}
 
 		// prg-ram

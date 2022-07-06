@@ -1,5 +1,7 @@
 #include "nes_apu.hpp"
 
+#include "nes.hpp"
+
 #include <util/logging.hpp>
 
 namespace nesem
@@ -148,7 +150,9 @@ namespace nesem
 			break;
 
 		case 18640:
-			CHECK(step_mode == ApuStepMode::five_step, "Invalid step mode!");
+			// TODO: figure out what we want to do here. APU isn't fully implemented, so ignore this inconsistency for now.
+			// are we susposed to finish the current step and when we start over, it will be four step? there are also supposed to be delays when setting apu values...
+			// CHECK(step_mode == ApuStepMode::five_step, "Invalid step mode!");
 
 			clock_quarter_frame();
 			clock_half_frame();
@@ -182,8 +186,8 @@ namespace nesem
 			return result;
 		}
 
-		LOG_WARN("Reading audio registers shouldn't happen!?!?");
-		return 0;
+		LOG_WARN_ONCE("Attempted read of audio register at addr: {:04X}", addr);
+		return nes->bus().open_bus_read();
 	}
 
 	void NesApu::write(U16 addr, U8 value) noexcept
@@ -235,7 +239,7 @@ namespace nesem
 		case 0x400D:
 		case 0x4014:
 		case 0x4016:
-			LOG_WARN("Write to unused APU addr: {:04X} with value: {:02X}", addr, value);
+			LOG_WARN_ONCE("Write to unused APU addr: {:04X} with value: {:02X}", addr, value);
 			return;
 		}
 

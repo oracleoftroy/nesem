@@ -47,14 +47,14 @@ namespace nesem::mappers
 		if (addr < 0x6000)
 		{
 			LOG_ERROR("Read from invalid address ${:04X}, ignoring", addr);
-			return 0;
+			return open_bus_read();
 		}
 
 		// prg-ram
 		if (addr < 0x8000)
 		{
 			LOG_ERROR_ONCE("Mapper 007 doesn't have PRG-RAM... read from addr: {:04X}", addr);
-			return 0;
+			return open_bus_read();
 		}
 
 		// extension, official carts only use the first 3 bits, but some roms use all 4

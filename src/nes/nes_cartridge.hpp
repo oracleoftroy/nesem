@@ -82,6 +82,7 @@ namespace nesem
 		void signal_irq(bool signal) noexcept;
 
 		void enable_bus_conflicts(bool enable) noexcept;
+		U8 open_bus_read() const noexcept;
 
 	protected:
 		const Nes *nes = nullptr;

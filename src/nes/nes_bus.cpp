@@ -50,41 +50,49 @@ namespace nesem
 		// the NES has 2k of ram mirrored 4 times between addr 0 - 0x1FFF
 		// thus, reads/writes to 0x0001 are observable at address 0x0801, 0x1001, 0x1801
 		if (addr < 0x2000)
-			return ram[addr & 0x7FF] & 255;
+			last_read_value = ram[addr & 0x7FF] & 255;
 
 		// this range maps to PPU registers
-		if (addr < 0x4000)
+		else if (addr < 0x4000)
 		{
 			switch (addr & 7)
 			{
 			case 0: // PPUCTRL
-				return nes->ppu().ppuctrl();
+				last_read_value = nes->ppu().ppuctrl();
+				break;
 
 			case 1: // PPUMASK
-				return nes->ppu().ppumask();
+				last_read_value = nes->ppu().ppumask();
+				break;
 
 			case 2: // PPUSTATUS
-				return nes->ppu().ppustatus();
+				last_read_value = nes->ppu().ppustatus();
+				break;
 
 			case 3: // OAMADDR
-				return nes->ppu().oamaddr();
+				last_read_value = nes->ppu().oamaddr();
+				break;
 
 			case 4: // OAMDATA
-				return nes->ppu().oamdata();
+				last_read_value = nes->ppu().oamdata();
+				break;
 
 			case 5: // PPUSCROLL
-				return nes->ppu().ppuscroll();
+				last_read_value = nes->ppu().ppuscroll();
+				break;
 
 			case 6: // PPUADDR
-				return nes->ppu().ppuaddr();
+				last_read_value = nes->ppu().ppuaddr();
+				break;
 
 			case 7: // PPUDATA
-				return nes->ppu().ppudata();
+				last_read_value = nes->ppu().ppudata();
+				break;
 			}
 		}
 
 		// read controller data
-		if (addr == 0x4016 || addr == 0x4017)
+		else if (addr == 0x4016 || addr == 0x4017)
 		{
 			// if we are in poll mode, make sure to poll. This has the effect of returning the A button over and over again
 			// I don't know if any games actually make use of this, but that is how the hardware behaves
@@ -95,33 +103,24 @@ namespace nesem
 			}
 
 			if (addr == 0x4016)
-				return nes->player1().read();
+				last_read_value = nes->player1().read();
 			else
-				return nes->player2().read();
+				last_read_value = nes->player2().read();
 		}
 
 		// NES APU and I/O registers
-		if (addr < 0x4018)
-			return nes->apu().read(addr);
+		else if (addr < 0x4018)
+			last_read_value = nes->apu().read(addr);
 
 		// unused area, intended for hardware testing and APU features, but disabled on commercial NES units
-		if (addr < 0x4020)
-		{
+		else if (addr < 0x4020)
 			LOG_WARN("disabled address, ignoring read from ${:04X}", addr);
-			return 0;
-		}
 
 		// 0x4020 - 0xFFFF go to the cart
-		if (cartridge)
-			return cartridge->cpu_read(addr);
-		else
-		{
-			LOG_WARN("no cartridge, ignoring read from ${:04X}", addr);
-			return 0;
-		}
+		else if (cartridge)
+			last_read_value = cartridge->cpu_read(addr);
 
-		CHECK(false, "We shouldn't get here");
-		return 0;
+		return last_read_value;
 	}
 
 	void NesBus::write(U16 addr, U8 value) noexcept
@@ -222,5 +221,10 @@ namespace nesem
 	void NesBus::load_cartridge(NesCartridge *cart) noexcept
 	{
 		this->cartridge = cart;
+	}
+
+	U8 NesBus::open_bus_read() const noexcept
+	{
+		return last_read_value;
 	}
 }

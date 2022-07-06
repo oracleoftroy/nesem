@@ -22,6 +22,8 @@ namespace nesem
 
 		void load_cartridge(NesCartridge *cartridge) noexcept;
 
+		U8 open_bus_read() const noexcept;
+
 	private:
 		Nes *nes = nullptr;
 		std::array<U8, 0x800> ram;
@@ -30,5 +32,7 @@ namespace nesem
 		bool poll_input = false;
 		U8 controller1 = 0;
 		U8 controller2 = 0;
+
+		U8 last_read_value = 0;
 	};
 }
