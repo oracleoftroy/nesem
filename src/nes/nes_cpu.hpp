@@ -31,7 +31,7 @@ namespace nesem
 
 		// get information about the current state
 		U64 current_cycle() const noexcept;
-		NesCpuState state() noexcept;
+		NesCpuState state() const noexcept;
 
 	private:
 		// helper functions

@@ -57,6 +57,7 @@ namespace nesem
 		nes_cartridge->reset();
 		nes_cpu.reset();
 		nes_ppu.reset();
+		nes_apu.reset();
 	}
 
 	void Nes::error(std::string_view message) noexcept

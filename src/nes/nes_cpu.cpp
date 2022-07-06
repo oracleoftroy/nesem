@@ -153,7 +153,7 @@ namespace nesem
 		case 0x70:
 		{
 			// relative address is signed
-			int value = int8_t(bus.read(pc));
+			int value = int8_t(bus.peek(pc));
 			return fmt::format("{} *{:+} <${:04X}>", name, value, pc + value + 1);
 		}
 
@@ -170,7 +170,7 @@ namespace nesem
 		case 0x09:
 		case 0xE9:
 		{
-			int value = bus.read(pc);
+			int value = bus.peek(pc);
 			return fmt::format("{0} #{1} <${1:02X}>", name, value);
 		}
 
@@ -197,7 +197,7 @@ namespace nesem
 		case 0x86:
 		case 0x84:
 		{
-			int value = bus.read(pc);
+			int value = bus.peek(pc);
 			return fmt::format("{} ${:02X}", name, value);
 		}
 
@@ -219,7 +219,7 @@ namespace nesem
 		case 0x95:
 		case 0x94:
 		{
-			int value = bus.read(pc);
+			int value = bus.peek(pc);
 			return fmt::format("{} ${:02X},X", name, value);
 		}
 
@@ -227,7 +227,7 @@ namespace nesem
 		case 0xB6:
 		case 0x96:
 		{
-			int value = bus.read(pc);
+			int value = bus.peek(pc);
 			return fmt::format("{} ${:02X},Y", name, value);
 		}
 
@@ -256,8 +256,8 @@ namespace nesem
 		case 0x8E:
 		case 0x8C:
 		{
-			int lo = bus.read(pc);
-			int hi = bus.read(pc + 1);
+			int lo = bus.peek(pc);
+			int hi = bus.peek(pc + 1);
 			return fmt::format("{} ${:04X}", name, hi << 8 | lo);
 		}
 
@@ -278,8 +278,8 @@ namespace nesem
 		case 0xFD:
 		case 0x9D:
 		{
-			int lo = bus.read(pc);
-			int hi = bus.read(pc + 1);
+			int lo = bus.peek(pc);
+			int hi = bus.peek(pc + 1);
 			return fmt::format("{} ${:04X},X", name, hi << 8 | lo);
 		}
 
@@ -294,16 +294,16 @@ namespace nesem
 		case 0xF9:
 		case 0x99:
 		{
-			int lo = bus.read(pc);
-			int hi = bus.read(pc + 1);
+			int lo = bus.peek(pc);
+			int hi = bus.peek(pc + 1);
 			return fmt::format("{} ${:04X},Y", name, hi << 8 | lo);
 		}
 
 		// Indirect 2 - "INS ($addr)"
 		case 0x6C:
 		{
-			int lo = bus.read(pc);
-			int hi = bus.read(pc + 1);
+			int lo = bus.peek(pc);
+			int hi = bus.peek(pc + 1);
 			return fmt::format("{} (${:04X})", name, hi << 8 | lo);
 		}
 
@@ -317,7 +317,7 @@ namespace nesem
 		case 0xE1:
 		case 0x81:
 		{
-			int value = bus.read(pc);
+			int value = bus.peek(pc);
 			return fmt::format("{} (${:02X},X)", name, value);
 		}
 
@@ -331,7 +331,7 @@ namespace nesem
 		case 0xF1:
 		case 0x91:
 		{
-			int value = bus.read(pc);
+			int value = bus.peek(pc);
 			return fmt::format("{} (${:02X}),Y", name, value);
 		}
 		}
@@ -396,7 +396,7 @@ namespace nesem
 		case 0x70:
 		{
 			// relative address is signed
-			int value = int8_t(bus.read(pc));
+			int value = int8_t(bus.peek(pc));
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{} ${:04X}", name, pc + value + 1));
 		}
 
@@ -413,7 +413,7 @@ namespace nesem
 		case 0x09:
 		case 0xE9:
 		{
-			int value = bus.read(pc);
+			int value = bus.peek(pc);
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{0} #${1:02X}", name, value));
 		}
 
@@ -440,7 +440,7 @@ namespace nesem
 		case 0x86:
 		case 0x84:
 		{
-			int value = bus.read(pc);
+			int value = bus.peek(pc);
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{} ${:02X}", name, value));
 		}
 
@@ -462,7 +462,7 @@ namespace nesem
 		case 0x95:
 		case 0x94:
 		{
-			int value = bus.read(pc);
+			int value = bus.peek(pc);
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{} ${:02X},X", name, value));
 		}
 
@@ -470,7 +470,7 @@ namespace nesem
 		case 0xB6:
 		case 0x96:
 		{
-			int value = bus.read(pc);
+			int value = bus.peek(pc);
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{} ${:02X},Y", name, value));
 		}
 
@@ -499,8 +499,8 @@ namespace nesem
 		case 0x8E:
 		case 0x8C:
 		{
-			int lo = bus.read(pc);
-			int hi = bus.read(pc + 1);
+			int lo = bus.peek(pc);
+			int hi = bus.peek(pc + 1);
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X} {:02X}", instruction, lo, hi), fmt::format("{} ${:04X}", name, hi << 8 | lo));
 		}
 
@@ -521,8 +521,8 @@ namespace nesem
 		case 0xFD:
 		case 0x9D:
 		{
-			int lo = bus.read(pc);
-			int hi = bus.read(pc + 1);
+			int lo = bus.peek(pc);
+			int hi = bus.peek(pc + 1);
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X} {:02X}", instruction, lo, hi), fmt::format("{} ${:04X},X", name, hi << 8 | lo));
 		}
 
@@ -537,16 +537,16 @@ namespace nesem
 		case 0xF9:
 		case 0x99:
 		{
-			int lo = bus.read(pc);
-			int hi = bus.read(pc + 1);
+			int lo = bus.peek(pc);
+			int hi = bus.peek(pc + 1);
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X} {:02X}", instruction, lo, hi), fmt::format("{} ${:04X},Y", name, hi << 8 | lo));
 		}
 
 		// Indirect 2 - "INS ($addr)"
 		case 0x6C:
 		{
-			int lo = bus.read(pc);
-			int hi = bus.read(pc + 1);
+			int lo = bus.peek(pc);
+			int hi = bus.peek(pc + 1);
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X} {:02X}", instruction, lo, hi), fmt::format("{} (${:04X})", name, hi << 8 | lo));
 		}
 
@@ -560,7 +560,7 @@ namespace nesem
 		case 0xE1:
 		case 0x81:
 		{
-			int value = bus.read(pc);
+			int value = bus.peek(pc);
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{} (${:02X},X)", name, value));
 		}
 
@@ -574,7 +574,7 @@ namespace nesem
 		case 0xF1:
 		case 0x91:
 		{
-			int value = bus.read(pc);
+			int value = bus.peek(pc);
 			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{} (${:02X}),Y", name, value));
 		}
 		}
@@ -784,7 +784,7 @@ namespace nesem
 		return instruction_complete;
 	}
 
-	NesCpuState NesCpu::state() noexcept
+	NesCpuState NesCpu::state() const noexcept
 	{
 		return {
 			.PC = PC,

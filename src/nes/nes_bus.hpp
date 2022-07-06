@@ -14,6 +14,9 @@ namespace nesem
 	public:
 		NesBus(Nes *nes) noexcept;
 
+		// just read addr without any additional handling, useful for visualizers, debuggers, etc
+		U8 peek(U16 addr) const noexcept;
+
 		U8 read(U16 addr) noexcept;
 		void write(U16 addr, U8 value) noexcept;
 

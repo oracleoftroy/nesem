@@ -48,7 +48,7 @@ namespace nesem::mappers
         };
 	}
 
-	U8 NesMapper000::on_cpu_read(U16 addr) noexcept
+	U8 NesMapper000::on_cpu_peek(U16 addr) const noexcept
 	{
 		if (addr < 0x8000)
 		{
@@ -71,7 +71,7 @@ namespace nesem::mappers
 			LOG_WARN("Write to PRG-ROM not allowed!");
 	}
 
-	std::optional<U8> NesMapper000::on_ppu_read(U16 &addr) noexcept
+	std::optional<U8> NesMapper000::on_ppu_peek(U16 &addr) const noexcept
 	{
 		if (addr < 0x2000)
 			return chr_read(addr);

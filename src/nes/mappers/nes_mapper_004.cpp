@@ -118,7 +118,7 @@ namespace nesem::mappers
 		}
 	}
 
-	size_t NesMapper004::map_addr_cpu(U16 addr) noexcept
+	size_t NesMapper004::map_addr_cpu(U16 addr) const noexcept
 	{
 		if (addr < 0x8000)
 			LOG_CRITICAL("Address is out of range!");
@@ -143,7 +143,7 @@ namespace nesem::mappers
 		return static_cast<U16>(bank * bank_8k + (addr & (bank_8k - 1)));
 	}
 
-	size_t NesMapper004::map_addr_ppu(U16 addr) noexcept
+	size_t NesMapper004::map_addr_ppu(U16 addr) const noexcept
 	{
 		if (addr >= 0x2000)
 			LOG_CRITICAL("Address is out of range!");
@@ -195,7 +195,7 @@ namespace nesem::mappers
 		}
 	}
 
-	U8 NesMapper004::on_cpu_read(U16 addr) noexcept
+	U8 NesMapper004::on_cpu_peek(U16 addr) const noexcept
 	{
 		if (addr < 0x6000)
 		{
@@ -291,11 +291,10 @@ namespace nesem::mappers
 		}
 	}
 
-	std::optional<U8> NesMapper004::on_ppu_read(U16 &addr) noexcept
+	std::optional<U8> NesMapper004::on_ppu_peek(U16 &addr) const noexcept
 	{
 		if (addr < 0x2000)
 		{
-			update_irq(addr);
 			return chr_read(map_addr_ppu(addr));
 		}
 		// reading from the nametable
@@ -305,6 +304,14 @@ namespace nesem::mappers
 		}
 
 		return std::nullopt;
+	}
+
+	std::optional<U8> NesMapper004::on_ppu_read(U16 &addr) noexcept
+	{
+		if (addr < 0x2000)
+			update_irq(addr);
+
+		return on_ppu_peek(addr);
 	}
 
 	bool NesMapper004::on_ppu_write(U16 &addr, U8 value) noexcept

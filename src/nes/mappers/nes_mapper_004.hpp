@@ -19,12 +19,14 @@ namespace nesem::mappers
 		Banks report_ppu_mapping() const noexcept override;
 		MirroringMode mirroring() const noexcept;
 
-		size_t map_addr_cpu(U16 addr) noexcept;
-		size_t map_addr_ppu(U16 addr) noexcept;
+		size_t map_addr_cpu(U16 addr) const noexcept;
+		size_t map_addr_ppu(U16 addr) const noexcept;
 
 		void update_irq(U16 addr) noexcept;
 
-		U8 on_cpu_read(U16 addr) noexcept override;
+		U8 on_cpu_peek(U16 addr) const noexcept override;
+		std::optional<U8> on_ppu_peek(U16 &addr) const noexcept override;
+
 		void on_cpu_write(U16 addr, U8 value) noexcept override;
 		std::optional<U8> on_ppu_read(U16 &addr) noexcept override;
 		bool on_ppu_write(U16 &addr, U8 value) noexcept override;

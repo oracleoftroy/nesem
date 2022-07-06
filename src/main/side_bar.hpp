@@ -27,12 +27,12 @@ namespace app
 		explicit SideBar() = default;
 		explicit SideBar(ui::App &app, cm::Recti area);
 
-		void update(DebugMode mode, nesem::Nes &nes, NesApp &app);
+		void update(DebugMode mode, const nesem::Nes &nes, NesApp &app);
 		void render(ui::Renderer &renderer, DebugMode mode);
 
 	private:
-		void draw_cpu_info(nesem::Nes &nes);
-		void draw_ppu_info(DebugMode mode, nesem::Nes &nes, NesApp &app);
+		void draw_cpu_info(const nesem::Nes &nes);
+		void draw_ppu_info(DebugMode mode, const nesem::Nes &nes, NesApp &app);
 
 	private:
 		ui::Texture texture;

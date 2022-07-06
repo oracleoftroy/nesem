@@ -127,7 +127,7 @@ namespace app
 	cm::Color NesApp::read_palette(nesem::U16 entry) noexcept
 	{
 		nesem::U16 palette_base_addr = 0x3F00;
-		auto index = nes.ppu().read(palette_base_addr + entry);
+		auto index = nes.ppu().peek(palette_base_addr + entry);
 
 		return nes_colors[index];
 	}

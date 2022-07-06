@@ -214,7 +214,7 @@ namespace nesem
 		table[index] = (table[index] & ~mask) | ((entry << x_shift) & mask);
 	}
 
-	NesPatternTable NesPpu::read_pattern_table(int index) noexcept
+	NesPatternTable NesPpu::read_pattern_table(int index) const noexcept
 	{
 		NesPatternTable result;
 
@@ -226,8 +226,8 @@ namespace nesem
 
 				for (U16 row = 0; row < 8; ++row)
 				{
-					U8 tile_lo = read(index * 0x1000 + offset + row + 0x0000);
-					U8 tile_hi = read(index * 0x1000 + offset + row + 0x0008);
+					U8 tile_lo = peek(index * 0x1000 + offset + row + 0x0000);
+					U8 tile_hi = peek(index * 0x1000 + offset + row + 0x0008);
 
 					for (U16 col = 0; col < 8; ++col)
 					{
@@ -253,7 +253,7 @@ namespace nesem
 		table[y * 256 + x] = palette;
 	}
 
-	NesNameTable NesPpu::read_name_table(int index, const std::array<NesPatternTable, 2> &pattern) noexcept
+	NesNameTable NesPpu::read_name_table(int index, const std::array<NesPatternTable, 2> &pattern) const noexcept
 	{
 		NesNameTable result;
 		U16 pattern_index = (reg.ppuctrl & ctrl_pattern_addr) != 0 ? 1 : 0;
@@ -266,8 +266,8 @@ namespace nesem
 				U16 nt_addr = 0x2000 | ((index & 3) << vram_nametable_shift) | (tile_y << vram_coarse_y_shift) | tile_x;
 				U16 attr_addr = 0x23C0 | ((index & 3) << vram_nametable_shift) | ((tile_y << 1) & 0b111000) | (tile_x >> 2);
 
-				auto nt = read(nt_addr);
-				auto attr = read(attr_addr);
+				auto nt = peek(nt_addr);
+				auto attr = peek(attr_addr);
 
 				if (tile_y & 2)
 					attr >>= 4;
@@ -282,7 +282,7 @@ namespace nesem
 					for (U16 col = 0; col < 8; ++col)
 					{
 						auto tile = pattern[pattern_index].read_pixel((nt & 0xF) * 8 + col, ((nt >> 4) & 0xF) * 8 + row, attr);
-						result.write_pixel(tile_x * 8 + col, tile_y * 8 + row, read(0x3F00 + tile));
+						result.write_pixel(tile_x * 8 + col, tile_y * 8 + row, peek(0x3F00 + tile));
 					}
 				}
 			}
@@ -846,6 +846,18 @@ namespace nesem
 		}
 	}
 
+	U8 NesPpu::peek(U16 addr) const noexcept
+	{
+		if (cartridge)
+		{
+			auto value = cartridge->ppu_peek(addr);
+			if (value)
+				return *value;
+		}
+
+		return read_internal(addr);
+	}
+
 	U8 NesPpu::read(U16 addr) noexcept
 	{
 		if (cartridge)
@@ -855,6 +867,12 @@ namespace nesem
 				return *value;
 		}
 
+		return read_internal(addr);
+	}
+
+	// read internal memory. shared by both peek and read
+	U8 NesPpu::read_internal(U16 addr) const noexcept
+	{
 		if (!VERIFY(!(addr < 0x2000), "The cart should have handled this range!"))
 			return 0;
 
@@ -895,7 +913,7 @@ namespace nesem
 			return palettes[addr];
 		}
 
-		CHECK(false, "We shouldn't get here");
+		CHECK(false, fmt::format("We shouldn't get here, addr ${:04X}", addr));
 		return 0;
 	}
 
@@ -998,7 +1016,7 @@ namespace nesem
 		reg.oamaddr = latch = value;
 	}
 
-	U8 NesPpu::oamdata() noexcept
+	U8 NesPpu::oamdata() const noexcept
 	{
 		// during oam clear (cycles 1-64 of visible scanlines), this reads 0xFF regardless of what is stored
 		if (oam_clear)
@@ -1060,10 +1078,11 @@ namespace nesem
 	U8 NesPpu::ppudata() noexcept
 	{
 		// non-palette data is buffered
-		auto result = std::exchange(reg.ppudata, read(reg.vram_addr));
+		U16 effective_addr = reg.vram_addr & 0x3FFF;
+		auto result = std::exchange(reg.ppudata, read(effective_addr));
 
 		// palette data is returned immediately
-		if (reg.vram_addr >= 0x3F00)
+		if (effective_addr >= 0x3F00)
 			result = reg.ppudata;
 
 		// the address is incremented on every read
@@ -1074,7 +1093,7 @@ namespace nesem
 
 	void NesPpu::ppudata(U8 value) noexcept
 	{
-		write(reg.vram_addr, value);
+		write(reg.vram_addr & 0x3FFF, value);
 
 		// the address is incremented on every write
 		reg.vram_addr += (reg.ppuctrl & ctrl_vram_addr_inc ? 32 : 1);

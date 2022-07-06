@@ -13,6 +13,38 @@ namespace nesem
 		CHECK(nes != nullptr, "Nes should not be null!");
 	}
 
+	U8 NesBus::peek(U16 addr) const noexcept
+	{
+		if (addr < 0x2000)
+			return ram[addr & 0x7FF] & 255;
+
+		// this range maps to PPU registers
+		if (addr < 0x4000)
+		{
+			LOG_WARN("Peek of PPU registers ignored for addr ${:04X}", addr);
+			return 0;
+		}
+
+		if (addr < 0x6000)
+		{
+			// no peek for input, apu, and other stuff
+			LOG_WARN("Peek ignored for addr ${:04X}", addr);
+			return 0;
+		}
+
+		// 0x4020 - 0xFFFF go to the cart
+		if (cartridge)
+			return cartridge->cpu_peek(addr);
+		else
+		{
+			LOG_WARN("no cartridge, ignoring peek for ${:04X}", addr);
+			return 0;
+		}
+
+		CHECK(false, "We shouldn't get here");
+		return 0;
+	}
+
 	U8 NesBus::read(U16 addr) noexcept
 	{
 		// the NES has 2k of ram mirrored 4 times between addr 0 - 0x1FFF

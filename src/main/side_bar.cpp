@@ -20,7 +20,7 @@ namespace app
 	{
 	}
 
-	void SideBar::update(DebugMode mode, nesem::Nes &nes, NesApp &app)
+	void SideBar::update(DebugMode mode, const nesem::Nes &nes, NesApp &app)
 	{
 		switch (mode)
 		{
@@ -39,7 +39,7 @@ namespace app
 		}
 	}
 
-	void SideBar::draw_cpu_info(nesem::Nes &nes)
+	void SideBar::draw_cpu_info(const nesem::Nes &nes)
 	{
 		const auto state = nes.cpu().state();
 
@@ -289,7 +289,7 @@ namespace app
 		}
 	}
 
-	void SideBar::draw_ppu_info(DebugMode mode, nesem::Nes &nes, NesApp &app)
+	void SideBar::draw_ppu_info(DebugMode mode, const nesem::Nes &nes, NesApp &app)
 	{
 		if (mode == DebugMode::none)
 			return;

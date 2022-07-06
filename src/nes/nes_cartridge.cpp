@@ -35,6 +35,11 @@ namespace nesem
 		return mirroring_mode(nes_rom);
 	}
 
+	U8 NesCartridge::cpu_peek(U16 addr) const noexcept
+	{
+		return on_cpu_peek(addr);
+	}
+
 	U8 NesCartridge::cpu_read(U16 addr) noexcept
 	{
 		return on_cpu_read(addr);
@@ -43,9 +48,14 @@ namespace nesem
 	void NesCartridge::cpu_write(U16 addr, U8 value) noexcept
 	{
 		if (emulate_bus_conflicts)
-			value &= cpu_read(addr);
+			value &= cpu_peek(addr);
 
 		on_cpu_write(addr, value);
+	}
+
+	std::optional<U8> NesCartridge::ppu_peek(U16 &addr) const noexcept
+	{
+		return on_ppu_peek(addr);
 	}
 
 	std::optional<U8> NesCartridge::ppu_read(U16 &addr) noexcept
@@ -56,6 +66,16 @@ namespace nesem
 	bool NesCartridge::ppu_write(U16 &addr, U8 value) noexcept
 	{
 		return on_ppu_write(addr, value);
+	}
+
+	U8 NesCartridge::on_cpu_read(U16 addr) noexcept
+	{
+		return on_cpu_peek(addr);
+	}
+
+	std::optional<U8> NesCartridge::on_ppu_read(U16 &addr) noexcept
+	{
+		return on_ppu_peek(addr);
 	}
 
 	const mappers::NesRom &NesCartridge::rom() const noexcept

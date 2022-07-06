@@ -58,7 +58,7 @@ namespace nesem
 		U8 oamaddr() noexcept;
 		void oamaddr(U8 value) noexcept;
 
-		U8 oamdata() noexcept;
+		U8 oamdata() const noexcept;
 		void oamdata(U8 value) noexcept;
 
 		U8 ppuscroll() noexcept;
@@ -207,6 +207,8 @@ namespace nesem
 		U16 attribute_lo = 0;
 		U16 attribute_hi = 0;
 
+		U8 read_internal(U16 addr) const noexcept;
+
 	public:
 		// debugging help
 
@@ -217,6 +219,8 @@ namespace nesem
 			U8 nt;
 		};
 
+		U8 peek(U16 addr) const noexcept;
+
 		U64 current_tick() const noexcept;
 		int current_scanline() const noexcept;
 		int current_cycle() const noexcept;
@@ -225,9 +229,9 @@ namespace nesem
 		const std::array<OAMSprite, 8> &get_active_sprites() const noexcept;
 
 		// get the current pattern table for visualization / debugging
-		NesPatternTable read_pattern_table(int index) noexcept;
+		NesPatternTable read_pattern_table(int index) const noexcept;
 
 		// get the current name table based on the provided pre-calculated pattern tables
-		NesNameTable read_name_table(int index, const std::array<NesPatternTable, 2> &pattern) noexcept;
+		NesNameTable read_name_table(int index, const std::array<NesPatternTable, 2> &pattern) const noexcept;
 	};
 }

@@ -120,7 +120,7 @@ namespace nesem::mappers
 		}
 	}
 
-	U8 NesMapper001::on_cpu_read(U16 addr) noexcept
+	U8 NesMapper001::on_cpu_peek(U16 addr) const noexcept
 	{
 		if (addr < 0x6000)
 		{
@@ -184,14 +184,14 @@ namespace nesem::mappers
 		}
 	}
 
-	std::optional<U8> NesMapper001::on_ppu_read(U16 &addr) noexcept
+	std::optional<U8> NesMapper001::on_ppu_peek(U16 &addr) const noexcept
 	{
 		if (addr < 0x2000)
 			return chr_read(map_ppu_addr(addr));
 
 		// reading from the nametable
 		else if (addr < 0x3F00)
-			nt_mirroring(addr);
+			apply_hardware_nametable_mapping(mirroring(), addr);
 
 		return std::nullopt;
 	}
@@ -202,7 +202,7 @@ namespace nesem::mappers
 			return chr_write(map_ppu_addr(addr), value);
 
 		else if (addr < 0x3F00)
-			nt_mirroring(addr);
+			apply_hardware_nametable_mapping(mirroring(), addr);
 
 		return false;
 	}
@@ -223,11 +223,9 @@ namespace nesem::mappers
 		case 3:
 			return horizontal;
 		}
-	}
 
-	void NesMapper001::nt_mirroring(U16 &addr) noexcept
-	{
-		apply_hardware_nametable_mapping(mirroring(), addr);
+		CHECK(false, "Should never get here");
+		return horizontal;
 	}
 
 	std::optional<U8> NesMapper001::shift(U8 value) noexcept

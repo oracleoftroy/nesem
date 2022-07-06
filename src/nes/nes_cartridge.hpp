@@ -28,12 +28,12 @@ namespace nesem
 		size_t size;
 		std::array<Bank, N> banks;
 
-		auto &&begin(this auto &&self) noexcept
+		auto begin(this auto &&self) noexcept
 		{
 			return std::begin(self.banks);
 		}
 
-		auto &&end(this auto &&self) noexcept
+		auto end(this auto &&self) noexcept
 		{
 			return std::begin(self.banks) + self.size;
 		}
@@ -52,6 +52,9 @@ namespace nesem
 		virtual Banks report_ppu_mapping() const noexcept = 0;
 		virtual mappers::MirroringMode mirroring() const noexcept;
 
+		U8 cpu_peek(U16 addr) const noexcept;
+		std::optional<U8> ppu_peek(U16 &addr) const noexcept;
+
 		U8 cpu_read(U16 addr) noexcept;
 		void cpu_write(U16 addr, U8 value) noexcept;
 
@@ -64,10 +67,12 @@ namespace nesem
 		size_t chr_size() const noexcept;
 
 	private:
-		virtual U8 on_cpu_read(U16 addr) noexcept = 0;
+		virtual U8 on_cpu_peek(U16 addr) const noexcept = 0;
+		virtual U8 on_cpu_read(U16 addr) noexcept;
 		virtual void on_cpu_write(U16 addr, U8 value) noexcept = 0;
 
-		virtual std::optional<U8> on_ppu_read(U16 &addr) noexcept = 0;
+		virtual std::optional<U8> on_ppu_peek(U16 &addr) const noexcept = 0;
+		virtual std::optional<U8> on_ppu_read(U16 &addr) noexcept;
 		virtual bool on_ppu_write(U16 &addr, U8 value) noexcept = 0;
 
 	protected:
