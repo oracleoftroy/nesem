@@ -45,7 +45,7 @@ namespace nesem
 		return 0;
 	}
 
-	U8 NesBus::read(U16 addr) noexcept
+	U8 NesBus::read(U16 addr, NesBusOp op) noexcept
 	{
 		// the NES has 2k of ram mirrored 4 times between addr 0 - 0x1FFF
 		// thus, reads/writes to 0x0001 are observable at address 0x0801, 0x1001, 0x1801
@@ -55,39 +55,42 @@ namespace nesem
 		// this range maps to PPU registers
 		else if (addr < 0x4000)
 		{
-			switch (addr & 7)
+			if (op == NesBusOp::ready)
 			{
-			case 0: // PPUCTRL
-				last_read_value = nes->ppu().ppuctrl();
-				break;
+				switch (addr & 7)
+				{
+				case 0: // PPUCTRL
+					last_read_value = nes->ppu().ppuctrl();
+					break;
 
-			case 1: // PPUMASK
-				last_read_value = nes->ppu().ppumask();
-				break;
+				case 1: // PPUMASK
+					last_read_value = nes->ppu().ppumask();
+					break;
 
-			case 2: // PPUSTATUS
-				last_read_value = nes->ppu().ppustatus();
-				break;
+				case 2: // PPUSTATUS
+					last_read_value = nes->ppu().ppustatus();
+					break;
 
-			case 3: // OAMADDR
-				last_read_value = nes->ppu().oamaddr();
-				break;
+				case 3: // OAMADDR
+					last_read_value = nes->ppu().oamaddr();
+					break;
 
-			case 4: // OAMDATA
-				last_read_value = nes->ppu().oamdata();
-				break;
+				case 4: // OAMDATA
+					last_read_value = nes->ppu().oamdata();
+					break;
 
-			case 5: // PPUSCROLL
-				last_read_value = nes->ppu().ppuscroll();
-				break;
+				case 5: // PPUSCROLL
+					last_read_value = nes->ppu().ppuscroll();
+					break;
 
-			case 6: // PPUADDR
-				last_read_value = nes->ppu().ppuaddr();
-				break;
+				case 6: // PPUADDR
+					last_read_value = nes->ppu().ppuaddr();
+					break;
 
-			case 7: // PPUDATA
-				last_read_value = nes->ppu().ppudata();
-				break;
+				case 7: // PPUDATA
+					last_read_value = nes->ppu().ppudata();
+					break;
+				}
 			}
 		}
 
@@ -123,7 +126,7 @@ namespace nesem
 		return last_read_value;
 	}
 
-	void NesBus::write(U16 addr, U8 value) noexcept
+	void NesBus::write(U16 addr, U8 value, NesBusOp op) noexcept
 	{
 		// the NES has 2k of ram mirrored 4 times between addr 0 - 0x1FFF
 		// thus, reads/writes to 0x0001 are observable at address 0x0801, 0x1001, 0x1801
@@ -136,32 +139,35 @@ namespace nesem
 		// this range maps to PPU registers
 		if (addr < 0x4000)
 		{
-			switch (addr & 7)
+			if (op == NesBusOp::ready)
 			{
-			case 0: // PPUCTRL
-				nes->ppu().ppuctrl(value);
-				break;
-			case 1: // PPUMASK
-				nes->ppu().ppumask(value);
-				break;
-			case 2: // PPUSTATUS
-				nes->ppu().ppustatus(value);
-				break;
-			case 3: // OAMADDR
-				nes->ppu().oamaddr(value);
-				break;
-			case 4: // OAMDATA
-				nes->ppu().oamdata(value);
-				break;
-			case 5: // PPUSCROLL
-				nes->ppu().ppuscroll(value);
-				break;
-			case 6: // PPUADDR
-				nes->ppu().ppuaddr(value);
-				break;
-			case 7: // PPUDATA
-				nes->ppu().ppudata(value);
-				break;
+				switch (addr & 7)
+				{
+				case 0: // PPUCTRL
+					nes->ppu().ppuctrl(value);
+					break;
+				case 1: // PPUMASK
+					nes->ppu().ppumask(value);
+					break;
+				case 2: // PPUSTATUS
+					nes->ppu().ppustatus(value);
+					break;
+				case 3: // OAMADDR
+					nes->ppu().oamaddr(value);
+					break;
+				case 4: // OAMDATA
+					nes->ppu().oamdata(value);
+					break;
+				case 5: // PPUSCROLL
+					nes->ppu().ppuscroll(value);
+					break;
+				case 6: // PPUADDR
+					nes->ppu().ppuaddr(value);
+					break;
+				case 7: // PPUDATA
+					nes->ppu().ppudata(value);
+					break;
+				}
 			}
 
 			return;
