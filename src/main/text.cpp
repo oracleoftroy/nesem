@@ -161,11 +161,57 @@ void draw_char(ui::Canvas &canvas, cm::Color color, char ch, cm::Point2i pos)
 	}
 }
 
+void outline_char(ui::Canvas &canvas, cm::Color color, char ch, cm::Point2i pos)
+{
+	uint64_t bits = invalid_ch;
+
+	if (ch >= 0 && ch < ssize(font8))
+		bits = font8[ch];
+
+	auto bit_at = [bits](int y, int x) {
+		if (x < 0 || x > 7)
+			return false;
+		if (y < 0 || y > 7)
+			return false;
+
+		auto offset = y * 8 + x;
+		uint64_t bit = uint64_t(1) << (63 - offset);
+
+		return (bits & bit) != 0;
+	};
+
+	for (int row = -1; row < 9; ++row)
+	{
+		for (int col = -1; col < 9; ++col)
+		{
+			// If this bit is set, it can't be part of the outline
+			if (!bit_at(row, col))
+			{
+				// if this unset bit neighbors a set bit, outline it
+				if (
+					bit_at(row - 1, col - 1) || bit_at(row - 1, col + 0) || bit_at(row - 1, col + 1) ||
+					bit_at(row + 0, col - 1) || /*        CENTER         */ bit_at(row + 0, col + 1) ||
+					bit_at(row + 1, col - 1) || bit_at(row + 1, col + 0) || bit_at(row + 1, col + 1))
+					canvas.draw_point(color, pos + cm::Point2i{col, row});
+			}
+		}
+	}
+}
+
 void draw_string(ui::Canvas &canvas, cm::Color color, std::string_view text, cm::Point2i pos)
 {
 	for (char ch : text)
 	{
 		draw_char(canvas, color, ch, pos);
+		pos.x += 8;
+	}
+}
+
+void outline_string(ui::Canvas &canvas, cm::Color color, std::string_view text, cm::Point2i pos)
+{
+	for (char ch : text)
+	{
+		outline_char(canvas, color, ch, pos);
 		pos.x += 8;
 	}
 }
@@ -176,4 +222,12 @@ void draw_string_centered(ui::Canvas &canvas, cm::Color color, std::string_view 
 	auto string_pos = cm::Point2{area.x + (area.w / 2 - (text_width / 2)), area.y + (area.h / 2 - 4)};
 
 	draw_string(canvas, color, text, string_pos);
+}
+
+void outline_string_centered(ui::Canvas &canvas, cm::Color color, std::string_view text, cm::Recti area)
+{
+	auto text_width = int(text.size() * 8);
+	auto string_pos = cm::Point2{area.x + (area.w / 2 - (text_width / 2)), area.y + (area.h / 2 - 4)};
+
+	outline_string(canvas, color, text, string_pos);
 }

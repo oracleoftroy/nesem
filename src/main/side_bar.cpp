@@ -204,10 +204,7 @@ namespace app
 			};
 
 			constexpr auto draw_string_centered_shaded = [](auto &canvas, auto &&txt, auto &&rect) {
-				draw_string_centered(canvas, {0, 0, 0}, txt, rect + cm::Point2{-1, -1});
-				draw_string_centered(canvas, {0, 0, 0}, txt, rect + cm::Point2{-1, 1});
-				draw_string_centered(canvas, {0, 0, 0}, txt, rect + cm::Point2{1, -1});
-				draw_string_centered(canvas, {0, 0, 0}, txt, rect + cm::Point2{1, 1});
+				outline_string_centered(canvas, {0, 0, 0}, txt, rect);
 				draw_string_centered(canvas, {255, 255, 255}, txt, rect);
 			};
 
