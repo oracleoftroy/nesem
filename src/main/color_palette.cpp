@@ -561,7 +561,7 @@ namespace app
 				return std::nullopt;
 			}
 
-			auto file = std::basic_ifstream<uint8_t>(path, std::ios::binary);
+			auto file = std::ifstream(path, std::ios::binary);
 			if (!file)
 			{
 				LOG_WARN("could not open file: {}", path.string());
@@ -574,9 +574,9 @@ namespace app
 			for (auto &c : new_palette)
 			{
 				c.a = 255;
-				file.get(c.r);
-				file.get(c.g);
-				file.get(c.b);
+				c.r = static_cast<uint8_t>(file.get());
+				c.g = static_cast<uint8_t>(file.get());
+				c.b = static_cast<uint8_t>(file.get());
 			}
 
 			LOG_INFO("Palette loaded: {}", path.string());
