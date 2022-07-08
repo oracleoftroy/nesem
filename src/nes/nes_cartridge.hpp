@@ -28,6 +28,7 @@ namespace nesem
 		size_t size;
 		std::array<Bank, N> banks;
 
+#if defined(__cpp_explicit_this_parameter)
 		auto begin(this auto &&self) noexcept
 		{
 			return std::begin(self.banks);
@@ -37,6 +38,18 @@ namespace nesem
 		{
 			return std::begin(self.banks) + self.size;
 		}
+#else
+		auto begin() const noexcept
+		{
+			return std::begin(banks);
+		}
+
+		auto end() const noexcept
+		{
+			return std::begin(banks) + size;
+		}
+
+#endif
 	};
 
 	class NesCartridge

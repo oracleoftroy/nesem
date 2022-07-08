@@ -48,6 +48,7 @@ namespace nesem
 
 		const NesCartridge *cartridge() const noexcept;
 
+#if defined(__cpp_explicit_this_parameter)
 		auto &bus(this auto &self) noexcept
 		{
 			return self.nes_bus;
@@ -67,6 +68,47 @@ namespace nesem
 		{
 			return self.nes_apu;
 		}
+#else
+		auto &bus() noexcept
+		{
+			return nes_bus;
+		}
+
+		const auto &bus() const noexcept
+		{
+			return nes_bus;
+		}
+
+		auto &cpu() noexcept
+		{
+			return nes_cpu;
+		}
+
+		const auto &cpu() const noexcept
+		{
+			return nes_cpu;
+		}
+
+		auto &ppu() noexcept
+		{
+			return nes_ppu;
+		}
+
+		const auto &ppu() const noexcept
+		{
+			return nes_ppu;
+		}
+
+		auto &apu() noexcept
+		{
+			return nes_apu;
+		}
+
+		const auto &apu() const noexcept
+		{
+			return nes_apu;
+		}
+#endif
 
 	private:
 		ErrorFn on_error;
