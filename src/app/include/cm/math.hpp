@@ -356,6 +356,30 @@ namespace cm
 		};
 	}
 
+	constexpr float luminosity(Color color) noexcept
+	{
+		float sr = color.r / 255.0f;
+		float sg = color.g / 255.0f;
+		float sb = color.b / 255.0f;
+
+		float r = sr <= 0.04045f ? sr / 12.92f : pow(((sr + 0.055f) / 1.055f), 2.4f);
+		float g = sg <= 0.04045f ? sg / 12.92f : pow(((sg + 0.055f) / 1.055f), 2.4f);
+		float b = sb <= 0.04045f ? sb / 12.92f : pow(((sb + 0.055f) / 1.055f), 2.4f);
+
+		return 0.2126f * r + 0.7152f * g + 0.0722f * b;
+	}
+
+	constexpr float contrast_ratio(Color c1, Color c2) noexcept
+	{
+		auto lum1 = luminosity(c1);
+		auto lum2 = luminosity(c2);
+
+		if (lum2 > lum1)
+			std::swap(lum1, lum2);
+
+		return (lum1 + 0.05f) / (lum2 + 0.05f);
+	}
+
 	constexpr Color to_grayscale(Color color) noexcept
 	{
 		auto gray = uint8_t(color.r * 0.2162f + color.g * 0.7152f + color.b * 0.0722f);
