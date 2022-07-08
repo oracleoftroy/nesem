@@ -57,8 +57,17 @@ namespace nesem
 	};
 	MAKE_FLAGS_ENUM(ApuStatus);
 
+	enum class NesColorEmphasis : U8
+	{
+		none = 0x0,
+		red = 0x1,
+		green = 0x2,
+		blue = 0x4,
+	};
+	MAKE_FLAGS_ENUM(NesColorEmphasis);
+
 #if defined(__cpp_lib_move_only_function)
-	using DrawFn = std::move_only_function<void(int x, int y, U8 color_index)>;
+	using DrawFn = std::move_only_function<void(int x, int y, U8 color_index, NesColorEmphasis emphasis)>;
 	using FrameReadyFn = std::move_only_function<void()>;
 	using PollInputFn = std::move_only_function<U8()>;
 	using ErrorFn = std::move_only_function<void(std::string_view message)>;

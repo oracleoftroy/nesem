@@ -442,36 +442,24 @@ namespace nesem
 		next_attribute = U8((attr >> shift) & 0b11);
 	}
 
-	bool NesPpu::clock() noexcept
+	U8 NesPpu::get_color_index() noexcept
 	{
-		bool frame_complete = false;
+		U8 color_index = 0;
 
-		// odd frame skip: the very first cycle of an odd frame is skipped if rendering is enabled
-		if (scanline == 0 && cycle == 0 && (frame & 1) == 1 && rendering_enabled())
-			cycle = 1;
-
-		prepare_background();
-		prepare_foreground();
-
-		if (scanline == 241 && cycle == 1)
+		if (!rendering_enabled() && (reg.vram_addr & 0x3F00) == 0x3F00)
 		{
-			reg.ppustatus |= status_vblank;
-			if (reg.ppuctrl & ctrl_nmi_flag)
-				nes->cpu().nmi();
+			// https://www.nesdev.org/wiki/PPU_palettes#The_background_palette_hack
+			// The background palette hack
+			// If the current VRAM address points in the range $3F00-$3FFF during forced blanking, the color indicated
+			// by this palette location will be shown on screen instead of the backdrop color. This can be used to display
+			// colors from the normally unused $3F04/$3F08/$3F0C palette locations.
 
-			nes->frame_complete();
-			frame_complete = true;
+			color_index = palettes[reg.vram_addr & 0x1F];
 		}
-
-		if (scanline == 261 && cycle == 1)
+		else
 		{
-			// clear vblank, sprite 0 hit, and sprite overflow; which is all the flags actually stored by status
-			reg.ppustatus = 0;
-		}
+			U8 palette_index = 0;
 
-		// All preparation done, determine the value of the current pixel
-		if (scanline < 240 && cycle >= 1 && cycle < 257)
-		{
 			U8 bg_palette_index = 0;
 			if (background_rendering_enabled())
 			{
@@ -522,7 +510,6 @@ namespace nesem
 			}
 
 			// We've determined which bg and fg color is relevant, now figure out which one actually gets rendered
-			U8 palette_index = 0;
 
 			// rules when background is transparent
 			if ((bg_palette_index & 0b11) == 0)
@@ -551,9 +538,96 @@ namespace nesem
 					reg.ppustatus |= status_sprite0_hit;
 			}
 
-			// lookup the color this palette entry is mapped to
-			auto index = read(0x3F00 + palette_index);
-			nes->screen_out(cycle - 1, scanline, index);
+			color_index = palettes[palette_index & 0x1F];
+		}
+
+		return apply_grayscale(color_index);
+	}
+
+	NesColorEmphasis NesPpu::color_emphasis() const noexcept
+	{
+		using enum NesColorEmphasis;
+
+		NesColorEmphasis result = none;
+
+		// TODO: Bit 5 emphasizes red on the NTSC PPU, and green on the PAL & Dendy PPUs.
+		if (reg.ppumask & mask_emphasize_red)
+			result |= red;
+
+		// TODO: Bit 6 emphasizes green on the NTSC PPU, and red on the PAL & Dendy PPUs.
+		if (reg.ppumask & mask_emphasize_green)
+			result |= green;
+
+		if (reg.ppumask & mask_emphasize_blue)
+			result |= blue;
+
+		return result;
+	}
+
+	U8 NesPpu::apply_grayscale(U8 color_index) const noexcept
+	{
+		// the NesDev wiki seems inconsistant on how to interpret the grayscale bit
+
+		// https://www.nesdev.org/wiki/NTSC_video#Brightness_Levels
+		// When grayscale is active, all colors between $x1-$xD are treated as $x0.
+
+		// so we do this? only modify the color index from $X1 - $XD?
+		// if ((reg.ppumask & mask_grayscale) && (color_index & 0x0F) < 0x0E)
+		// 	color_index &= 0x30;
+
+		// the $XD column is already grayscale, is this supposed to be an exclusive range?, e.g.:
+		// if ((reg.ppumask & mask_grayscale) && (color_index & 0x0F) < 0x0D)
+		// 	color_index &= 0x30;
+
+		// https://www.nesdev.org/wiki/PPU_registers#Color_Control
+		// Bit 0 controls a greyscale mode, which causes the palette to use only the colors from the grey column: $00, $10, $20, $30.
+		// This is implemented as a bitwise AND with $30 on any value read from PPU $3F00-$3FFF, both on the display and through PPUDATA.
+		// Writes to the palette through PPUDATA are not affected. Also note that black colours like $0F will be replaced by a non-black grey $00.
+
+		// so we do this? all values are modified?
+		if ((reg.ppumask & mask_grayscale))
+			color_index &= 0x30;
+
+		// The former url also says: $xE/$xF output the same voltage as $1D. $x1-$xC output a square wave alternating between levels for $xD and $x0. Colors $20 and $30 are exactly the same.
+		// does that mean we should force everything in that range to $1D & 3F -> $10?
+
+		// Mesen seems to apply the mask to all values, so that sounds good to me.
+
+		return color_index;
+	}
+
+	bool NesPpu::clock() noexcept
+	{
+		bool frame_complete = false;
+
+		// odd frame skip: the very first cycle of an odd frame is skipped if rendering is enabled
+		if (scanline == 0 && cycle == 0 && (frame & 1) == 1 && rendering_enabled())
+			cycle = 1;
+
+		prepare_background();
+		prepare_foreground();
+
+		if (scanline == 241 && cycle == 1)
+		{
+			reg.ppustatus |= status_vblank;
+			if (reg.ppuctrl & ctrl_nmi_flag)
+				nes->cpu().nmi();
+
+			nes->frame_complete();
+			frame_complete = true;
+		}
+
+		if (scanline == 261 && cycle == 1)
+		{
+			// clear vblank, sprite 0 hit, and sprite overflow; which is all the flags actually stored by status
+			reg.ppustatus = 0;
+		}
+
+		// All preparation done, determine the value of the current pixel
+		if (scanline < 240 && cycle >= 1 && cycle < 257)
+		{
+			auto index = get_color_index();
+			nes->screen_out(cycle - 1, scanline, index, color_emphasis());
 			shift_fg();
 		}
 
@@ -910,7 +984,7 @@ namespace nesem
 				break;
 			}
 
-			return palettes[addr];
+			return apply_grayscale(palettes[addr]);
 		}
 
 		CHECK(false, fmt::format("We shouldn't get here, addr ${:04X}", addr));
@@ -1083,7 +1157,7 @@ namespace nesem
 
 		// palette data is returned immediately
 		if (effective_addr >= 0x3F00)
-			result = reg.ppudata;
+			result = apply_grayscale(reg.ppudata);
 
 		// the address is incremented on every read
 		reg.vram_addr += (reg.ppuctrl & ctrl_vram_addr_inc ? 32 : 1);

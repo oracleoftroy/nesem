@@ -4,6 +4,7 @@
 
 #include <fmt/format.h>
 
+#include "color_palette.hpp"
 #include "nes_app.hpp"
 #include "text.hpp"
 
@@ -20,7 +21,7 @@ namespace app
 	{
 	}
 
-	void SideBar::update(DebugMode mode, const nesem::Nes &nes, NesApp &app)
+	void SideBar::update(DebugMode mode, const nesem::Nes &nes, NesApp &app, const ColorPalette &colors)
 	{
 		switch (mode)
 		{
@@ -30,7 +31,7 @@ namespace app
 
 		case bg_info:
 		case fg_info:
-			draw_ppu_info(mode, nes, app);
+			draw_ppu_info(mode, nes, app, colors);
 			break;
 
 		case cpu_info:
@@ -289,7 +290,7 @@ namespace app
 		}
 	}
 
-	void SideBar::draw_ppu_info(DebugMode mode, const nesem::Nes &nes, NesApp &app)
+	void SideBar::draw_ppu_info(DebugMode mode, const nesem::Nes &nes, NesApp &app, const ColorPalette &colors)
 	{
 		if (mode == DebugMode::none)
 			return;
@@ -315,7 +316,7 @@ namespace app
 					for (int x = 0; x < 128; ++x)
 					{
 						auto palette_entry = pattern_tables[index].read_pixel(x, y, current_palette);
-						auto color = app.read_palette(palette_entry);
+						auto color = colors.color_at_index(palette_entry);
 						pt_canvas.draw_point(color, {x, y});
 					}
 				}
@@ -342,7 +343,7 @@ namespace app
 				color_pos.x += (color_size.w) * i;
 				auto color_rect = rect(color_pos, color_size);
 
-				auto color = app.read_palette(p * 4 + i);
+				auto color = colors.color_at_index(p * 4 + i);
 
 				canvas.fill_rect(color, color_rect);
 				canvas.draw_rect({255, 255, 255}, color_rect);
@@ -385,7 +386,7 @@ namespace app
 						for (int x = 0; x < 256; ++x)
 						{
 							auto color_index = name_table.read_pixel(x, y);
-							nt_canvas.draw_point(app.color_at_index(color_index), {x, y});
+							nt_canvas.draw_point(colors.color_at_index(color_index), {x, y});
 						}
 					}
 				}

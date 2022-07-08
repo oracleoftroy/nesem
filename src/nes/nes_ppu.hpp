@@ -107,7 +107,7 @@ namespace nesem
 		std::array<U8, 0x0400> nametable[2];
 
 		// 0x3F00-0x3FFF
-		std::array<U8, 32> palettes;
+		std::array<U8, 32> palettes{};
 		std::array<U8, 256> oam;
 
 		// working buffer for evaluating sprites for the next scanline
@@ -199,6 +199,10 @@ namespace nesem
 
 		void prepare_background() noexcept;
 		void prepare_foreground() noexcept;
+
+		U8 get_color_index() noexcept;
+		NesColorEmphasis color_emphasis() const noexcept;
+		U8 apply_grayscale(U8 color_index) const noexcept;
 
 		// rendering state
 

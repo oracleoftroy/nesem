@@ -11,15 +11,9 @@
 
 namespace
 {
-	std::filesystem::path find_file(const std::filesystem::path &path)
+	std::filesystem::path find_path(const std::filesystem::path &path)
 	{
 		namespace fs = std::filesystem;
-
-		if (!path.has_filename())
-		{
-			LOG_WARN("Path does not name a file: '{}'", path.string());
-			return path;
-		}
 
 		// remember the bit that varies from our current working directory
 		const auto relative = fs::proximate(path);
@@ -38,7 +32,7 @@ namespace
 
 		auto p = dir / relative;
 
-		// we found a path to the file, return it
+		// we found a path, return it
 		if (fs::exists(p))
 		{
 			LOG_INFO("Found {}", p.string());
@@ -48,6 +42,19 @@ namespace
 		// could not find path, return original path
 		LOG_INFO("Could not find file {}", path.string());
 		return path;
+	}
+
+	std::filesystem::path find_file(const std::filesystem::path &path)
+	{
+		namespace fs = std::filesystem;
+
+		if (!path.has_filename())
+		{
+			LOG_WARN("Path does not name a file: '{}'", path.string());
+			return path;
+		}
+
+		return (find_path(path));
 	}
 }
 
@@ -65,7 +72,7 @@ namespace app
 	{
 		{ // setup callbacks
 			app.on_update = std::bind_front(&NesApp::tick, this);
-			app.on_file_drop = std::bind_front(&NesApp::load_rom, this);
+			app.on_file_drop = std::bind_front(&NesApp::on_file_drop, this);
 		}
 
 		{ // setup keys
@@ -121,20 +128,9 @@ namespace app
 
 		nes_screen_texture = app.create_texture({256, 240});
 
-		load_rom(find_file(R"(data/nestest.nes)").string());
-	}
-
-	cm::Color NesApp::read_palette(nesem::U16 entry) noexcept
-	{
-		nesem::U16 palette_base_addr = 0x3F00;
-		auto index = nes.ppu().peek(palette_base_addr + entry);
-
-		return nes_colors[index];
-	}
-
-	cm::Color NesApp::color_at_index(int index) noexcept
-	{
-		return nes_colors[index];
+		data_path = find_path("data");
+		load_rom(data_path / "nestest.nes");
+		load_pal(data_path / "nes_colors.pal");
 	}
 
 	nesem::U8 NesApp::get_current_palette() const noexcept
@@ -142,7 +138,22 @@ namespace app
 		return current_palette;
 	}
 
-	void NesApp::load_rom(std::string_view filepath)
+	void NesApp::on_file_drop(std::string_view filename)
+	{
+		auto path = std::filesystem::path(filename);
+
+		if (path.extension() == ".nes")
+			load_rom(path);
+		else if (path.extension() == ".pal")
+			load_pal(path);
+		else
+		{
+			LOG_WARN("Unknown file type for '{}', trying to load as iNES", path.string());
+			load_rom(path);
+		}
+	}
+
+	void NesApp::load_rom(const std::filesystem::path &filepath)
 	{
 		rom_loaded = nes.load_rom(filepath);
 
@@ -153,11 +164,20 @@ namespace app
 		}
 		else
 		{
-			rom_name = filepath;
+			rom_name = filepath.string();
 			trigger_break(false);
 		}
 
 		bottom_bar.update(system_break, rom_name);
+	}
+
+	void NesApp::load_pal(const std::filesystem::path &filepath)
+	{
+		auto new_colors = ColorPalette::from_file(filepath);
+		if (new_colors)
+			colors = std::move(*new_colors);
+		else
+			LOG_WARN("Could not load color palette from '{}', keeping previous", filepath.string());
 	}
 
 	void NesApp::trigger_break(bool enable)
@@ -183,7 +203,7 @@ namespace app
 
 		// the side bar is normally updated when we tick the nes. But we don't tick the nes when we are paused, so force an update
 		if (system_break)
-			side_bar.update(debug_mode, nes, *this);
+			side_bar.update(debug_mode, nes, *this, colors);
 	}
 
 	void NesApp::on_change_current_palette(nesem::U8 palette)
@@ -192,7 +212,7 @@ namespace app
 
 		// the side bar is normally updated when we tick the nes. But we don't tick the nes when we are paused, so force an update
 		if (system_break)
-			side_bar.update(debug_mode, nes, *this);
+			side_bar.update(debug_mode, nes, *this, colors);
 	}
 
 	void NesApp::tick(ui::App &app, ui::Renderer &canvas, double deltatime)
@@ -315,12 +335,12 @@ namespace app
 			if (!system_break)
 			{
 				nes.tick(deltatime);
-				side_bar.update(debug_mode, nes, *this);
+				side_bar.update(debug_mode, nes, *this, colors);
 			}
 			else if (step != None)
 			{
 				nes.step(step);
-				side_bar.update(debug_mode, nes, *this);
+				side_bar.update(debug_mode, nes, *this, colors);
 				step = None;
 
 				draw_screen();
@@ -340,9 +360,9 @@ namespace app
 		controller_overlay.render(renderer);
 	}
 
-	void NesApp::on_nes_pixel(int x, int y, nesem::U8 color_index) noexcept
+	void NesApp::on_nes_pixel(int x, int y, nesem::U8 color_index, nesem::NesColorEmphasis emphasis) noexcept
 	{
-		nes_screen[y * nes_resolution.w + x] = color_index;
+		nes_screen[y * nes_resolution.w + x] = to_color_index(color_index, emphasis);
 	}
 
 	void NesApp::on_nes_frame_ready() noexcept
@@ -362,8 +382,8 @@ namespace app
 	{
 		auto [canvas, lock] = nes_screen_texture.lock();
 
-		std::ranges::transform(nes_screen, canvas.ptr(), [this, format = canvas.format()](nesem::U8 index) {
-			return to_pixel(format, nes_colors[index]);
+		std::ranges::transform(nes_screen, canvas.ptr(), [this, format = canvas.format()](nesem::U16 index) {
+			return to_pixel(format, colors.color_at_index(index));
 		});
 	}
 

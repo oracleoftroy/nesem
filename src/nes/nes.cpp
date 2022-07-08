@@ -97,10 +97,10 @@ namespace nesem
 		return (nes_cartridge && nes_cartridge->irq()) || nes_apu.irq();
 	}
 
-	void Nes::screen_out(int x, int y, U8 color_index) noexcept
+	void Nes::screen_out(int x, int y, U8 color_index, NesColorEmphasis emphasis) noexcept
 	{
 		if (draw) [[likely]]
-			draw(x, y, color_index);
+			draw(x, y, color_index, emphasis);
 	}
 
 	void Nes::frame_complete() noexcept
