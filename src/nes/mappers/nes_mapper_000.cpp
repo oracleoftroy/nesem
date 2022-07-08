@@ -44,8 +44,8 @@ namespace nesem::mappers
 	{
 		return {
 			.size = 1,
-			.banks = Bank{.addr = 0x0000, .bank = 0, .size = bank_8k}
-        };
+			.banks = {Bank{.addr = 0x0000, .bank = 0, .size = bank_8k}},
+		};
 	}
 
 	U8 NesMapper000::on_cpu_peek(U16 addr) const noexcept
