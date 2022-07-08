@@ -44,7 +44,7 @@ namespace nesem::mappers
 	{
 		return {
 			.size = 1,
-			.banks = {Bank{.addr = 0x0000, .bank = 0, .size = bank_8k}},
+			.banks{Bank{.addr = 0x0000, .bank = 0, .size = bank_8k}},
 		};
 	}
 

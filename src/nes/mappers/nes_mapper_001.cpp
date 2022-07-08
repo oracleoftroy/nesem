@@ -108,14 +108,14 @@ namespace nesem::mappers
 
 			return Banks{
 				.size = 1,
-				.banks = {Bank{.addr = 0x0000, .bank = bank, .size = bank_8k}}};
+				.banks{Bank{.addr = 0x0000, .bank = bank, .size = bank_8k}}};
 		}
 		else
 		{
 			return Banks{
 				.size = 2,
-				.banks = {Bank{.addr = 0x0000, .bank = U16(chr_bank_0 & chr_bank_mask), .size = bank_4k},
-						  Bank{.addr = 0x1000, .bank = U16(chr_bank_1 & chr_bank_mask), .size = bank_4k}}
+				.banks{Bank{.addr = 0x0000, .bank = U16(chr_bank_0 & chr_bank_mask), .size = bank_4k},
+					   Bank{.addr = 0x1000, .bank = U16(chr_bank_1 & chr_bank_mask), .size = bank_4k}}
             };
 		}
 	}

@@ -51,12 +51,12 @@ namespace nesem::mappers
 
 		return {
 			.size = 4,
-			.banks = {
-					  Bank{.addr = 0x8000, .bank = bank0, .size = bank_8k},
-					  Bank{.addr = 0xA000, .bank = bank1, .size = bank_8k},
-					  Bank{.addr = 0xC000, .bank = bank2, .size = bank_8k},
-					  Bank{.addr = 0xE000, .bank = bank3, .size = bank_8k},
-					  }
+			.banks{
+				   Bank{.addr = 0x8000, .bank = bank0, .size = bank_8k},
+				   Bank{.addr = 0xA000, .bank = bank1, .size = bank_8k},
+				   Bank{.addr = 0xC000, .bank = bank2, .size = bank_8k},
+				   Bank{.addr = 0xE000, .bank = bank3, .size = bank_8k},
+				   }
         };
 	}
 
@@ -68,32 +68,32 @@ namespace nesem::mappers
 		{
 			return {
 				.size = 8,
-				.banks = {
-						  Bank{.addr = 0x0000, .bank = U16(bank_map[0] + 0), .size = bank_1k},
-						  Bank{.addr = 0x0400, .bank = U16(bank_map[0] + 1), .size = bank_1k},
-						  Bank{.addr = 0x0800, .bank = U16(bank_map[1] + 0), .size = bank_1k},
-						  Bank{.addr = 0x0C00, .bank = U16(bank_map[1] + 1), .size = bank_1k},
-						  Bank{.addr = 0x1000, .bank = U16(bank_map[2]), .size = bank_1k},
-						  Bank{.addr = 0x1400, .bank = U16(bank_map[3]), .size = bank_1k},
-						  Bank{.addr = 0x1800, .bank = U16(bank_map[4]), .size = bank_1k},
-						  Bank{.addr = 0x1C00, .bank = U16(bank_map[5]), .size = bank_1k},
-						  }
+				.banks{
+					   Bank{.addr = 0x0000, .bank = U16(bank_map[0] + 0), .size = bank_1k},
+					   Bank{.addr = 0x0400, .bank = U16(bank_map[0] + 1), .size = bank_1k},
+					   Bank{.addr = 0x0800, .bank = U16(bank_map[1] + 0), .size = bank_1k},
+					   Bank{.addr = 0x0C00, .bank = U16(bank_map[1] + 1), .size = bank_1k},
+					   Bank{.addr = 0x1000, .bank = U16(bank_map[2]), .size = bank_1k},
+					   Bank{.addr = 0x1400, .bank = U16(bank_map[3]), .size = bank_1k},
+					   Bank{.addr = 0x1800, .bank = U16(bank_map[4]), .size = bank_1k},
+					   Bank{.addr = 0x1C00, .bank = U16(bank_map[5]), .size = bank_1k},
+					   }
             };
 		}
 		else
 		{
 			return {
 				.size = 8,
-				.banks = {
-						  Bank{.addr = 0x0000, .bank = U16(bank_map[2]), .size = bank_1k},
-						  Bank{.addr = 0x0400, .bank = U16(bank_map[3]), .size = bank_1k},
-						  Bank{.addr = 0x0800, .bank = U16(bank_map[4]), .size = bank_1k},
-						  Bank{.addr = 0x0C00, .bank = U16(bank_map[5]), .size = bank_1k},
-						  Bank{.addr = 0x1000, .bank = U16(bank_map[0] + 0), .size = bank_1k},
-						  Bank{.addr = 0x1400, .bank = U16(bank_map[0] + 1), .size = bank_1k},
-						  Bank{.addr = 0x1800, .bank = U16(bank_map[1] + 0), .size = bank_1k},
-						  Bank{.addr = 0x1C00, .bank = U16(bank_map[1] + 1), .size = bank_1k},
-						  }
+				.banks{
+					   Bank{.addr = 0x0000, .bank = U16(bank_map[2]), .size = bank_1k},
+					   Bank{.addr = 0x0400, .bank = U16(bank_map[3]), .size = bank_1k},
+					   Bank{.addr = 0x0800, .bank = U16(bank_map[4]), .size = bank_1k},
+					   Bank{.addr = 0x0C00, .bank = U16(bank_map[5]), .size = bank_1k},
+					   Bank{.addr = 0x1000, .bank = U16(bank_map[0] + 0), .size = bank_1k},
+					   Bank{.addr = 0x1400, .bank = U16(bank_map[0] + 1), .size = bank_1k},
+					   Bank{.addr = 0x1800, .bank = U16(bank_map[1] + 0), .size = bank_1k},
+					   Bank{.addr = 0x1C00, .bank = U16(bank_map[1] + 1), .size = bank_1k},
+					   }
             };
 		}
 	}

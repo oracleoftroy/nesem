@@ -20,8 +20,8 @@ namespace nesem::mappers
 		auto last_bank = U16(prgrom_banks(rom(), bank_16k) - 1);
 		return {
 			.size = 2,
-			.banks = {Bank{.addr = 0x8000, .bank = bank_select, .size = bank_16k},
-					  Bank{.addr = 0xC000, .bank = last_bank, .size = bank_16k}}
+			.banks{Bank{.addr = 0x8000, .bank = bank_select, .size = bank_16k},
+				   Bank{.addr = 0xC000, .bank = last_bank, .size = bank_16k}}
         };
 	}
 
@@ -29,8 +29,8 @@ namespace nesem::mappers
 	{
 		return {
 			.size = 1,
-			.banks = Bank{.addr = 0x0000, .bank = 0, .size = bank_8k}
-        };
+			.banks{Bank{.addr = 0x0000, .bank = 0, .size = bank_8k}},
+		};
 	}
 
 	U8 NesMapper002::on_cpu_peek(U16 addr) const noexcept

@@ -22,16 +22,14 @@ namespace nesem::mappers
 
 		return {
 			.size = 1,
-			.banks = Bank{.addr = 0x8000, .bank = bank, .size = bank_32k}
-        };
+			.banks{Bank{.addr = 0x8000, .bank = bank, .size = bank_32k}}};
 	}
 
 	Banks NesMapper007::report_ppu_mapping() const noexcept
 	{
 		return {
 			.size = 1,
-			.banks = Bank{.addr = 0x0000, .bank = 0, .size = bank_8k}
-        };
+			.banks{Bank{.addr = 0x0000, .bank = 0, .size = bank_8k}}};
 	}
 
 	MirroringMode NesMapper007::mirroring() const noexcept
