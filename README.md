@@ -5,11 +5,12 @@
 <!-- [![MIT License][license-shield]][license-url] -->
 
 
-## Nintento Entertainment System Emulator
+## Nintendo Entertainment System Emulator
 
-An NES emulator using C++23.
+An NES emulator using C++23. It tries to be a cycle accurate emulation of the CPU, PPU and cartridge memory mappers. At this time, NTSC/PAL or 100% accurate audio emulation is not a goal as long as the output still looks reasonable, but I may consider it in the future.
 
-This is very much an in progress learning project for me, and is missing many features. If you are looking for an emulator to play your favorite games, Mesen or FCEUX are much better options.
+This is very much an in progress project for learning about emulator development and how the NES works. Many features are missing or incomplete. If you are looking for an emulator to play your favorite games, Mesen or FCEUX are much better options. I hope my code can serve as inspiration or ideas for writing your own emulator, and I welcome feedback and suggestions for improvement.
+
 
 ![NES Emulator preview](doc/smb.webp)
 
