@@ -313,6 +313,7 @@ namespace nesem
 			.prg_rom = std::vector<U8>(prg_rom_size * mappers::bank_16k),
 			.chr_rom = std::vector<U8>(chr_rom_size * mappers::bank_8k),
 			.v1 = mappers::ines_1::RomData{mapper, mirroring, prg_rom_size, chr_rom_size, has_battery},
+			.v2 = std::nullopt, // we set this later on below
 		};
 
 		if (!file.read(reinterpret_cast<char *>(data(result.prg_rom)), size(result.prg_rom)))

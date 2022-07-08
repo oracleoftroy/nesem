@@ -10,6 +10,7 @@
 
 #include <ui/app.hpp>
 #include <ui/renderer.hpp>
+#include <util/logging.hpp>
 
 namespace app
 {
@@ -447,8 +448,10 @@ namespace app
 		}
 		break;
 
+		case DebugMode::cpu_info:
 		case DebugMode::none:
 			// nothing to do, here so that if we add a new mode, we can get a warning for unhandled cases
+			LOG_WARN("draw_ppu_info called for unexpected DebugMode");
 			break;
 		}
 	}

@@ -362,9 +362,9 @@ namespace cm
 		float sg = color.g / 255.0f;
 		float sb = color.b / 255.0f;
 
-		float r = sr <= 0.04045f ? sr / 12.92f : pow(((sr + 0.055f) / 1.055f), 2.4f);
-		float g = sg <= 0.04045f ? sg / 12.92f : pow(((sg + 0.055f) / 1.055f), 2.4f);
-		float b = sb <= 0.04045f ? sb / 12.92f : pow(((sb + 0.055f) / 1.055f), 2.4f);
+		float r = sr <= 0.04045f ? sr / 12.92f : powf(((sr + 0.055f) / 1.055f), 2.4f);
+		float g = sg <= 0.04045f ? sg / 12.92f : powf(((sg + 0.055f) / 1.055f), 2.4f);
+		float b = sb <= 0.04045f ? sb / 12.92f : powf(((sb + 0.055f) / 1.055f), 2.4f);
 
 		return 0.2126f * r + 0.7152f * g + 0.0722f * b;
 	}
