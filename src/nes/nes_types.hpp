@@ -72,7 +72,7 @@ namespace nesem
 	using PollInputFn = std::move_only_function<U8()>;
 	using ErrorFn = std::move_only_function<void(std::string_view message)>;
 #else
-	using DrawFn = std::function<void(int x, int y, U8 color_index)>;
+	using DrawFn = std::function<void(int x, int y, U8 color_index, NesColorEmphasis emphasis)>;
 	using FrameReadyFn = std::function<void()>;
 	using PollInputFn = std::function<U8()>;
 	using ErrorFn = std::function<void(std::string_view message)>;
