@@ -69,7 +69,7 @@
 
 #endif
 
-#if defined(_WIN32)
+#if defined(_WIN32) && !defined(_WINDOWS_)
 // #	define NOMINMAX
 // #	include <Windows.h>
 // #	undef far
