@@ -583,7 +583,7 @@ namespace nesem
 	// TODO: Keep this? Give it a "better" home? The static logger is a bit hacky...
 	void NesCpu::log_instruction() noexcept
 	{
-		if constexpr (SPDLOG_ACTIVE_LEVEL <= SPDLOG_LEVEL_DEBUG)
+		if constexpr (SPDLOG_ACTIVE_LEVEL <= SPDLOG_LEVEL_TRACE)
 		{
 			static std::shared_ptr<spdlog::logger> cpu_log = [] {
 				auto log_filename = std::filesystem::temp_directory_path() / "cpu.log";
@@ -599,7 +599,7 @@ namespace nesem
 
 			// designed to be compatible with nestest.log
 			// pc  raw bytes *di
-			cpu_log->debug("{} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} PPU: XXX,XXX CYC:{}", format_nestest(U8(instruction), nes->bus(), PC), A, X, Y, U8(P), S, cycles);
+			cpu_log->trace("{} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} PPU: XXX,XXX CYC:{}", format_nestest(U8(instruction), nes->bus(), PC), A, X, Y, U8(P), S, cycles);
 		}
 	}
 
@@ -768,7 +768,7 @@ namespace nesem
 			}
 
 			instruction = readPC();
-			LOG_DEBUG("{:>5}: [{:04X}] {:<35} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}", cycles, PC - 1, decompile(U8(instruction), nes->bus(), PC), A, X, Y, U8(P), S);
+			LOG_TRACE("{:>5}: [{:04X}] {:<35} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}", cycles, PC - 1, decompile(U8(instruction), nes->bus(), PC), A, X, Y, U8(P), S);
 			log_instruction();
 		}
 		else

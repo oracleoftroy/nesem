@@ -232,36 +232,35 @@ namespace ui
 				break;
 			}
 
-			spdlog::level::level_enum level;
+			auto level = LOG_LEVEL_DISABLED;
 			switch (priority)
 			{
 			case SDL_LOG_PRIORITY_VERBOSE:
-				level = spdlog::level::trace;
+				level = LOG_LEVEL_TRACE;
 				break;
 
 			case SDL_LOG_PRIORITY_DEBUG:
-				level = spdlog::level::debug;
+				level = LOG_LEVEL_DEBUG;
 				break;
 
 			case SDL_LOG_PRIORITY_INFO:
-				level = spdlog::level::info;
+				level = LOG_LEVEL_INFO;
 				break;
 
 			case SDL_LOG_PRIORITY_WARN:
-				level = spdlog::level::warn;
+				level = LOG_LEVEL_WARN;
 				break;
 
 			case SDL_LOG_PRIORITY_ERROR:
-				level = spdlog::level::err;
+				level = LOG_LEVEL_ERROR;
 				break;
 
-			default:
 			case SDL_LOG_PRIORITY_CRITICAL:
-				level = spdlog::level::critical;
+				level = LOG_LEVEL_CRITICAL;
 				break;
 			}
 
-			spdlog::log(level, "SDL {}: {}", category_str, message);
+			LOG(level, "SDL {}: {}", category_str, message);
 		}
 
 		~SdlLib()
