@@ -285,6 +285,8 @@ namespace nesem
 		if ((header[7] & 0b00001100) == 0b00001000)
 			version = 2;
 
+		LOG_INFO("ROM file is version {}", version);
+
 		// optional trainer, 512 bytes if present
 		bool has_trainer = (header[6] & 0b00000100) > 0;
 
