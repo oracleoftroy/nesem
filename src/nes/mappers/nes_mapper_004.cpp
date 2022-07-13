@@ -8,12 +8,51 @@
 
 namespace nesem::mappers
 {
+	namespace
+	{
+		// used for MMC6 variant
+		constexpr U8 prg_ram_protect_read_lo = 0b0010'0000;
+		constexpr U8 prg_ram_protect_read_hi = 0b1000'0000;
+		constexpr U8 prg_ram_protect_read = prg_ram_protect_read_lo | prg_ram_protect_read_hi;
+
+		// note that to write, you also have to be able to read, thus both read and write bits appear in the mask
+		constexpr U8 prg_ram_protect_write_lo = 0b0011'0000;
+		constexpr U8 prg_ram_protect_write_hi = 0b1100'0000;
+
+		constexpr U8 prg_ram_write_protect = 0b0100'0000;
+		constexpr U8 prg_ram_enable = 0b1000'0000;
+
+		NesMapper004Variants pick_variant(const NesRom &rom) noexcept
+		{
+			using enum NesMapper004Variants;
+			if (rom.v2)
+			{
+				auto variant = NesMapper004Variants(rom.v2->pcb.submapper);
+
+				// make sure the submapper is one of our enum values
+				switch (variant)
+				{
+				case MMC3C:
+					return variant;
+				case MMC6:
+					return variant;
+				case MC_ACC:
+					return variant;
+				case MMC3A:
+					return variant;
+				}
+			}
+
+			// use MMC3C as the default submapper. This could trigger if the ROM is assigned to the deprecated submapper 2 or otherwise has a bad value
+			return MMC3C;
+		}
+	}
+
 	NesMapper004::NesMapper004(const Nes &nes, NesRom &&rom_data) noexcept
-		: NesCartridge(nes, std::move(rom_data))
+		: NesCartridge(nes, std::move(rom_data)), variant(pick_variant(rom()))
 	{
 		CHECK(mapper(rom()) == ines_mapper, "Wrong mapper!");
 
-		prg_ram.resize(bank_8k);
 		reset();
 	}
 
@@ -178,6 +217,10 @@ namespace nesem::mappers
 
 		if (old_a12 == 0 && a12 == 1 && (nes->ppu().current_tick() - cycle_low) > 10)
 		{
+			// record the previous count and whether this is a force reload so we can handle board variants later on
+			auto prev_count = irq_counter;
+			auto was_reload = irq_reload;
+
 			if (irq_counter == 0 || irq_reload)
 			{
 				irq_counter = irq_latch;
@@ -187,12 +230,42 @@ namespace nesem::mappers
 				--irq_counter;
 
 			if (irq_counter == 0 && irq_enabled)
-				signal_irq(true);
+			{
+				// signal if:
+				// all variants - the counter being 0 is enough to trigger an irq
+				// MMC3A - only trigger if this was force reloaded to 0 or if we decremented to 0. If the counter was already 0 and reloaded to 0, do not trigger
+				if (variant != NesMapper004Variants::MMC3A || was_reload || prev_count != irq_counter)
+					signal_irq(true);
+			}
 		}
 		else if (old_a12 == 1 && a12 == 0)
 		{
 			cycle_low = nes->ppu().current_tick();
 		}
+	}
+
+	U8 NesMapper004::do_read_ram(size_t addr) const noexcept
+	{
+		// Mapper 004 carts in nescartdb either have ram or nvram (or neither)
+		if (prgnvram_size() > 0)
+			return prgnvram_read(addr);
+
+		if (prgram_size() > 0)
+			return prgram_read(addr);
+
+		return open_bus_read();
+	}
+
+	bool NesMapper004::do_read_write(size_t addr, U8 value) noexcept
+	{
+		// Mapper 004 carts in nescartdb either have ram or nvram (or neither)
+		if (prgnvram_size() > 0)
+			return prgnvram_write(addr, value);
+
+		if (prgram_size() > 0)
+			return prgram_write(addr, value);
+
+		return false;
 	}
 
 	U8 NesMapper004::on_cpu_peek(U16 addr) const noexcept
@@ -205,7 +278,37 @@ namespace nesem::mappers
 
 		// prg-ram
 		if (addr < 0x8000)
-			return prg_ram[addr & (bank_8k - 1)];
+		{
+			if (prgram_size() == 0 && prgnvram_size() == 0)
+				return open_bus_read();
+
+			else if (variant == NesMapper004Variants::MMC6)
+			{
+				if (addr < 0x7000)
+					return open_bus_read();
+
+				// The PRG RAM protect bits control mapping of two 512B banks of RAM mirrored across $7000-7FFF.
+				// If neither bank is enabled for reading, the $7000-$7FFF area is open bus.
+				if ((prg_ram_protect & prg_ram_protect_read) == 0)
+					return open_bus_read();
+
+				// If only one bank is enabled for reading, the other reads back as zero.
+				auto ram_addr = addr & 0x3FF;
+				auto enabled_bit = (ram_addr & 512) ? prg_ram_protect_read_hi : prg_ram_protect_read_lo;
+
+				if (prg_ram_protect & enabled_bit)
+					return do_read_ram(ram_addr);
+				else
+					return 0;
+			}
+			else
+			{
+				if (prg_ram_protect & prg_ram_enable)
+					return do_read_ram(addr & (bank_8k - 1));
+				else
+					return open_bus_read();
+			}
+		}
 
 		// address >= 8000
 		return rom().prg_rom[map_addr_cpu(addr)];
@@ -222,7 +325,25 @@ namespace nesem::mappers
 		// prg-ram
 		if (addr < 0x8000)
 		{
-			prg_ram[addr & (bank_8k - 1)] = value;
+			// no ram, so nothing to do
+			if (prgram_size() == 0 && prgnvram_size() == 0)
+				return;
+
+			if (variant == NesMapper004Variants::MMC6)
+			{
+				auto ram_addr = addr & 0x3FF;
+				auto enabled_bits = (ram_addr & 512) ? prg_ram_protect_write_hi : prg_ram_protect_write_lo;
+
+				// The write-enable bits only have effect if that bank is enabled for reading, otherwise the bank is not writable.
+				if ((prg_ram_protect & enabled_bits) == enabled_bits)
+					do_read_write(ram_addr, value);
+			}
+			else
+			{
+				if ((prg_ram_protect & prg_ram_write_protect) == 0)
+					do_read_write(addr & (bank_8k - 1), value);
+			}
+
 			return;
 		}
 
@@ -289,42 +410,41 @@ namespace nesem::mappers
 			irq_enabled = true;
 			break;
 		}
+
+		// When PRG RAM is disabled via $8000, the mapper continuously sets $A001 to $00, and so all writes to $A001 are ignored.
+		if (variant == NesMapper004Variants::MMC6 && (bank_select & (1 << 5)) == 0)
+			prg_ram_protect = 0;
 	}
 
 	std::optional<U8> NesMapper004::on_ppu_peek(U16 &addr) const noexcept
 	{
 		if (addr < 0x2000)
-		{
 			return chr_read(map_addr_ppu(addr));
-		}
+
 		// reading from the nametable
 		else if (addr < 0x3F00)
-		{
 			apply_hardware_nametable_mapping(mirroring(), addr);
-		}
 
 		return std::nullopt;
 	}
 
 	std::optional<U8> NesMapper004::on_ppu_read(U16 &addr) noexcept
 	{
-		if (addr < 0x2000)
-			update_irq(addr);
+		update_irq(addr);
 
 		return on_ppu_peek(addr);
 	}
 
 	bool NesMapper004::on_ppu_write(U16 &addr, U8 value) noexcept
 	{
+		update_irq(addr);
+
 		if (addr < 0x2000)
-		{
-			update_irq(addr);
 			return chr_write(map_addr_ppu(addr), value);
-		}
+
 		else if (addr < 0x3F00)
-		{
 			apply_hardware_nametable_mapping(mirroring(), addr);
-		}
+
 		return false;
 	}
 }

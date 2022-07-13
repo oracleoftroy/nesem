@@ -7,6 +7,15 @@
 
 namespace nesem::mappers
 {
+	// consider adding a fallback that acts like MMC3C without ram protect?
+	enum class NesMapper004Variants
+	{
+		MMC3C = 0, // default, maps to submapper 0
+		MMC6 = 1, // uses regs $8000 and $A001 slightly differently, 1K prgram at $7000-7FFF, maps to submapper 1
+		MC_ACC = 3, // IRQ on falling edge of A12, maps to submapper 3
+		MMC3A = 4, // IRQ disabled if latch is 0, maps to submapper 4
+	};
+
 	class NesMapper004 final : public NesCartridge
 	{
 	public:
@@ -32,7 +41,10 @@ namespace nesem::mappers
 		bool on_ppu_write(U16 &addr, U8 value) noexcept override;
 
 	private:
-		std::vector<U8> prg_ram;
+		U8 do_read_ram(size_t addr) const noexcept;
+		bool do_read_write(size_t addr, U8 value) noexcept;
+
+		NesMapper004Variants variant = NesMapper004Variants::MMC3C;
 
 		// registers
 		U8 bank_select = 0; // 8000-9FFE even

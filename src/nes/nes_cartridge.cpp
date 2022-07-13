@@ -27,6 +27,15 @@ namespace nesem
 			chr_ram.resize(chrram_size(rom()));
 		}
 
+		if (rom().v2)
+		{
+			if (rom().v2->prgram)
+				prg_ram.resize(rom().v2->prgram->size);
+
+			if (rom().v2->prgnvram)
+				prg_nvram = nes.open_prgnvram(rom().v2->rom.sha1, rom().v2->prgnvram->size);
+		}
+
 		emulate_bus_conflicts = has_bus_conflicts(nes_rom);
 	}
 
@@ -112,6 +121,62 @@ namespace nesem
 		else
 			LOG_ERROR("Write to CHR-ROM not allowed");
 
+		return true;
+	}
+
+	size_t NesCartridge::prgram_size() const noexcept
+	{
+		return prg_ram.size();
+	}
+
+	U8 NesCartridge::prgram_read(size_t addr) const noexcept
+	{
+		if (prg_ram.size() < addr)
+		{
+			LOG_ERROR("PRGRAM read out of range!");
+			return open_bus_read();
+		}
+
+		return prg_ram[addr];
+	}
+
+	bool NesCartridge::prgram_write(size_t addr, U8 value) noexcept
+	{
+		if (prg_ram.size() < addr)
+		{
+			LOG_ERROR("PRGRAM write out of range!");
+			return false;
+		}
+
+		prg_ram[addr] = value;
+		return true;
+	}
+
+	size_t NesCartridge::prgnvram_size() const noexcept
+	{
+		return prg_nvram.size();
+	}
+
+	U8 NesCartridge::prgnvram_read(size_t addr) const noexcept
+	{
+		if (prg_nvram.size() < addr)
+		{
+			LOG_ERROR("PRGRAM read out of range!");
+			return open_bus_read();
+		}
+
+		return static_cast<U8>(prg_nvram[addr]);
+	}
+
+	bool NesCartridge::prgnvram_write(size_t addr, U8 value) noexcept
+	{
+		if (prg_nvram.size() < addr)
+		{
+			LOG_ERROR("PRGRAM write out of range!");
+			return false;
+		}
+
+		prg_nvram[addr] = value;
 		return true;
 	}
 

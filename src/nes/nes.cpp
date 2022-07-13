@@ -19,7 +19,8 @@ namespace nesem
 		  nes_ppu(this),
 		  nes_apu(this),
 		  nes_clock(this),
-		  rom_loader(NesRomLoader::create(settings.nes20db_filename))
+		  rom_loader(NesRomLoader::create(settings.nes20db_filename)),
+		  user_data_dir(std::move(settings.user_data_dir))
 	{
 	}
 
@@ -128,5 +129,12 @@ namespace nesem
 	const NesCartridge *Nes::cartridge() const noexcept
 	{
 		return nes_cartridge.get();
+	}
+
+	NesNvram Nes::open_prgnvram(std::string_view rom, size_t size) const noexcept
+	{
+		auto prgnvram_path = user_data_dir / "ram" / fmt::format("{}.prgnvram", rom);
+
+		return NesNvram(prgnvram_path, size);
 	}
 }

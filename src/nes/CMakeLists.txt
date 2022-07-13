@@ -14,6 +14,8 @@ add_library(
 	"nes_cpu.hpp"
 	"nes_cpu_ops.hpp"
 	"nes_input_device.hpp"
+	"nes_nvram.cpp"
+	"nes_nvram.hpp"
 	"nes_ppu.cpp"
 	"nes_ppu.hpp"
 	"nes_rom_loader.cpp"
@@ -38,9 +40,11 @@ add_library(
 
 find_package(tinyxml2 CONFIG REQUIRED)
 find_package(cryptopp CONFIG REQUIRED)
+find_package(mio CONFIG REQUIRED)
 
 target_link_libraries(nesemlib PRIVATE project_options)
 target_link_libraries(nesemlib PUBLIC util)
 target_link_libraries(nesemlib PRIVATE tinyxml2::tinyxml2)
 target_link_libraries(nesemlib PRIVATE cryptopp-static)
+target_link_libraries(nesemlib PRIVATE mio::mio)
 target_include_directories(nesemlib PUBLIC ".")

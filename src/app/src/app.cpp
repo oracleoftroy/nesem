@@ -607,6 +607,29 @@ namespace ui
 		return Texture(texture);
 	}
 
+	std::filesystem::path App::get_application_path() noexcept
+	{
+		auto path = SDL_GetBasePath();
+		if (!path)
+			return "";
+
+		return path;
+	}
+
+	std::filesystem::path App::get_user_data_path(const std::string &company_name, const std::string &app_name) noexcept
+	{
+		auto path = SDL_GetPrefPath(company_name.c_str(), app_name.c_str());
+		if (!path)
+			return "";
+
+		return path;
+	}
+
+	std::filesystem::path App::get_user_data_path(const std::string &app_name) noexcept
+	{
+		return get_user_data_path("", app_name);
+	}
+
 	App::App() noexcept = default;
 	App::~App() = default;
 

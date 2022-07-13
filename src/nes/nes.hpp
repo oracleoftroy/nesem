@@ -6,6 +6,7 @@
 #include "nes_clock.hpp"
 #include "nes_cpu.hpp"
 #include "nes_input_device.hpp"
+#include "nes_nvram.hpp"
 #include "nes_ppu.hpp"
 #include "nes_rom_loader.hpp"
 
@@ -19,6 +20,7 @@ namespace nesem
 		std::unique_ptr<NesInputDevice> player1 = make_null_input();
 		std::unique_ptr<NesInputDevice> player2 = make_null_input();
 		std::filesystem::path nes20db_filename = {};
+		std::filesystem::path user_data_dir = {};
 	};
 
 	class Nes final
@@ -47,6 +49,8 @@ namespace nesem
 		NesInputDevice &player2() noexcept;
 
 		const NesCartridge *cartridge() const noexcept;
+
+		NesNvram open_prgnvram(std::string_view rom, size_t size) const noexcept;
 
 #if defined(__cpp_explicit_this_parameter)
 		auto &bus(this auto &self) noexcept
@@ -125,5 +129,6 @@ namespace nesem
 		NesRomLoader rom_loader;
 
 		std::unique_ptr<NesCartridge> nes_cartridge;
+		std::filesystem::path user_data_dir;
 	};
 }

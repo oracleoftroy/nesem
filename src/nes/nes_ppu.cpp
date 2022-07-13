@@ -922,26 +922,30 @@ namespace nesem
 
 	U8 NesPpu::peek(U16 addr) const noexcept
 	{
+		U16 effective_addr = addr & 0x3FFF;
+
 		if (cartridge)
 		{
-			auto value = cartridge->ppu_peek(addr);
+			auto value = cartridge->ppu_peek(effective_addr);
 			if (value)
 				return *value;
 		}
 
-		return read_internal(addr);
+		return read_internal(effective_addr);
 	}
 
 	U8 NesPpu::read(U16 addr) noexcept
 	{
+		U16 effective_addr = addr & 0x3FFF;
+
 		if (cartridge)
 		{
-			auto value = cartridge->ppu_read(addr);
+			auto value = cartridge->ppu_read(effective_addr);
 			if (value)
 				return *value;
 		}
 
-		return read_internal(addr);
+		return read_internal(effective_addr);
 	}
 
 	// read internal memory. shared by both peek and read
@@ -993,15 +997,17 @@ namespace nesem
 
 	void NesPpu::write(U16 addr, U8 value) noexcept
 	{
-		if (cartridge && cartridge->ppu_write(addr, value))
+		U16 effective_addr = addr & 0x3FFF;
+
+		if (cartridge && cartridge->ppu_write(effective_addr, value))
 		{
 			return;
 		}
 
-		if (!VERIFY(!(addr < 0x2000), "The cart should have handled this range!"))
+		if (!VERIFY(!(effective_addr < 0x2000), "The cart should have handled this range!"))
 			return;
 
-		if (addr < 0x3F00)
+		if (effective_addr < 0x3F00)
 		{
 			// $2000-$23FF Nametable 0
 			// $2400-$27FF Nametable 1
@@ -1009,33 +1015,33 @@ namespace nesem
 			// $2C00-$2FFF Nametable 3
 			// always treat nametables as vertically mirrored and let the cartridge remap addr as needed
 			// TODO: This may not work for some mappers... but we'll figure it out when we get there
-			nametable[(addr >> vram_nametable_shift) & 1][addr & 0x03FF] = value;
+			nametable[(effective_addr >> vram_nametable_shift) & 1][effective_addr & 0x03FF] = value;
 			return;
 		}
 
-		if (addr < 0x4000)
+		if (effective_addr < 0x4000)
 		{
 			// palette control
-			addr &= 0x1F;
+			effective_addr &= 0x1F;
 
 			// Addresses $3F10/$3F14/$3F18/$3F1C are mirrors of $3F00/$3F04/$3F08/$3F0C.
-			switch (addr)
+			switch (effective_addr)
 			{
 			case 0x0010:
-				addr = 0x0000;
+				effective_addr = 0x0000;
 				break;
 			case 0x0014:
-				addr = 0x0004;
+				effective_addr = 0x0004;
 				break;
 			case 0x0018:
-				addr = 0x0008;
+				effective_addr = 0x0008;
 				break;
 			case 0x001C:
-				addr = 0x000C;
+				effective_addr = 0x000C;
 				break;
 			}
 
-			palettes[addr] = value;
+			palettes[effective_addr] = value;
 			return;
 		}
 
@@ -1144,6 +1150,9 @@ namespace nesem
 		{
 			reg.tram_addr = (reg.tram_addr & 0xFF00) | value;
 			reg.vram_addr = reg.tram_addr;
+
+			// dummy read of vram, affects irq on mapper 004
+			read(reg.vram_addr);
 		}
 
 		reg.addr_latch = !reg.addr_latch;
@@ -1152,25 +1161,30 @@ namespace nesem
 	U8 NesPpu::ppudata() noexcept
 	{
 		// non-palette data is buffered
-		U16 effective_addr = reg.vram_addr & 0x3FFF;
-		auto result = std::exchange(reg.ppudata, read(effective_addr));
+		auto result = std::exchange(reg.ppudata, read(reg.vram_addr));
 
 		// palette data is returned immediately
-		if (effective_addr >= 0x3F00)
+		if ((reg.vram_addr & 0x3FFF) >= 0x3F00)
 			result = apply_grayscale(reg.ppudata);
 
 		// the address is incremented on every read
 		reg.vram_addr += (reg.ppuctrl & ctrl_vram_addr_inc ? 32 : 1);
+
+		// dummy read of vram, affects irq on mapper 004
+		read(reg.vram_addr);
 
 		return result;
 	}
 
 	void NesPpu::ppudata(U8 value) noexcept
 	{
-		write(reg.vram_addr & 0x3FFF, value);
+		write(reg.vram_addr, value);
 
 		// the address is incremented on every write
 		reg.vram_addr += (reg.ppuctrl & ctrl_vram_addr_inc ? 32 : 1);
+
+		// dummy read of vram, affects irq on mapper 004
+		read(reg.vram_addr);
 	}
 
 	int NesPpu::sprite_size() noexcept

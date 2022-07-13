@@ -36,7 +36,7 @@ namespace nesem::mappers
 			break;
 		}
 
-		prg_ram.resize(prgram_size(rom()));
+		prg_ram.resize(mappers::prgram_size(rom()));
 
 		// SZROM has 8K of PRG RAM, 8K of PRG NV RAM, and 16K or more of CHR.
 		if (rom().v2 && rom().v2->prgram && rom().v2->prgnvram &&

@@ -68,6 +68,7 @@ namespace app
 			  .player1 = std::make_unique<nesem::NesController>(std::bind_front(&NesApp::read_controller, this, std::ref(app))),
 			  .player2 = std::make_unique<nesem::NesInputDevice>(std::bind_front(&NesApp::read_zapper, this, std::ref(app))),
 			  .nes20db_filename = find_file(R"(data/nes20db.xml)"),
+			  .user_data_dir = app.get_user_data_path("nesem"),
 		  })
 	{
 		{ // setup callbacks

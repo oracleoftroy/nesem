@@ -1,8 +1,10 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>
 #include <functional>
 #include <memory>
+#include <string>
 #include <version>
 
 #include <cm/math.hpp>
@@ -112,6 +114,13 @@ namespace ui
 
 		// Texturing
 		[[nodiscard]] Texture create_texture(cm::Sizei size) noexcept;
+
+		// get directory this program was run from
+		[[nodiscard]] std::filesystem::path get_application_path() noexcept;
+
+		// get directory for saving/loading user data (e.g. save files, etc)
+		[[nodiscard]] std::filesystem::path get_user_data_path(const std::string &company_name, const std::string &app_name) noexcept;
+		[[nodiscard]] std::filesystem::path get_user_data_path(const std::string &app_name) noexcept;
 
 	private:
 		struct Core;

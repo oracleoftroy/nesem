@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "mappers/nes_rom.hpp"
+#include "nes_nvram.hpp"
 #include "nes_types.hpp"
 
 namespace nesem
@@ -97,6 +98,14 @@ namespace nesem
 		void enable_bus_conflicts(bool enable) noexcept;
 		U8 open_bus_read() const noexcept;
 
+		size_t prgram_size() const noexcept;
+		U8 prgram_read(size_t addr) const noexcept;
+		bool prgram_write(size_t addr, U8 value) noexcept;
+
+		size_t prgnvram_size() const noexcept;
+		U8 prgnvram_read(size_t addr) const noexcept;
+		bool prgnvram_write(size_t addr, U8 value) noexcept;
+
 	protected:
 		const Nes *nes = nullptr;
 
@@ -106,6 +115,9 @@ namespace nesem
 		std::vector<U8> chr_ram;
 		bool irq_signaled = false;
 		bool emulate_bus_conflicts = false;
+
+		std::vector<U8> prg_ram;
+		NesNvram prg_nvram;
 	};
 
 	std::unique_ptr<NesCartridge> load_cartridge(const Nes &nes, mappers::NesRom rom) noexcept;
