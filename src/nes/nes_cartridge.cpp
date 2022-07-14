@@ -133,7 +133,7 @@ namespace nesem
 	{
 		if (prg_ram.size() < addr)
 		{
-			LOG_ERROR("PRGRAM read out of range!");
+			LOG_ERROR("PRGRAM read out of range! Read from {:X}, but size is {:X}", addr, prg_nvram.size());
 			return open_bus_read();
 		}
 
@@ -144,7 +144,7 @@ namespace nesem
 	{
 		if (prg_ram.size() < addr)
 		{
-			LOG_ERROR("PRGRAM write out of range!");
+			LOG_ERROR("PRGRAM write out of range! Write to {:X}, but size is {:X}", addr, prg_nvram.size());
 			return false;
 		}
 
@@ -161,7 +161,7 @@ namespace nesem
 	{
 		if (prg_nvram.size() < addr)
 		{
-			LOG_ERROR("PRGRAM read out of range!");
+			LOG_ERROR("PRGNVRAM read out of range! Read from {:X}, but size is {:X}", addr, prg_nvram.size());
 			return open_bus_read();
 		}
 
@@ -172,7 +172,7 @@ namespace nesem
 	{
 		if (prg_nvram.size() < addr)
 		{
-			LOG_ERROR("PRGRAM write out of range!");
+			LOG_ERROR("PRGNVRAM write out of range! Write to {:X}, but size is {:X}", addr, prg_nvram.size());
 			return false;
 		}
 

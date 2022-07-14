@@ -49,7 +49,6 @@ namespace nesem::mappers
 
 	private:
 		PrgRamMode prg_ram_mode = PrgRamMode::Normal;
-		std::vector<U8> prg_ram;
 
 		// registers
 		U8 load_counter = 0;

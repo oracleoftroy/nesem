@@ -36,8 +36,6 @@ namespace nesem::mappers
 			break;
 		}
 
-		prg_ram.resize(mappers::prgram_size(rom()));
-
 		// SZROM has 8K of PRG RAM, 8K of PRG NV RAM, and 16K or more of CHR.
 		if (rom().v2 && rom().v2->prgram && rom().v2->prgnvram &&
 			rom().v2->prgram->size == bank_8k && rom().v2->prgnvram->size == bank_8k &&
@@ -130,8 +128,28 @@ namespace nesem::mappers
 
 		if (addr < 0x8000)
 		{
-			if (!prg_ram.empty())
-				return prg_ram[map_prgram_addr(addr)];
+			auto ram_addr = map_prgram_addr(addr);
+
+			// if we have both prgram and nvram, assume the battery backed ram is in the upper bank
+			if (prgram_size() > 0 && prgnvram_size() > 0)
+			{
+				CHECK(prgram_size() == prgnvram_size(), "All examples in romdb have the same amount for both");
+
+				ram_addr &= ram_addr & (prgram_size() - 1);
+
+				// SZROM has an 8k bank of RAM and an 8k bank of battery backed RAM
+				// direct addresses mapped to the high bank to nvram
+				if (ram_addr > prgram_size())
+					return prgnvram_read(ram_addr);
+				else
+					return prgram_read(ram_addr);
+			}
+
+			if (prgnvram_size() > 0)
+				return prgnvram_read(ram_addr);
+
+			if (prgram_size() > 0)
+				return prgram_read(ram_addr);
 
 			return open_bus_read();
 		}
@@ -149,8 +167,29 @@ namespace nesem::mappers
 
 		if (addr < 0x8000)
 		{
-			if (!prg_ram.empty())
-				prg_ram[map_prgram_addr(addr)] = value;
+			auto ram_addr = map_prgram_addr(addr);
+
+			// if we have both prgram and nvram, assume the battery backed ram is in the upper bank
+			if (prgram_size() > 0 && prgnvram_size() > 0)
+			{
+				CHECK(prgram_size() == prgnvram_size(), "All examples in romdb have the same amount for both");
+
+				ram_addr &= ram_addr & (prgram_size() - 1);
+
+				// SZROM has an 8k bank of RAM and an 8k bank of battery backed RAM
+				// direct addresses mapped to the high bank to nvram
+				if (ram_addr > prgram_size())
+					prgnvram_write(ram_addr, value);
+				else
+					prgram_write(ram_addr, value);
+				return;
+			}
+
+			if (prgnvram_size() > 0)
+				prgnvram_write(ram_addr, value);
+
+			else if (prgram_size() > 0)
+				prgram_write(ram_addr, value);
 
 			return;
 		}
@@ -296,9 +335,10 @@ namespace nesem::mappers
 
 		if (prg_ram_mode == PrgRamMode::SZROM)
 			bank = (chr_bank_0 >> 4) & 1;
-		else if (size(prg_ram) == bank_16k)
+		else if (auto size = prgram_size() + prgnvram_size();
+				 size == bank_16k)
 			bank = (chr_bank_0 >> 3) & 1;
-		else if (size(prg_ram) == bank_32k)
+		else if (size == bank_32k)
 			bank = (chr_bank_0 >> 2) & 3;
 
 		return bank * bank_8k + (addr & (bank_8k - 1));
