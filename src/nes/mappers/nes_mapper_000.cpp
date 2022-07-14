@@ -50,9 +50,26 @@ namespace nesem::mappers
 
 	U8 NesMapper000::on_cpu_peek(U16 addr) const noexcept
 	{
-		if (addr < 0x8000)
+		if (addr < 0x6000)
 		{
 			LOG_ERROR("Read from invalid address ${:04X}, ignoring", addr);
+			return open_bus_read();
+		}
+
+		if (addr < 0x8000)
+		{
+			CHECK(prgram_size() > 0 && prgnvram_size() > 0, "Not expecting cart to use both prgram and prgnvram");
+
+			// pretty simple rules, if ram exists, it is mirrored across the entire $6000-7FFF address range
+			// mostly used by Family Basic and homebrew carts
+			if (auto size = prgnvram_size();
+				size > 0)
+				return prgnvram_read(addr & (size - 1));
+
+			if (auto size = prgram_size();
+				size > 0)
+				return prgram_read(addr & (size - 1));
+
 			return open_bus_read();
 		}
 
@@ -65,10 +82,30 @@ namespace nesem::mappers
 
 	void NesMapper000::on_cpu_write([[maybe_unused]] U16 addr, [[maybe_unused]] U8 value) noexcept
 	{
-		if (has_prgram(rom()))
-			LOG_WARN("Write to PRG-RAM not implemented!");
-		else
-			LOG_WARN("Write to PRG-ROM not allowed!");
+		if (addr < 0x6000)
+		{
+			LOG_ERROR("Write to invalid address ${:04X} with value {}, ignoring", addr, value);
+			return;
+		}
+
+		if (addr < 0x8000)
+		{
+			CHECK(prgram_size() > 0 && prgnvram_size() > 0, "Not expecting cart to use both prgram and prgnvram");
+
+			// pretty simple rules, if ram exists, it is mirrored across the entire $6000-7FFF address range
+			// mostly used by Family Basic and homebrew carts
+			if (auto size = prgnvram_size();
+				size > 0)
+				prgnvram_write(addr & (size - 1), value);
+
+			if (auto size = prgram_size();
+				size > 0)
+				prgram_write(addr & (size - 1), value);
+
+			return;
+		}
+
+		LOG_WARN("Write to PRG-ROM not allowed!");
 	}
 
 	std::optional<U8> NesMapper000::on_ppu_peek(U16 &addr) const noexcept
