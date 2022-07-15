@@ -98,6 +98,13 @@ namespace nesem
 		void enable_bus_conflicts(bool enable) noexcept;
 		U8 open_bus_read() const noexcept;
 
+		// simple use case for handling prg_ram, where it is all battery backed or all volatile
+		// mappers that allow both ought to use the more specific functions
+		// having both is pretty rare though, nes20db only lists 48 carts total across mappers 1, 5, 164, 195, 198, 199, and 547
+		size_t cpu_ram_size() const noexcept;
+		U8 cpu_ram_read(size_t addr) const noexcept;
+		bool cpu_ram_write(size_t addr, U8 value) noexcept;
+
 		size_t prgram_size() const noexcept;
 		U8 prgram_read(size_t addr) const noexcept;
 		bool prgram_write(size_t addr, U8 value) noexcept;

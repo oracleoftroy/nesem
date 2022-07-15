@@ -35,9 +35,23 @@ namespace nesem::mappers
 
 	U8 NesMapper002::on_cpu_peek(U16 addr) const noexcept
 	{
-		if (addr < 0x8000)
+		if (addr < 0x6000)
 		{
 			LOG_ERROR("Read from invalid address ${:04X}, ignoring", addr);
+			return open_bus_read();
+		}
+
+		if (addr < 0x8000)
+		{
+			if (auto size = cpu_ram_size();
+				size > 0)
+			{
+				if (size > bank_8k) [[unlikely]]
+					LOG_WARN("Cart has more than 8k of RAM, but we aren't doing any special bank switching? Mapper bug?");
+
+				return cpu_ram_read(addr & (size - 1));
+			}
+
 			return open_bus_read();
 		}
 
@@ -51,9 +65,22 @@ namespace nesem::mappers
 
 	void NesMapper002::on_cpu_write(U16 addr, U8 value) noexcept
 	{
-		if (addr < 0x8000)
+		if (addr < 0x6000)
 		{
 			LOG_ERROR_ONCE("Write to invalid address ${:04X}, ignoring", addr);
+			return;
+		}
+
+		if (addr < 0x8000)
+		{
+			if (auto size = cpu_ram_size();
+				size > 0)
+			{
+				if (size > bank_8k) [[unlikely]]
+					LOG_WARN("Cart has more than 8k of RAM, but we aren't doing any special bank switching? Mapper bug?");
+
+				cpu_ram_write(addr & (size - 1), value);
+			}
 			return;
 		}
 

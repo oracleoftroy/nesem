@@ -58,17 +58,14 @@ namespace nesem::mappers
 
 		if (addr < 0x8000)
 		{
-			CHECK(prgram_size() > 0 && prgnvram_size() > 0, "Not expecting cart to use both prgram and prgnvram");
-
-			// pretty simple rules, if ram exists, it is mirrored across the entire $6000-7FFF address range
-			// mostly used by Family Basic and homebrew carts
-			if (auto size = prgnvram_size();
+			if (auto size = cpu_ram_size();
 				size > 0)
-				return prgnvram_read(addr & (size - 1));
+			{
+				if (size > bank_8k) [[unlikely]]
+					LOG_WARN("Cart has more than 8k of RAM, but we aren't doing any special bank switching? Mapper bug?");
 
-			if (auto size = prgram_size();
-				size > 0)
-				return prgram_read(addr & (size - 1));
+				return cpu_ram_read(addr & (size - 1));
+			}
 
 			return open_bus_read();
 		}
@@ -90,18 +87,14 @@ namespace nesem::mappers
 
 		if (addr < 0x8000)
 		{
-			CHECK(prgram_size() > 0 && prgnvram_size() > 0, "Not expecting cart to use both prgram and prgnvram");
-
-			// pretty simple rules, if ram exists, it is mirrored across the entire $6000-7FFF address range
-			// mostly used by Family Basic and homebrew carts
-			if (auto size = prgnvram_size();
+			if (auto size = cpu_ram_size();
 				size > 0)
-				prgnvram_write(addr & (size - 1), value);
+			{
+				if (size > bank_8k) [[unlikely]]
+					LOG_WARN("Cart has more than 8k of RAM, but we aren't doing any special bank switching? Mapper bug?");
 
-			if (auto size = prgram_size();
-				size > 0)
-				prgram_write(addr & (size - 1), value);
-
+				cpu_ram_write(addr & (size - 1), value);
+			}
 			return;
 		}
 

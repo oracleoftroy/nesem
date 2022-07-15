@@ -124,6 +124,56 @@ namespace nesem
 		return true;
 	}
 
+	size_t NesCartridge::cpu_ram_size() const noexcept
+	{
+		if (prgram_size() > 0 && prgnvram_size() > 0) [[unlikely]]
+			LOG_ERROR("Not expecting cart to use both prgram and prgnvram");
+
+		return prgnvram_size() + prgram_size();
+	}
+
+	U8 NesCartridge::cpu_ram_read(size_t addr) const noexcept
+	{
+		if (prgram_size() > 0 && prgnvram_size() > 0) [[unlikely]]
+			LOG_ERROR("Not expecting cart to use both prgram and prgnvram");
+
+		// pretty simple rules for simple cases: if ram exists, it is mirrored across the entire $6000-7FFF address range
+		// should be useful in most cases except when both non-volatile and volatile RAM exist on the same cart
+		if (auto size = prgnvram_size();
+			size > 0)
+			return prgnvram_read(addr);
+
+		if (auto size = prgram_size();
+			size > 0)
+			return prgram_read(addr);
+
+		return open_bus_read();
+	}
+
+	bool NesCartridge::cpu_ram_write(size_t addr, U8 value) noexcept
+	{
+		if (prgram_size() > 0 && prgnvram_size() > 0) [[unlikely]]
+			LOG_ERROR("Not expecting cart to use both prgram and prgnvram");
+
+		// pretty simple rules for simple cases: if ram exists, it is mirrored across the entire $6000-7FFF address range
+		// should be useful in most cases except when both non-volatile and volatile RAM exist on the same cart
+		if (auto size = prgnvram_size();
+			size > 0)
+		{
+			prgnvram_write(addr, value);
+			return true;
+		}
+
+		if (auto size = prgram_size();
+			size > 0)
+		{
+			prgram_write(addr, value);
+			return true;
+		}
+
+		return false;
+	}
+
 	size_t NesCartridge::prgram_size() const noexcept
 	{
 		return prg_ram.size();
@@ -131,7 +181,7 @@ namespace nesem
 
 	U8 NesCartridge::prgram_read(size_t addr) const noexcept
 	{
-		if (prg_ram.size() < addr)
+		if (prg_ram.size() < addr) [[unlikely]]
 		{
 			LOG_ERROR("PRGRAM read out of range! Read from {:X}, but size is {:X}", addr, prg_nvram.size());
 			return open_bus_read();
@@ -142,7 +192,7 @@ namespace nesem
 
 	bool NesCartridge::prgram_write(size_t addr, U8 value) noexcept
 	{
-		if (prg_ram.size() < addr)
+		if (prg_ram.size() < addr) [[unlikely]]
 		{
 			LOG_ERROR("PRGRAM write out of range! Write to {:X}, but size is {:X}", addr, prg_nvram.size());
 			return false;
@@ -159,7 +209,7 @@ namespace nesem
 
 	U8 NesCartridge::prgnvram_read(size_t addr) const noexcept
 	{
-		if (prg_nvram.size() < addr)
+		if (prg_nvram.size() < addr) [[unlikely]]
 		{
 			LOG_ERROR("PRGNVRAM read out of range! Read from {:X}, but size is {:X}", addr, prg_nvram.size());
 			return open_bus_read();
@@ -170,7 +220,7 @@ namespace nesem
 
 	bool NesCartridge::prgnvram_write(size_t addr, U8 value) noexcept
 	{
-		if (prg_nvram.size() < addr)
+		if (prg_nvram.size() < addr) [[unlikely]]
 		{
 			LOG_ERROR("PRGNVRAM write out of range! Write to {:X}, but size is {:X}", addr, prg_nvram.size());
 			return false;
