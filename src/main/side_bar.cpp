@@ -314,7 +314,9 @@ namespace app
 					for (int x = 0; x < 128; ++x)
 					{
 						auto palette_entry = pattern_tables[index].read_pixel(x, y, current_palette);
-						auto color = colors.color_at_index(palette_entry);
+						auto color_index = nes.ppu().peek(0x3F00 + palette_entry);
+
+						auto color = colors.color_at_index(color_index);
 						pt_canvas.draw_point(color, {x, y});
 					}
 				}
@@ -341,7 +343,8 @@ namespace app
 				color_pos.x += (color_size.w) * i;
 				auto color_rect = rect(color_pos, color_size);
 
-				auto color = colors.color_at_index(p * 4 + i);
+				auto color_index = nes.ppu().peek(0x3F00 + (p * 4 + i));
+				auto color = colors.color_at_index(color_index);
 
 				canvas.fill_rect(color, color_rect);
 				canvas.draw_rect({255, 255, 255}, color_rect);
