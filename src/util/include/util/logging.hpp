@@ -163,10 +163,6 @@ namespace util::detail
 			if (filename.empty())
 				return;
 
-			auto configure_sink = [](auto &&sink) {
-				return sink;
-			};
-
 			auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filename.string(), true);
 			file_sink->set_pattern(file_pattern);
 			file_sink->set_level(spdlog::level::debug);
