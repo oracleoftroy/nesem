@@ -39,12 +39,12 @@ namespace app
 		nesem::U8 get_current_palette() const noexcept;
 
 	private:
-		void on_file_drop(std::string_view filename);
-		void load_rom(const std::filesystem::path &filepath);
+		void on_file_drop(ui::App &app, std::string_view filename);
+		void load_rom(ui::App &app, const std::filesystem::path &filepath);
 		void load_pal(const std::filesystem::path &filepath);
-		void trigger_break(bool enable);
+		void trigger_break(ui::App &app, bool enable);
 
-		void on_error(std::string_view message);
+		void on_error(ui::App &app, std::string_view message);
 		void on_change_debug_mode(DebugMode mode);
 		void on_change_current_palette(nesem::U8 palette);
 		void on_nes_pixel(int x, int y, nesem::U8 color_index, nesem::NesColorEmphasis emphasis) noexcept;

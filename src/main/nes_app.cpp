@@ -62,7 +62,7 @@ namespace app
 {
 	NesApp::NesApp(ui::App &app)
 		: nes({
-			  .error = std::bind_front(&NesApp::on_error, this),
+			  .error = std::bind_front(&NesApp::on_error, this, std::ref(app)),
 			  .draw = std::bind_front(&NesApp::on_nes_pixel, this),
 			  .frame_ready = std::bind_front(&NesApp::on_nes_frame_ready, this),
 			  .player1 = std::make_unique<nesem::NesController>(std::bind_front(&NesApp::read_controller, this, std::ref(app))),
@@ -130,7 +130,7 @@ namespace app
 		nes_screen_texture = app.create_texture({256, 240});
 
 		data_path = find_path("data");
-		load_rom(data_path / "nestest.nes");
+		load_rom(app, data_path / "nestest.nes");
 		load_pal(data_path / "nes_colors.pal");
 	}
 
@@ -139,22 +139,22 @@ namespace app
 		return current_palette;
 	}
 
-	void NesApp::on_file_drop(std::string_view filename)
+	void NesApp::on_file_drop(ui::App &app, std::string_view filename)
 	{
 		auto path = std::filesystem::path(filename);
 
 		if (path.extension() == ".nes")
-			load_rom(path);
+			load_rom(app, path);
 		else if (path.extension() == ".pal")
 			load_pal(path);
 		else
 		{
 			LOG_WARN("Unknown file type for '{}', trying to load as iNES", path.string());
-			load_rom(path);
+			load_rom(app, path);
 		}
 	}
 
-	void NesApp::load_rom(const std::filesystem::path &filepath)
+	void NesApp::load_rom(ui::App &app, const std::filesystem::path &filepath)
 	{
 		rom_loaded = nes.load_rom(filepath);
 
@@ -166,7 +166,7 @@ namespace app
 		else
 		{
 			rom_name = filepath.string();
-			trigger_break(false);
+			trigger_break(app, false);
 		}
 
 		bottom_bar.update(system_break, rom_name);
@@ -181,8 +181,10 @@ namespace app
 			LOG_WARN("Could not load color palette from '{}', keeping previous", filepath.string());
 	}
 
-	void NesApp::trigger_break(bool enable)
+	void NesApp::trigger_break(ui::App &app, bool enable)
 	{
+		app.enable_screensaver(enable);
+
 		system_break = enable;
 		step = nesem::NesClockStep::None;
 
@@ -192,10 +194,10 @@ namespace app
 		bottom_bar.update(system_break, rom_name);
 	}
 
-	void NesApp::on_error(std::string_view message)
+	void NesApp::on_error(ui::App &app, std::string_view message)
 	{
 		overlay.show({0, 0, 0, 127}, message);
-		trigger_break(true);
+		trigger_break(app, true);
 	}
 
 	void NesApp::on_change_debug_mode(DebugMode mode)
@@ -265,13 +267,13 @@ namespace app
 
 		if (app.key_pressed(run_key))
 		{
-			trigger_break(false);
+			trigger_break(app, false);
 			LOG_INFO("System break now: {}", system_break);
 		}
 
 		if (app.key_pressed(break_key))
 		{
-			trigger_break(!system_break);
+			trigger_break(app, !system_break);
 
 			if (system_break)
 				overlay.show({0, 0, 0, 127}, "Paused");

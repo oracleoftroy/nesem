@@ -407,7 +407,7 @@ namespace ui
 
 				case SDL_DROPFILE:
 					if (on_file_drop)
-						on_file_drop(event.drop.file);
+						on_file_drop(*this, event.drop.file);
 
 					// these events conveniently allocate memory for your app and leave it up to you to free. And they
 					// are enabled by default. Yay! Free memory leak unless you explicitly handle or disable them! :(
@@ -570,6 +570,20 @@ namespace ui
 		SDL_RenderGetLogicalSize(core->renderer.get(), &size.w, &size.h);
 
 		return size;
+	}
+
+	void App::enable_screensaver(bool enable) noexcept
+	{
+		if (enable)
+		{
+			LOG_INFO("Screensaver enabled");
+			SDL_EnableScreenSaver();
+		}
+		else
+		{
+			LOG_INFO("Screensaver disabled");
+			SDL_DisableScreenSaver();
+		}
 	}
 
 	AudioDevice App::create_audio_device(int frequency, int channels, int sample_size) const noexcept

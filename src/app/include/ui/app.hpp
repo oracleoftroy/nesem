@@ -39,13 +39,13 @@ namespace ui
 		std::move_only_function<void(std::reference_wrapper<App> app, std::reference_wrapper<Renderer> renderer, double deltatime)> on_update;
 
 		// callback for handling dropped file
-		std::move_only_function<void(std::string_view filename)> on_file_drop;
+		std::move_only_function<void(std::reference_wrapper<App> app, std::string_view filename)> on_file_drop;
 #else
 		// callback function, called each tick
 		std::function<void(App &app, Renderer &renderer, double deltatime)> on_update;
 
 		// callback for handling dropped file
-		std::function<void(std::string_view filename)> on_file_drop;
+		std::function<void(App &app, std::string_view filename)> on_file_drop;
 #endif
 
 		// run the application. Exits when the window is closed
@@ -61,6 +61,10 @@ namespace ui
 
 		// The dimensions of the renderer
 		[[nodiscard]] cm::Sizei renderer_size() const noexcept;
+
+		// SDL by default disables the screensaver, allow apps to modify this (for example, while paused)
+		// if the screensaver is disabled, it will be re-enabled when the app exits
+		void enable_screensaver(bool enable) noexcept;
 
 		// Input handling
 
