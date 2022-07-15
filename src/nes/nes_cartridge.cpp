@@ -137,15 +137,13 @@ namespace nesem
 		if (prgram_size() > 0 && prgnvram_size() > 0) [[unlikely]]
 			LOG_ERROR("Not expecting cart to use both prgram and prgnvram");
 
-		// pretty simple rules for simple cases: if ram exists, it is mirrored across the entire $6000-7FFF address range
-		// should be useful in most cases except when both non-volatile and volatile RAM exist on the same cart
-		if (auto size = prgnvram_size();
-			size > 0)
-			return prgnvram_read(addr);
-
 		if (auto size = prgram_size();
 			size > 0)
 			return prgram_read(addr);
+
+		if (auto size = prgnvram_size();
+			size > 0)
+			return prgnvram_read(addr);
 
 		return open_bus_read();
 	}
@@ -155,19 +153,17 @@ namespace nesem
 		if (prgram_size() > 0 && prgnvram_size() > 0) [[unlikely]]
 			LOG_ERROR("Not expecting cart to use both prgram and prgnvram");
 
-		// pretty simple rules for simple cases: if ram exists, it is mirrored across the entire $6000-7FFF address range
-		// should be useful in most cases except when both non-volatile and volatile RAM exist on the same cart
-		if (auto size = prgnvram_size();
-			size > 0)
-		{
-			prgnvram_write(addr, value);
-			return true;
-		}
-
 		if (auto size = prgram_size();
 			size > 0)
 		{
 			prgram_write(addr, value);
+			return true;
+		}
+
+		if (auto size = prgnvram_size();
+			size > 0)
+		{
+			prgnvram_write(addr, value);
 			return true;
 		}
 
