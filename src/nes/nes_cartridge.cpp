@@ -8,6 +8,7 @@
 #include "mappers/nes_mapper_003.hpp"
 #include "mappers/nes_mapper_004.hpp"
 #include "mappers/nes_mapper_007.hpp"
+#include "mappers/nes_mapper_009.hpp"
 #include "mappers/nes_mapper_066.hpp"
 #include "mappers/nes_rom.hpp"
 #include "nes.hpp"
@@ -65,16 +66,25 @@ namespace nesem
 
 	std::optional<U8> NesCartridge::ppu_peek(U16 &addr) const noexcept
 	{
+		if (addr >= 0x4000) [[unlikely]]
+			LOG_ERROR("address out of range? PPU should properly mirror addresses, but we got ${:04X}", addr);
+
 		return on_ppu_peek(addr);
 	}
 
 	std::optional<U8> NesCartridge::ppu_read(U16 &addr) noexcept
 	{
+		if (addr >= 0x4000) [[unlikely]]
+			LOG_ERROR("address out of range? PPU should properly mirror addresses, but we got ${:04X}", addr);
+
 		return on_ppu_read(addr);
 	}
 
 	bool NesCartridge::ppu_write(U16 &addr, U8 value) noexcept
 	{
+		if (addr >= 0x4000) [[unlikely]]
+			LOG_ERROR("address out of range? PPU should properly mirror addresses, but we got ${:04X}", addr);
+
 		return on_ppu_write(addr, value);
 	}
 
@@ -303,6 +313,9 @@ namespace nesem
 
 		case mappers::NesMapper007::ines_mapper:
 			return std::make_unique<mappers::NesMapper007>(nes, std::move(rom));
+
+		case mappers::NesMapper009::ines_mapper:
+			return std::make_unique<mappers::NesMapper009>(nes, std::move(rom));
 
 		case mappers::NesMapper066::ines_mapper:
 			return std::make_unique<mappers::NesMapper066>(nes, std::move(rom));

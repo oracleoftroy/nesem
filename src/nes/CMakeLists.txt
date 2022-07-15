@@ -34,6 +34,8 @@ add_library(
 	"mappers/nes_mapper_004.hpp"
 	"mappers/nes_mapper_007.cpp"
 	"mappers/nes_mapper_007.hpp"
+	"mappers/nes_mapper_009.cpp"
+	"mappers/nes_mapper_009.hpp"
 	"mappers/nes_mapper_066.cpp"
 	"mappers/nes_mapper_066.hpp"
 )
