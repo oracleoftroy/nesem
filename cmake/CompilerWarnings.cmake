@@ -46,6 +46,7 @@ function(set_project_warnings project_name)
 		# -Wdouble-promotion # warn if float is implicit promoted to double
 		-Wformat=2 # warn on security issues around functions that format output (ie printf)
 		-Wimplicit-fallthrough # warn on statements that fallthrough without an explicit annotation
+		-Wcast-align
 	)
 
 	set(GCC_WARNINGS
