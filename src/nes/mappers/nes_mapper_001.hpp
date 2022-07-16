@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "../nes_cartridge.hpp"
-#include "nes_rom.hpp"
 
 namespace nesem::mappers
 {

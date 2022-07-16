@@ -10,7 +10,6 @@
 #include "mappers/nes_mapper_007.hpp"
 #include "mappers/nes_mapper_009.hpp"
 #include "mappers/nes_mapper_066.hpp"
-#include "mappers/nes_rom.hpp"
 #include "nes.hpp"
 
 #include <util/logging.hpp>
@@ -35,6 +34,15 @@ namespace nesem
 
 			if (rom().v2->prgnvram)
 				prg_nvram = nes.open_prgnvram(rom().v2->rom.sha1, rom().v2->prgnvram->size);
+		}
+		else if (auto size = rom().v1.prg_ram_size * bank_8k;
+				 size > 0)
+		{
+			// nesdev wiki indicates ram size in iNES 1 isn't reliable, but if its all we have to go by...
+			if (rom().v1.has_battery)
+				prg_nvram = nes.open_prgnvram(rom().sha1, size);
+			else
+				prg_ram.resize(size);
 		}
 
 		emulate_bus_conflicts = has_bus_conflicts(nes_rom);

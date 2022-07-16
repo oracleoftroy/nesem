@@ -5,7 +5,7 @@
 #include <string_view>
 #include <vector>
 
-#include "../nes_types.hpp"
+#include "nes_types.hpp"
 
 namespace nesem::mappers
 {
@@ -157,6 +157,9 @@ namespace nesem::mappers
 			// size in 8K units
 			int chr_rom_size;
 
+			// size in 8K units
+			int prg_ram_size;
+
 			// has battery backed prg-nvram
 			bool has_battery;
 		};
@@ -166,19 +169,10 @@ namespace nesem::mappers
 	{
 		std::vector<U8> prg_rom;
 		std::vector<U8> chr_rom;
+		std::string sha1;
 
 		ines_1::RomData v1;
 		std::optional<ines_2::RomData> v2;
-	};
-
-	enum BankSize
-	{
-		bank_1k = 0x0400,
-		bank_2k = 0x0800,
-		bank_4k = 0x1000,
-		bank_8k = 0x2000,
-		bank_16k = 0x4000,
-		bank_32k = 0x8000,
 	};
 
 	// utility function for mappers representing physically soldered nametable maps

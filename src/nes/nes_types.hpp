@@ -14,6 +14,16 @@ namespace nesem
 	using U32 = std::uint_fast32_t;
 	using U64 = std::uint_fast64_t;
 
+	enum BankSize
+	{
+		bank_1k = 0x0400,
+		bank_2k = 0x0800,
+		bank_4k = 0x1000,
+		bank_8k = 0x2000,
+		bank_16k = 0x4000,
+		bank_32k = 0x8000,
+	};
+
 	// processor status flags
 	enum class ProcessorStatus : U8
 	{

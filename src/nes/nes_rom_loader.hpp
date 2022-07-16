@@ -6,7 +6,7 @@
 #include <string_view>
 #include <vector>
 
-#include "mappers/nes_rom.hpp"
+#include "nes_rom.hpp"
 #include "nes_types.hpp"
 
 namespace nesem
@@ -21,7 +21,7 @@ namespace nesem
 
 		std::optional<mappers::NesRom> load_rom(const std::filesystem::path &filename) noexcept;
 
-		std::optional<mappers::ines_2::RomData> find_rom_data(const std::vector<U8> &prgrom, const std::vector<U8> &chrrom);
+		std::optional<mappers::ines_2::RomData> find_rom_data(std::string_view sha1);
 
 	private:
 		void build_indexes();

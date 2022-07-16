@@ -5,8 +5,8 @@
 #include <optional>
 #include <vector>
 
-#include "mappers/nes_rom.hpp"
 #include "nes_nvram.hpp"
+#include "nes_rom.hpp"
 #include "nes_types.hpp"
 
 namespace nesem

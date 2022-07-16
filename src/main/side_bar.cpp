@@ -120,17 +120,17 @@ namespace app
 				draw_string(canvas, {255, 255, 255}, fmt::format("Mapper: {:03}", v1.mapper), pos);
 
 				pos.y += 12;
-				draw_string(canvas, {255, 255, 255}, fmt::format("PRG ROM size: {0}K ({1:L})", v1.prg_rom_size * 16, v1.prg_rom_size * nesem::mappers::bank_16k), pos);
+				draw_string(canvas, {255, 255, 255}, fmt::format("PRG ROM size: {0}K ({1:L})", v1.prg_rom_size * 16, v1.prg_rom_size * nesem::bank_16k), pos);
 
 				if (v1.chr_rom_size == 0)
 				{
 					pos.y += 12;
-					draw_string(canvas, {255, 255, 255}, fmt::format("CHR RAM size: 8K ({:L})", nesem::mappers::bank_8k), pos);
+					draw_string(canvas, {255, 255, 255}, fmt::format("CHR RAM size: 8K ({:L})", nesem::bank_8k), pos);
 				}
 				else
 				{
 					pos.y += 12;
-					draw_string(canvas, {255, 255, 255}, fmt::format("CHR ROM size: {0}K ({1:L})", v1.chr_rom_size * 8, v1.chr_rom_size * nesem::mappers::bank_8k), pos);
+					draw_string(canvas, {255, 255, 255}, fmt::format("CHR ROM size: {0}K ({1:L})", v1.chr_rom_size * 8, v1.chr_rom_size * nesem::bank_8k), pos);
 				}
 			}
 
@@ -211,7 +211,7 @@ namespace app
 
 			{
 				auto cpu_map = cartridge->report_cpu_mapping();
-				constexpr auto sys_prg_size = nesem::mappers::bank_32k;
+				constexpr auto sys_prg_size = nesem::bank_32k;
 				auto prgsize = size(cartridge->rom().prg_rom);
 
 				for (auto bank : cpu_map)
@@ -243,7 +243,7 @@ namespace app
 
 			{
 				auto ppu_map = cartridge->report_ppu_mapping();
-				constexpr auto ppu_chr_size = nesem::mappers::bank_8k;
+				constexpr auto ppu_chr_size = nesem::bank_8k;
 				auto chrsize = cartridge->chr_size();
 
 				for (auto bank : ppu_map)

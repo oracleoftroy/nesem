@@ -3,10 +3,10 @@
 #include <array>
 #include <fstream>
 
-#include <cryptopp/hex.h>
-#include <cryptopp/sha.h>
 #include <fmt/format.h>
 #include <tinyxml2.h>
+
+#include "nes_sha1.hpp"
 
 #include <util/logging.hpp>
 
@@ -285,7 +285,7 @@ namespace nesem
 		if ((header[7] & 0b00001100) == 0b00001000)
 			version = 2;
 
-		LOG_INFO("ROM file is version {}", version);
+		LOG_INFO("ROM file iNES version: {}", version);
 
 		// optional trainer, 512 bytes if present
 		bool has_trainer = (header[6] & 0b00000100) > 0;
@@ -305,6 +305,9 @@ namespace nesem
 		// size in 8K units
 		int chr_rom_size = header[5];
 
+		// size in 8K units
+		int prg_ram_size = header[8];
+
 		if (has_trainer)
 		{
 			LOG_WARN("ROM has trainer data, but we are ignoring it");
@@ -312,9 +315,9 @@ namespace nesem
 		}
 
 		auto result = mappers::NesRom{
-			.prg_rom = std::vector<U8>(prg_rom_size * mappers::bank_16k),
-			.chr_rom = std::vector<U8>(chr_rom_size * mappers::bank_8k),
-			.v1 = mappers::ines_1::RomData{mapper, mirroring, prg_rom_size, chr_rom_size, has_battery},
+			.prg_rom = std::vector<U8>(prg_rom_size * bank_16k),
+			.chr_rom = std::vector<U8>(chr_rom_size * bank_8k),
+			.v1 = mappers::ines_1::RomData{mapper, mirroring, prg_rom_size, chr_rom_size, prg_ram_size, has_battery},
 			.v2 = std::nullopt, // we set this later on below
 		};
 
@@ -333,31 +336,15 @@ namespace nesem
 		if (has_inst_rom)
 			LOG_WARN("ROM has INST-ROM data, but we are ignoring it");
 
-		result.v2 = find_rom_data(result.prg_rom, result.chr_rom);
+		result.sha1 = util::sha1(result.prg_rom, result.chr_rom);
+		result.v2 = find_rom_data(result.sha1);
 
 		return result;
 	}
 
-	std::optional<mappers::ines_2::RomData> NesRomLoader::find_rom_data(const std::vector<U8> &prgrom, const std::vector<U8> &chrrom)
+	std::optional<mappers::ines_2::RomData> NesRomLoader::find_rom_data(std::string_view sha1)
 	{
-		auto rom_sha1 = [&] {
-			std::array<CryptoPP::byte, CryptoPP::SHA1::DIGESTSIZE> digest;
-
-			CryptoPP::SHA1 sha;
-			sha.Update(data(prgrom), size(prgrom));
-			sha.Update(data(chrrom), size(chrrom));
-			sha.Final(data(digest));
-
-			std::string output;
-
-			auto encoder = CryptoPP::HexEncoder(new CryptoPP::StringSink(output));
-			encoder.Put(data(digest), size(digest));
-			encoder.MessageEnd();
-
-			return output;
-		}();
-
-		if (auto it = rom_sha1_to_index.find(rom_sha1); it != end(rom_sha1_to_index))
+		if (auto it = rom_sha1_to_index.find(sha1); it != end(rom_sha1_to_index))
 			return roms[it->second];
 
 		LOG_WARN("ROM not found in DB");
