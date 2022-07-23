@@ -1,6 +1,7 @@
 
 #include <filesystem>
 
+#include "config.hpp"
 #include "nes_app.hpp"
 
 #include <ui/app.hpp>
@@ -21,9 +22,14 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	auto core = app::NesApp{app};
+	auto config_path = app.get_user_data_path("nesem") / "nesem.toml";
+	auto config = app::load_config_file(config_path);
+
+	auto core = app::NesApp{app, config};
 
 	app.run();
+
+	app::save_config_file(config_path, core.get_config(app));
 
 	LOG_INFO("Exiting...");
 	return 0;

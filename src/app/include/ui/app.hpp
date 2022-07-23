@@ -69,10 +69,12 @@ namespace ui
 		// Input handling
 
 		// look up a key by name. Slow, so call once and save the value to re-use a key
-		[[nodiscard]] Key key_from_name(const char *name) noexcept;
+		[[nodiscard]] Key key_from_name(const char *name) const noexcept;
+		[[nodiscard]] std::string_view name_from_key(Key key) const noexcept;
 
 		// look up a scancode by name. Slow, so call once and save the value to re-use a key
-		[[nodiscard]] Scancode scancode_from_name(const char *name) noexcept;
+		[[nodiscard]] Scancode scancode_from_name(const char *name) const noexcept;
+		[[nodiscard]] std::string_view name_from_scancode(Scancode scancode) const noexcept;
 
 		// get the current modifier keys (shift, alt, etc)
 		// TODO: consider deprecating...

@@ -2,6 +2,7 @@
 
 #include <filesystem>
 
+#include "config.hpp"
 #include "text.hpp"
 
 #include <ui/app.hpp>
@@ -60,7 +61,7 @@ namespace
 
 namespace app
 {
-	NesApp::NesApp(ui::App &app)
+	NesApp::NesApp(ui::App &app, const Config &config)
 		: nes({
 			  .error = std::bind_front(&NesApp::on_error, this, std::ref(app)),
 			  .draw = std::bind_front(&NesApp::on_nes_pixel, this),
@@ -77,14 +78,17 @@ namespace app
 		}
 
 		{ // setup keys
-			button_a = app.key_from_name("/");
-			button_b = app.key_from_name(".");
-			button_select = app.key_from_name(",");
-			button_start = app.key_from_name("Space");
-			button_up = app.key_from_name("W");
-			button_down = app.key_from_name("S");
-			button_left = app.key_from_name("A");
-			button_right = app.key_from_name("D");
+			button_a = app.key_from_name(config.controller_1.a.c_str());
+			button_b = app.key_from_name(config.controller_1.b.c_str());
+			button_turbo_a = app.key_from_name(config.controller_1.turbo_a.c_str());
+			button_turbo_b = app.key_from_name(config.controller_1.turbo_b.c_str());
+
+			button_select = app.key_from_name(config.controller_1.select.c_str());
+			button_start = app.key_from_name(config.controller_1.start.c_str());
+			button_up = app.key_from_name(config.controller_1.up.c_str());
+			button_down = app.key_from_name(config.controller_1.down.c_str());
+			button_left = app.key_from_name(config.controller_1.left.c_str());
+			button_right = app.key_from_name(config.controller_1.right.c_str());
 
 			escape_key = app.key_from_name("Escape");
 
@@ -125,18 +129,47 @@ namespace app
 			controller_overlay = ControllerOverlay(app, nes_area);
 		}
 
-		// extra stuff that should mostly go away....?
+		turbo_frame_cycle = config.controller_1.turbo_speed;
 
 		nes_screen_texture = app.create_texture({256, 240});
 
 		data_path = find_path("data");
-		load_rom(app, data_path / "nestest.nes");
-		load_pal(data_path / "nes_colors.pal");
+
+		if (config.last_played_rom)
+			load_rom(app, *config.last_played_rom);
+		else
+			load_rom(app, data_path / "nestest.nes");
+
+		if (config.palette)
+			load_pal(*config.palette);
+		else
+			load_pal(data_path / "nes_colors.pal");
 	}
 
 	nesem::U8 NesApp::get_current_palette() const noexcept
 	{
 		return current_palette;
+	}
+
+	Config NesApp::get_config(const ui::App &app) const noexcept
+	{
+		Config config;
+
+		config.last_played_rom = rom_name;
+
+		config.controller_1.turbo_speed = turbo_frame_cycle;
+		config.controller_1.turbo_a = app.name_from_key(button_turbo_a);
+		config.controller_1.turbo_b = app.name_from_key(button_turbo_b);
+		config.controller_1.a = app.name_from_key(button_a);
+		config.controller_1.b = app.name_from_key(button_b);
+		config.controller_1.select = app.name_from_key(button_select);
+		config.controller_1.start = app.name_from_key(button_start);
+		config.controller_1.up = app.name_from_key(button_up);
+		config.controller_1.down = app.name_from_key(button_down);
+		config.controller_1.left = app.name_from_key(button_left);
+		config.controller_1.right = app.name_from_key(button_right);
+
+		return config;
 	}
 
 	void NesApp::on_file_drop(ui::App &app, std::string_view filename)
@@ -394,6 +427,13 @@ namespace app
 	{
 		using enum nesem::Buttons;
 		auto result = None;
+
+		bool in_turbo = (nes.ppu().current_frame() % turbo_frame_cycle) >= (turbo_frame_cycle / 2);
+
+		if (in_turbo && app.key_down(button_turbo_a))
+			result |= A;
+		if (in_turbo && app.key_down(button_turbo_b))
+			result |= B;
 
 		if (app.key_down(button_a))
 			result |= A;

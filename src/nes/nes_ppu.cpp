@@ -163,6 +163,11 @@ namespace nesem
 		return tick;
 	}
 
+	U64 NesPpu::current_frame() const noexcept
+	{
+		return frame;
+	}
+
 	int NesPpu::current_scanline() const noexcept
 	{
 		return scanline;

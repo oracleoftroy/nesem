@@ -470,7 +470,7 @@ namespace ui
 		return !!core;
 	}
 
-	Key App::key_from_name(const char *name) noexcept
+	Key App::key_from_name(const char *name) const noexcept
 	{
 		auto key = SDL_GetKeyFromName(name);
 
@@ -480,13 +480,25 @@ namespace ui
 		return Key{key};
 	}
 
-	Scancode App::scancode_from_name(const char *name) noexcept
+	Scancode App::scancode_from_name(const char *name) const noexcept
 	{
 		auto scancode = SDL_GetScancodeFromName(name);
 		if (scancode == SDL_SCANCODE_UNKNOWN)
 			LOG_WARN("Could not find scancode named '{}', reason: {}", name, SDL_GetError());
 
 		return Scancode{scancode};
+	}
+
+	std::string_view App::name_from_key(Key key) const noexcept
+	{
+		auto value = static_cast<int>(key);
+		return SDL_GetKeyName(static_cast<SDL_Keycode>(value));
+	}
+
+	std::string_view App::name_from_scancode(Scancode scancode) const noexcept
+	{
+		auto value = static_cast<int>(scancode);
+		return SDL_GetScancodeName(static_cast<SDL_Scancode>(value));
 	}
 
 	KeyMods App::modifiers() const noexcept

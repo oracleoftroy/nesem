@@ -8,6 +8,7 @@
 		"scottt-debugbreak",
 		"sdl2",
 		"spdlog",
-		"tinyxml2"
+		"tinyxml2",
+		"tomlplusplus"
 	]
 }

@@ -31,12 +31,16 @@ namespace app
 
 	constexpr auto nes_resolution = cm::Size{256, 240};
 
+	struct Config;
+
 	class NesApp
 	{
 	public:
-		explicit NesApp(ui::App &app);
+		explicit NesApp(ui::App &app, const Config &config);
 
 		nesem::U8 get_current_palette() const noexcept;
+
+		Config get_config(const ui::App &app) const noexcept;
 
 	private:
 		void on_file_drop(ui::App &app, std::string_view filename);
@@ -65,6 +69,8 @@ namespace app
 
 		ui::Key button_a;
 		ui::Key button_b;
+		ui::Key button_turbo_a;
+		ui::Key button_turbo_b;
 		ui::Key button_select;
 		ui::Key button_start;
 		ui::Key button_up;
@@ -78,6 +84,7 @@ namespace app
 		int triggered_frame_counter = -1;
 
 		int nes_scale = 3;
+		int turbo_frame_cycle = 16;
 
 		std::array<nesem::U16, nes_resolution.w * nes_resolution.h> nes_screen;
 		ui::Texture nes_screen_texture;

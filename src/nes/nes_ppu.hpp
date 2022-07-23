@@ -226,6 +226,7 @@ namespace nesem
 		U8 peek(U16 addr) const noexcept;
 
 		U64 current_tick() const noexcept;
+		U64 current_frame() const noexcept;
 		int current_scanline() const noexcept;
 		int current_cycle() const noexcept;
 		ScrollInfo get_scroll_info() const noexcept;
