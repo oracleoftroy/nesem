@@ -145,6 +145,9 @@ namespace nesem::mappers
 	{
 		struct RomData
 		{
+			// ines version from file
+			int version;
+
 			// iNES mapper id, see: https://wiki.nesdev.org/w/index.php?title=Mapper
 			int mapper;
 
@@ -162,6 +165,12 @@ namespace nesem::mappers
 
 			// has battery backed prg-nvram
 			bool has_battery;
+
+			// has 512k trainer data
+			bool has_trainer;
+
+			// optional INST-ROM, 8192 bytes if present
+			bool has_inst_rom;
 		};
 	}
 
