@@ -38,8 +38,6 @@ namespace app
 	public:
 		explicit NesApp(ui::App &app, const Config &config);
 
-		nesem::U8 get_current_palette() const noexcept;
-
 		Config get_config(const ui::App &app) const noexcept;
 
 	private:

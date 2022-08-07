@@ -2,6 +2,8 @@
 
 #include <array>
 
+#include <nes_types.hpp>
+
 #include <cm/math.hpp>
 #include <ui/texture.hpp>
 
@@ -28,12 +30,12 @@ namespace app
 		explicit SideBar() = default;
 		explicit SideBar(ui::App &app, cm::Recti area);
 
-		void update(DebugMode mode, const nesem::Nes &nes, NesApp &app, const ColorPalette &colors);
+		void update(DebugMode mode, const nesem::Nes &nes, nesem::U8 current_palette, const ColorPalette &colors);
 		void render(ui::Renderer &renderer, DebugMode mode);
 
 	private:
 		void draw_cpu_info(const nesem::Nes &nes);
-		void draw_ppu_info(DebugMode mode, const nesem::Nes &nes, NesApp &app, const ColorPalette &colors);
+		void draw_ppu_info(DebugMode mode, const nesem::Nes &nes, nesem::U8 current_palette, const ColorPalette &colors);
 
 	private:
 		ui::Texture texture;

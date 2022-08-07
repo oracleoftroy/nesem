@@ -146,11 +146,6 @@ namespace app
 			load_pal(data_path / "nes_colors.pal");
 	}
 
-	nesem::U8 NesApp::get_current_palette() const noexcept
-	{
-		return current_palette;
-	}
-
 	Config NesApp::get_config(const ui::App &app) const noexcept
 	{
 		Config config;
@@ -239,7 +234,7 @@ namespace app
 
 		// the side bar is normally updated when we tick the nes. But we don't tick the nes when we are paused, so force an update
 		if (system_break)
-			side_bar.update(debug_mode, nes, *this, colors);
+			side_bar.update(debug_mode, nes, current_palette, colors);
 	}
 
 	void NesApp::on_change_current_palette(nesem::U8 palette)
@@ -248,7 +243,7 @@ namespace app
 
 		// the side bar is normally updated when we tick the nes. But we don't tick the nes when we are paused, so force an update
 		if (system_break)
-			side_bar.update(debug_mode, nes, *this, colors);
+			side_bar.update(debug_mode, nes, current_palette, colors);
 	}
 
 	void NesApp::tick(ui::App &app, ui::Renderer &canvas, double deltatime)
@@ -371,12 +366,12 @@ namespace app
 			if (!system_break)
 			{
 				nes.tick(deltatime);
-				side_bar.update(debug_mode, nes, *this, colors);
+				side_bar.update(debug_mode, nes, current_palette, colors);
 			}
 			else if (step != None)
 			{
 				nes.step(step);
-				side_bar.update(debug_mode, nes, *this, colors);
+				side_bar.update(debug_mode, nes, current_palette, colors);
 				step = None;
 
 				draw_screen();

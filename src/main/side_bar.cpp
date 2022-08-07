@@ -22,7 +22,7 @@ namespace app
 	{
 	}
 
-	void SideBar::update(DebugMode mode, const nesem::Nes &nes, NesApp &app, const ColorPalette &colors)
+	void SideBar::update(DebugMode mode, const nesem::Nes &nes, nesem::U8 current_palette, const ColorPalette &colors)
 	{
 		switch (mode)
 		{
@@ -32,7 +32,7 @@ namespace app
 
 		case bg_info:
 		case fg_info:
-			draw_ppu_info(mode, nes, app, colors);
+			draw_ppu_info(mode, nes, current_palette, colors);
 			break;
 
 		case cpu_info:
@@ -288,7 +288,7 @@ namespace app
 		}
 	}
 
-	void SideBar::draw_ppu_info(DebugMode mode, const nesem::Nes &nes, NesApp &app, const ColorPalette &colors)
+	void SideBar::draw_ppu_info(DebugMode mode, const nesem::Nes &nes, nesem::U8 current_palette, const ColorPalette &colors)
 	{
 		if (mode == DebugMode::none)
 			return;
@@ -302,8 +302,6 @@ namespace app
 			nes.ppu().read_pattern_table(0),
 			nes.ppu().read_pattern_table(1),
 		};
-
-		auto current_palette = app.get_current_palette();
 
 		for (size_t index = 0; index < size(pattern_tables); ++index)
 		{
