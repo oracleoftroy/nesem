@@ -11,6 +11,23 @@ using namespace std::string_view_literals;
 
 namespace app
 {
+	constinit auto key_version = "version"sv;
+	constinit auto key_last_rom = "last-rom"sv;
+	constinit auto key_palette = "palette"sv;
+
+	constinit auto key_controller_1 = "controller-1"sv;
+	constinit auto key_turbo_speed = "turbo-speed"sv;
+	constinit auto key_turbo_a = "turbo-A"sv;
+	constinit auto key_turbo_b = "turbo-B"sv;
+	constinit auto key_a = "A"sv;
+	constinit auto key_b = "B"sv;
+	constinit auto key_select = "Select"sv;
+	constinit auto key_start = "Start"sv;
+	constinit auto key_up = "Up"sv;
+	constinit auto key_down = "Down"sv;
+	constinit auto key_left = "Left"sv;
+	constinit auto key_right = "Right"sv;
+
 	Config load_config_file(const std::filesystem::path &path) noexcept
 	{
 		Config config;
@@ -23,23 +40,24 @@ namespace app
 		{
 			auto table = result.table();
 
-			auto version = table["version"].value_or(0);
+			auto version = table[key_version].value_or(0);
 			if (version == 0)
 			{
-				config.last_played_rom = table["last-rom"].value<std::string>();
-				config.palette = table["palette"].value<std::string>();
+				config.last_played_rom = table[key_last_rom].value<std::string>();
+				config.palette = table[key_palette].value<std::string>();
 
-				config.controller_1.turbo_speed = table["turbo-speed"].value_or(16);
-				config.controller_1.turbo_a = table["turbo-A"].value_or(";"sv);
-				config.controller_1.turbo_b = table["turbo-B"].value_or("L"sv);
-				config.controller_1.a = table["A"].value_or("/"sv);
-				config.controller_1.b = table["B"].value_or("."sv);
-				config.controller_1.select = table["Select"].value_or(","sv);
-				config.controller_1.start = table["Start"].value_or("Space"sv);
-				config.controller_1.up = table["Up"].value_or("W"sv);
-				config.controller_1.down = table["Down"].value_or("S"sv);
-				config.controller_1.left = table["Left"].value_or("A"sv);
-				config.controller_1.right = table["Right"].value_or("D"sv);
+				auto controller_1 = table[key_controller_1];
+				config.controller_1.turbo_speed = controller_1[key_turbo_speed].value_or(16);
+				config.controller_1.turbo_a = controller_1[key_turbo_a].value_or(";"sv);
+				config.controller_1.turbo_b = controller_1[key_turbo_b].value_or("L"sv);
+				config.controller_1.a = controller_1[key_a].value_or("/"sv);
+				config.controller_1.b = controller_1[key_b].value_or("."sv);
+				config.controller_1.select = controller_1[key_select].value_or(","sv);
+				config.controller_1.start = controller_1[key_start].value_or("Space"sv);
+				config.controller_1.up = controller_1[key_up].value_or("W"sv);
+				config.controller_1.down = controller_1[key_down].value_or("S"sv);
+				config.controller_1.left = controller_1[key_left].value_or("A"sv);
+				config.controller_1.right = controller_1[key_right].value_or("D"sv);
 			}
 			else
 				LOG_WARN("Unexpected config file version: {}", version);
@@ -53,24 +71,24 @@ namespace app
 		auto table = toml::table{};
 
 		if (config.last_played_rom)
-			table.insert("last-rom", *config.last_played_rom);
+			table.insert(key_last_rom, *config.last_played_rom);
 
 		if (config.palette)
-			table.insert("palette", *config.palette);
+			table.insert(key_palette, *config.palette);
 
-		table.insert("controller-1",
+		table.insert("controller-1"sv,
 			toml::table{
-				{"turbo-speed", config.controller_1.turbo_speed},
-				{"turbo-A",     config.controller_1.turbo_a    },
-				{"turbo-B",     config.controller_1.turbo_b    },
-				{"A",           config.controller_1.a          },
-				{"B",           config.controller_1.b          },
-				{"Select",      config.controller_1.select     },
-				{"Start",       config.controller_1.start      },
-				{"Up",          config.controller_1.up         },
-				{"Down",        config.controller_1.down       },
-				{"Left",        config.controller_1.left       },
-				{"Right",       config.controller_1.right      },
+				{key_turbo_speed, config.controller_1.turbo_speed},
+				{key_turbo_a,     config.controller_1.turbo_a    },
+				{key_turbo_b,     config.controller_1.turbo_b    },
+				{key_a,           config.controller_1.a          },
+				{key_b,           config.controller_1.b          },
+				{key_select,      config.controller_1.select     },
+				{key_start,       config.controller_1.start      },
+				{key_up,          config.controller_1.up         },
+				{key_down,        config.controller_1.down       },
+				{key_left,        config.controller_1.left       },
+				{key_right,       config.controller_1.right      },
         });
 
 		auto file = std::ofstream(path, std::ios::trunc);
