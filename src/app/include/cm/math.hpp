@@ -884,15 +884,16 @@ namespace cm
 			point.y < rect.y + rect.h;
 	}
 
+	// clang-format off
 	template <typename T>
 	concept BoundedArea = requires(T t, T u)
 	{
-		// clang-format off
 		{collides(t, u)} -> std::convertible_to<bool>;
 		{collides(u, t)} -> std::convertible_to<bool>;
 		{center(t)};
-		// clang-format on
 	};
+
+	// clang-format on
 
 	template <typename T>
 	constexpr bool collides(Rect<T> r1, Rect<T> r2) noexcept
