@@ -6,7 +6,18 @@
 		"cryptopp",
 		"mio",
 		"scottt-debugbreak",
-		"sdl2",
+		{
+			"name": "sdl2",
+			"platform": "!windows",
+			"features": [
+				"wayland",
+				"x11"
+			]
+		},
+		{
+			"name": "sdl2",
+			"platform": "windows"
+		},
 		"spdlog",
 		"tinyxml2",
 		"tomlplusplus"
