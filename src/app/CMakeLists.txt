@@ -23,5 +23,5 @@ add_library(
 )
 target_link_libraries(appui PRIVATE project_options)
 target_link_libraries(appui PUBLIC drawlib util)
-target_link_libraries(appui PRIVATE SDL2::SDL2 SDL2::SDL2main)
+target_link_libraries(appui PRIVATE $<TARGET_NAME_IF_EXISTS:SDL2::SDL2main> $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>)
 target_include_directories(appui PUBLIC include)
