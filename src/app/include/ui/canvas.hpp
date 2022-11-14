@@ -1,5 +1,6 @@
 #pragma once
 
+#include <concepts>
 #include <cstdint>
 #include <optional>
 
@@ -41,6 +42,9 @@ namespace ui
 
 		void blit(cm::Point2i dst, const Canvas &src, const std::optional<cm::Recti> &src_rect = std::nullopt, cm::Sizei scale = {1, 1}) noexcept;
 
+		// avoid repeated bounds check
+		void update_points(std::invocable<cm::Point2i> auto fn) noexcept;
+
 	private:
 		void cleanup() noexcept;
 
@@ -57,4 +61,17 @@ namespace ui
 		bool owns_canvas = true;
 		bool blending_enabled = false;
 	};
+
+	void Canvas::update_points(std::invocable<cm::Point2i> auto fn) noexcept
+	{
+		for (int y = 0; y < canvas_size.h; ++y)
+		{
+			for (int x = 0; x < canvas_size.w; ++x)
+			{
+				const auto pos = cm::Point2{x, y};
+				const auto color = fn(pos);
+				do_draw_point(cm::to_pixel(canvas_format, color), pos);
+			}
+		}
+	}
 }

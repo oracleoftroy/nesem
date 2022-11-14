@@ -1,5 +1,6 @@
 #include "side_bar.hpp"
 
+#include <functional>
 #include <numbers>
 
 #include <fmt/format.h>
@@ -306,18 +307,15 @@ namespace app
 		for (size_t index = 0; index < size(pattern_tables); ++index)
 		{
 			{
-				auto [pt_canvas, pt_lock] = nes_pattern_textures[index].lock();
-				for (int y = 0; y < 128; ++y)
-				{
-					for (int x = 0; x < 128; ++x)
-					{
-						auto palette_entry = pattern_tables[index].read_pixel(x, y, current_palette);
-						auto color_index = nes.ppu().peek(0x3F00 + palette_entry);
+				auto fn = [&](const cm::Point2i pos) {
+					auto palette_entry = pattern_tables[index].read_pixel(pos.x, pos.y, current_palette);
+					auto color_index = nes.ppu().peek(0x3F00 + palette_entry);
 
-						auto color = colors.color_at_index(color_index);
-						pt_canvas.draw_point(color, {x, y});
-					}
-				}
+					return colors.color_at_index(color_index);
+				};
+
+				auto [pt_canvas, pt_lock] = nes_pattern_textures[index].lock();
+				pt_canvas.update_points(std::cref(fn));
 			}
 
 			auto pos = cm::Point2{128 * static_cast<int>(index), 0};
@@ -379,15 +377,13 @@ namespace app
 				auto name_table = nes.ppu().read_name_table(nt, pattern_tables);
 
 				{
+					auto fn = [&](const cm::Point2i pos) {
+						auto color_index = name_table.read_pixel(pos.x, pos.y);
+						return colors.color_at_index(color_index);
+					};
+
 					auto [nt_canvas, nt_lock] = nes_nametable_textures[index].lock();
-					for (int y = 0; y < 240; ++y)
-					{
-						for (int x = 0; x < 256; ++x)
-						{
-							auto color_index = name_table.read_pixel(x, y);
-							nt_canvas.draw_point(colors.color_at_index(color_index), {x, y});
-						}
-					}
+					nt_canvas.update_points(std::cref(fn));
 				}
 
 				auto pos = cm::Point2{0, area.h - (240 * (2 - index))};
