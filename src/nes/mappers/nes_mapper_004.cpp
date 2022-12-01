@@ -179,7 +179,7 @@ namespace nesem::mappers
 		else if (addr < 0xE000)
 			bank = mode == 0 ? num_banks - 2 : bank_map[6];
 
-		return static_cast<U16>(bank * bank_8k + (addr & (bank_8k - 1)));
+		return bank * bank_8k + (addr & (bank_8k - 1));
 	}
 
 	size_t NesMapper004::map_addr_ppu(U16 addr) const noexcept
@@ -207,7 +207,7 @@ namespace nesem::mappers
 		else if (addr < 0x2000)
 			bank = mode == 0 ? bank_map[5] : bank_map[1] + 1;
 
-		return static_cast<U16>(bank_1k * bank + (addr & (bank_1k - 1)));
+		return bank_1k * bank + (addr & (bank_1k - 1));
 	}
 
 	void NesMapper004::update_irq(U16 addr) noexcept
