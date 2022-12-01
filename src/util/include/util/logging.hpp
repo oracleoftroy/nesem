@@ -128,6 +128,11 @@ namespace util::detail
 			spdlog::set_default_logger(std::move(logger));
 
 			spdlog::set_level(spdlog::level::level_enum(SPDLOG_ACTIVE_LEVEL));
+
+			std::set_terminate([] {
+				spdlog::shutdown();
+				std::abort();
+			});
 		}
 
 		~LoggerInit()
