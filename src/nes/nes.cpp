@@ -30,7 +30,7 @@ namespace nesem
 		if (!rom)
 			return false;
 
-		auto cart = load_cartridge(*this, *rom);
+		auto cart = load_cartridge(*this, std::move(*rom));
 		if (!cart)
 			return false;
 
