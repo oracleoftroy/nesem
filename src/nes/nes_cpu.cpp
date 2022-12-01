@@ -678,7 +678,7 @@ namespace nesem
 
 			// do the dma transfer, read on even steps, write on odd steps
 			if ((dma_step & 1) == 0)
-				scratch = nes->bus().read((dma_page << 8) | (dma_step >> 1), NesBusOp::ready);
+				scratch = nes->bus().read(U16((dma_page << 8) | (dma_step >> 1)), NesBusOp::ready);
 			else
 				nes->ppu().oamdata(scratch);
 
@@ -1461,7 +1461,7 @@ namespace nesem
 			scratch = readPC();
 
 			// force PC to current page, e.g. 0x02FF + 1 == 0x0200
-			PC = hi | (PC & 0x00FF);
+			PC = U16(hi | (PC & 0x00FF));
 			break;
 		}
 
@@ -2294,8 +2294,8 @@ namespace nesem
 
 		case 4:
 		{
-			auto hi = nes->bus().read((effective_addr + 1) & 255, NesBusOp::ready) << 8;
-			effective_addr = hi | scratch;
+			auto hi = nes->bus().read((effective_addr + 1) & 255, NesBusOp::ready);
+			effective_addr = U16((hi << 8) | scratch);
 			effective_addr += Y;
 			effective_addr &= 0xFFFF;
 

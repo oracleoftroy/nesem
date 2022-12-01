@@ -151,7 +151,7 @@ namespace nesem
 
 		case 18640:
 			// TODO: figure out what we want to do here. APU isn't fully implemented, so ignore this inconsistency for now.
-			// are we susposed to finish the current step and when we start over, it will be four step? there are also supposed to be delays when setting apu values...
+			// are we supposed to finish the current step and when we start over, it will be four step? there are also supposed to be delays when setting apu values...
 			// CHECK(step_mode == ApuStepMode::five_step, "Invalid step mode!");
 
 			clock_quarter_frame();

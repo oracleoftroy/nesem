@@ -231,8 +231,8 @@ namespace nesem
 
 				for (U16 row = 0; row < 8; ++row)
 				{
-					U8 tile_lo = peek(index * 0x1000 + offset + row + 0x0000);
-					U8 tile_hi = peek(index * 0x1000 + offset + row + 0x0008);
+					U8 tile_lo = peek(U16(index * 0x1000 + offset + row + 0x0000));
+					U8 tile_hi = peek(U16(index * 0x1000 + offset + row + 0x0008));
 
 					for (U16 col = 0; col < 8; ++col)
 					{
@@ -354,8 +354,8 @@ namespace nesem
 	{
 		if (rendering_enabled())
 		{
-			auto fine_y = (reg.vram_addr & vram_fine_y_mask) >> vram_fine_y_shift;
-			auto coarse_y = (reg.vram_addr & vram_coarse_y_mask) >> vram_coarse_y_shift;
+			auto fine_y = U16((reg.vram_addr & vram_fine_y_mask) >> vram_fine_y_shift);
+			auto coarse_y = U16((reg.vram_addr & vram_coarse_y_mask) >> vram_coarse_y_shift);
 
 			if (++fine_y > 7)
 			{
@@ -423,19 +423,19 @@ namespace nesem
 
 	void NesPpu::read_at() noexcept
 	{
-		auto coarse_y = (reg.vram_addr & vram_coarse_y_mask) >> vram_coarse_y_shift;
-		auto coarse_x = (reg.vram_addr & vram_coarse_x_mask) >> vram_coarse_x_shift;
+		auto coarse_y = U16((reg.vram_addr & vram_coarse_y_mask) >> vram_coarse_y_shift);
+		auto coarse_x = U16((reg.vram_addr & vram_coarse_x_mask) >> vram_coarse_x_shift);
 
 		// construct an address into the attribute table
 		// 0x2000 - base address of the name table or'ed with the nametable we wish to use
 		// 0x03C0 - the offset into the nametable where attribute data lives
-		auto addr = 0x23C0 | (reg.vram_addr & vram_nametable_mask)
+		auto addr = U16(0x23C0 | (reg.vram_addr & vram_nametable_mask)
 			// shift the coarse_y into place and take the top three bits
 		    // coarse_y is bits 5-9, so we end up with bit 7-9 shifted into bit 3-5
 			| ((coarse_y << 1) & 0b111000)
 			// shift the coarse_x into place and take the top three bits,
 		    // moving bits 2-4 to 0-2
-			| ((coarse_x >> 2) & 0b000111);
+			| ((coarse_x >> 2) & 0b000111));
 
 		auto attr = read(addr);
 

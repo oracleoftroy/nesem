@@ -308,8 +308,8 @@ namespace app
 		{
 			{
 				auto fn = [&](const cm::Point2i pos) {
-					auto palette_entry = pattern_tables[index].read_pixel(pos.x, pos.y, current_palette);
-					auto color_index = nes.ppu().peek(0x3F00 + palette_entry);
+					auto palette_entry = pattern_tables[index].read_pixel(static_cast<nesem::U16>(pos.x), static_cast<nesem::U16>(pos.y), current_palette);
+					auto color_index = nes.ppu().peek(nesem::U16(0x3F00 + palette_entry));
 
 					return colors.color_at_index(color_index);
 				};
@@ -339,7 +339,7 @@ namespace app
 				color_pos.x += (color_size.w) * i;
 				auto color_rect = rect(color_pos, color_size);
 
-				auto color_index = nes.ppu().peek(0x3F00 + (p * 4 + i));
+				auto color_index = nes.ppu().peek(nesem::U16(0x3F00 + (p * 4 + i)));
 				auto color = colors.color_at_index(color_index);
 
 				canvas.fill_rect(color, color_rect);
@@ -378,7 +378,7 @@ namespace app
 
 				{
 					auto fn = [&](const cm::Point2i pos) {
-						auto color_index = name_table.read_pixel(pos.x, pos.y);
+						auto color_index = name_table.read_pixel(static_cast<nesem::U16>(pos.x), static_cast<nesem::U16>(pos.y));
 						return colors.color_at_index(color_index);
 					};
 

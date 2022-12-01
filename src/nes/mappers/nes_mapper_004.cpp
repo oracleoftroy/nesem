@@ -82,8 +82,8 @@ namespace nesem::mappers
 
 		U16 bank0 = bank_map[6];
 		U16 bank1 = bank_map[7];
-		U16 bank2 = num_banks - 2;
-		U16 bank3 = num_banks - 1;
+		U16 bank2 = U16(num_banks - 2);
+		U16 bank3 = U16(num_banks - 1);
 
 		if (mode == 1)
 			std::swap(bank0, bank2);
@@ -213,7 +213,7 @@ namespace nesem::mappers
 	void NesMapper004::update_irq(U16 addr) noexcept
 	{
 		// counter decremented on the rising edge of address line 12
-		auto old_a12 = std::exchange(a12, (addr >> 12) & 1);
+		auto old_a12 = std::exchange(a12, U16((addr >> 12) & 1));
 
 		if (old_a12 == 0 && a12 == 1 && (nes->ppu().current_tick() - cycle_low) > 10)
 		{

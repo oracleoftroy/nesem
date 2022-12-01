@@ -28,9 +28,9 @@ namespace nesem::mappers
 		return {
 			.size = 4,
 			.banks{Bank{.addr = 0x8000, .bank = prgrom_bank, .size = bank_8k},
-				   Bank{.addr = 0xA000, .bank = num_banks - 3, .size = bank_8k},
-				   Bank{.addr = 0xC000, .bank = num_banks - 2, .size = bank_8k},
-				   Bank{.addr = 0xE000, .bank = num_banks - 1, .size = bank_8k}}
+				   Bank{.addr = 0xA000, .bank = U16(num_banks - 3), .size = bank_8k},
+				   Bank{.addr = 0xC000, .bank = U16(num_banks - 2), .size = bank_8k},
+				   Bank{.addr = 0xE000, .bank = U16(num_banks - 1), .size = bank_8k}}
         };
 	}
 
