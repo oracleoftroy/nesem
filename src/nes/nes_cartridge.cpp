@@ -255,9 +255,7 @@ namespace nesem
 	void NesCartridge::signal_irq(bool signal) noexcept
 	{
 		if (irq_signaled != signal)
-		{
-			LOG_INFO("IRQ {} on PPU scanline {}, cycle {}", (signal ? "signaled" : "cleared"), nes->ppu().current_scanline(), nes->ppu().current_cycle());
-		}
+			LOG_DEBUG("IRQ {} on PPU scanline {}, cycle {}", (signal ? "signaled" : "cleared"), nes->ppu().current_scanline(), nes->ppu().current_cycle());
 
 		irq_signaled = signal;
 	}
