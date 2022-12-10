@@ -491,6 +491,7 @@ namespace nesem
 			U8 fg_palette_index = 0;
 			U8 bg_priority = false;
 			U8 fg_id = 0xFF;
+			U8 fg_y = 0xFF;
 
 			if (sprite_rendering_enabled())
 			{
@@ -504,6 +505,7 @@ namespace nesem
 							fg_palette_index = active_sprites[i].palette_index();
 							bg_priority = active_sprites[i].bg_priority();
 							fg_id = active_sprites[i].addr;
+							fg_y = active_sprites[i].y;
 
 							// if this sprite is not transparent, we are done
 							// the first entry of each palette is 'transparent'
@@ -539,7 +541,7 @@ namespace nesem
 				palette_index = bg_priority ? bg_palette_index : fg_palette_index;
 
 				// both background and foreground are non-transparent, so check for a sprite 0 hit
-				if (fg_id == sprite_0_addr)
+				if (fg_id == sprite_0_addr && scanline < 240 && cycle < 256 && fg_y != 255)
 					reg.ppustatus |= status_sprite0_hit;
 			}
 
@@ -782,13 +784,16 @@ namespace nesem
 					// 	1. Starting at n = 0, read a sprite's Y-coordinate (OAM[n][0], copying it to the next open slot in secondary OAM (unless 8 sprites have been found, in which case the write is ignored).
 					if (evaluated_sprite_count < 8)
 					{
-						auto y = evaluated_sprites[evaluated_sprite_count * 4] = oam[reg.oamaddr];
+						auto y = oam[reg.oamaddr];
 						evaluated_sprite_addr[evaluated_sprite_count] = U8(reg.oamaddr);
 
 						auto pos = scanline - y;
 
 						if (pos >= 0 && pos < sprite_size())
+						{
+							evaluated_sprites[evaluated_sprite_count * 4] = y;
 							sprite_evaluation_step = step1a;
+						}
 						else
 							sprite_evaluation_step = step2;
 					}
