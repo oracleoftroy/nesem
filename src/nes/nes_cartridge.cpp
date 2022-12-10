@@ -61,11 +61,14 @@ namespace nesem
 
 	U8 NesCartridge::cpu_read(U16 addr) noexcept
 	{
+		signal_m2(true);
 		return on_cpu_read(addr);
 	}
 
 	void NesCartridge::cpu_write(U16 addr, U8 value) noexcept
 	{
+		signal_m2(true);
+
 		if (emulate_bus_conflicts)
 			value &= cpu_peek(addr);
 
@@ -122,6 +125,11 @@ namespace nesem
 			return size(chr_ram);
 
 		return size(nes_rom.chr_rom);
+	}
+
+	void NesCartridge::signal_m2([[maybe_unused]] bool rising) noexcept
+	{
+		// default, do nothing
 	}
 
 	U8 NesCartridge::chr_read(size_t addr) const noexcept
@@ -246,6 +254,11 @@ namespace nesem
 
 	void NesCartridge::signal_irq(bool signal) noexcept
 	{
+		if (irq_signaled != signal)
+		{
+			LOG_INFO("IRQ {} on PPU scanline {}, cycle {}", (signal ? "signaled" : "cleared"), nes->ppu().current_scanline(), nes->ppu().current_cycle());
+		}
+
 		irq_signaled = signal;
 	}
 

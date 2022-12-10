@@ -72,7 +72,9 @@ namespace nesem::mappers
 		signal_irq(false);
 
 		a12 = 1;
-		cycle_low = 0;
+
+		m2_state = NesBusOp::pending;
+		m2_toggle_count = 0;
 	}
 
 	Banks NesMapper004::report_cpu_mapping() const noexcept
@@ -210,12 +212,30 @@ namespace nesem::mappers
 		return bank_1k * bank + (addr & (bank_1k - 1));
 	}
 
-	void NesMapper004::update_irq(U16 addr) noexcept
+	void NesMapper004::signal_m2(bool rising) noexcept
+	{
+		if (rising)
+			return;
+
+		// NesDev - https://www.nesdev.org/wiki/MMC3
+		// The MMC3 scanline counter is based entirely on PPU A12, triggered on a rising edge after the line has remained low for three falling edges of M2.
+
+		// As I understand it, there are three S/R latches with a12 set to the reset and m2 the clock
+		// m2 is a cpu output pin that goes low at the start of each cycle
+		if (a12 == 0)
+			++m2_toggle_count;
+		else
+			m2_toggle_count = 0;
+	}
+
+	void NesMapper004::update_a12(U16 addr) noexcept
 	{
 		// counter decremented on the rising edge of address line 12
 		auto old_a12 = std::exchange(a12, U16((addr >> 12) & 1));
 
-		if (old_a12 == 0 && a12 == 1 && (nes->ppu().current_tick() - cycle_low) > 10)
+		// NesDev - https://www.nesdev.org/wiki/MMC3
+		// The MMC3 scanline counter is based entirely on PPU A12, triggered on a rising edge after the line has remained low for three falling edges of M2.
+		if (old_a12 == 0 && a12 == 1 && m2_toggle_count >= 3)
 		{
 			// record the previous count and whether this is a force reload so we can handle board variants later on
 			auto prev_count = irq_counter;
@@ -237,10 +257,6 @@ namespace nesem::mappers
 				if (variant != NesMapper004Variants::MMC3A || was_reload || prev_count != irq_counter)
 					signal_irq(true);
 			}
-		}
-		else if (old_a12 == 1 && a12 == 0)
-		{
-			cycle_low = nes->ppu().current_tick();
 		}
 	}
 
@@ -271,10 +287,7 @@ namespace nesem::mappers
 	U8 NesMapper004::on_cpu_peek(U16 addr) const noexcept
 	{
 		if (addr < 0x6000)
-		{
-			LOG_ERROR("Read to invalid address ${:04X}, ignoring", addr);
 			return open_bus_read();
-		}
 
 		// prg-ram
 		if (addr < 0x8000)
@@ -317,10 +330,7 @@ namespace nesem::mappers
 	void NesMapper004::on_cpu_write(U16 addr, U8 value) noexcept
 	{
 		if (addr < 0x6000)
-		{
-			LOG_ERROR("Write to invalid address ${:04X}, ignoring", addr);
 			return;
-		}
 
 		// prg-ram
 		if (addr < 0x8000)
@@ -430,14 +440,14 @@ namespace nesem::mappers
 
 	std::optional<U8> NesMapper004::on_ppu_read(U16 &addr) noexcept
 	{
-		update_irq(addr);
+		update_a12(addr);
 
 		return on_ppu_peek(addr);
 	}
 
 	bool NesMapper004::on_ppu_write(U16 &addr, U8 value) noexcept
 	{
-		update_irq(addr);
+		update_a12(addr);
 
 		if (addr < 0x2000)
 			return chr_write(map_addr_ppu(addr), value);

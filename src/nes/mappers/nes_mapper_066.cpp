@@ -34,10 +34,7 @@ namespace nesem::mappers
 	U8 NesMapper066::on_cpu_peek(U16 addr) const noexcept
 	{
 		if (addr < 0x8000)
-		{
-			LOG_ERROR("Read from invalid address ${:04X}, ignoring", addr);
 			return open_bus_read();
-		}
 
 		return rom().prg_rom[prg_bank_select * 0x8000 + (addr & 0x7FFF)];
 	}
@@ -45,10 +42,7 @@ namespace nesem::mappers
 	void NesMapper066::on_cpu_write(U16 addr, U8 value) noexcept
 	{
 		if (addr < 0x8000)
-		{
-			LOG_ERROR_ONCE("Write to invalid address ${:04X} with value {:02X}, ignoring", addr, value);
 			return;
-		}
 
 		// writes, regardless of the address, adjust the current PRG-ROM and CHR-ROM bank we are reading from
 		prg_bank_select = U8(((value >> 4) & 3) % prgrom_banks(rom(), bank_16k));

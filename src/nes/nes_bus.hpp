@@ -9,22 +9,12 @@ namespace nesem
 	class Nes;
 	class NesCartridge;
 
-	// Indicate whether this read or write is ready to be handled by the issuing device
-	// the 6502 always issues a read or write every cycle. Cartridges will observe and
-	// respond to reads/writes even if the CPU ignores them, but the PPU is a bit lazy
-	// about when it actually handles the op. I presume the PPU and CPU are timed so that
-	// the PPU handles the "real" operation and not the reads or writes the CPU performs
-	// as it is configuring the operation
-	enum class NesBusOp
-	{
-		pending, // the issuer is no yet ready to handle this read/write
-		ready, // The issuer is ready to handle this read/write immediately
-	};
-
 	class NesBus final
 	{
 	public:
 		NesBus(Nes *nes) noexcept;
+
+		void clock() noexcept;
 
 		// just read addr without any additional handling, useful for visualizers, debuggers, etc
 		U8 peek(U16 addr) const noexcept;

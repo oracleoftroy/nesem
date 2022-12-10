@@ -25,7 +25,10 @@ namespace nesem
 				nes->ppu().clock();
 
 			if ((tickcount % clock_rate.cpu_divisor) == 0)
+			{
+				nes->bus().clock();
 				nes->cpu().clock();
+			}
 
 			if ((tickcount % clock_rate.apu_divisor) == 0)
 				nes->apu().clock();
@@ -65,6 +68,7 @@ namespace nesem
 
 			if ((tickcount % clock_rate.cpu_divisor) == 0)
 			{
+				nes->bus().clock();
 				auto instruction_complete = nes->cpu().clock();
 				done = done || step == NesClockStep::OneCpuCycle || (instruction_complete && step == NesClockStep::OneCpuInstruction);
 			}

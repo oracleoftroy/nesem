@@ -121,10 +121,7 @@ namespace nesem::mappers
 	U8 NesMapper001::on_cpu_peek(U16 addr) const noexcept
 	{
 		if (addr < 0x6000)
-		{
-			LOG_ERROR("Read from invalid address ${:04X}, ignoring", addr);
 			return 0;
-		}
 
 		if (addr < 0x8000)
 		{
@@ -160,10 +157,7 @@ namespace nesem::mappers
 	void NesMapper001::on_cpu_write(U16 addr, U8 value) noexcept
 	{
 		if (addr < 0x6000)
-		{
-			LOG_ERROR("Write to invalid address ${:04X} value: {:02X}, ignoring", addr, value);
 			return;
-		}
 
 		if (addr < 0x8000)
 		{

@@ -76,6 +76,14 @@ namespace nesem
 	};
 	MAKE_FLAGS_ENUM(NesColorEmphasis);
 
+	// Indicate whether this read or write is ready to be handled by the issuing device
+	// the 6502 always issues a read or write every cycle. Roughly equal to the CPU M2 pin
+	enum class NesBusOp
+	{
+		pending,
+		ready,
+	};
+
 #if defined(__cpp_lib_move_only_function)
 	using DrawFn = std::move_only_function<void(int x, int y, U8 color_index, NesColorEmphasis emphasis)>;
 	using FrameReadyFn = std::move_only_function<void()>;

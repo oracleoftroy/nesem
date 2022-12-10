@@ -80,6 +80,8 @@ namespace nesem
 
 		size_t chr_size() const noexcept;
 
+		virtual void signal_m2(bool rising) noexcept;
+
 	private:
 		virtual U8 on_cpu_peek(U16 addr) const noexcept = 0;
 		virtual U8 on_cpu_read(U16 addr) noexcept;
