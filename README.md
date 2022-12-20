@@ -47,13 +47,13 @@ Distributed under the MIT License. See `LICENSE.txt` for more information.
 Project Link: [https://github.com/oracleoftroy/nesem](https://github.com/oracleoftroy/nesem)
 
 
-[contributors-shield]: https://img.shields.io/github/contributors/oracleoftroy/nesem.svg?style=for-the-badge
+[contributors-shield]: https://img.shields.io/github/contributors/oracleoftroy/nesem.svg?style=flat
 [contributors-url]: https://github.com/oracleoftroy/nesem/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/oracleoftroy/nesem.svg?style=for-the-badge
+[forks-shield]: https://img.shields.io/github/forks/oracleoftroy/nesem.svg?style=flat
 [forks-url]: https://github.com/oracleoftroy/nesem/network/members
-[stars-shield]: https://img.shields.io/github/stars/oracleoftroy/nesem.svg?style=for-the-badge
+[stars-shield]: https://img.shields.io/github/stars/oracleoftroy/nesem.svg?style=flat
 [stars-url]: https://github.com/oracleoftroy/nesem/stargazers
-[issues-shield]: https://img.shields.io/github/issues/oracleoftroy/nesem.svg?style=for-the-badge
+[issues-shield]: https://img.shields.io/github/issues/oracleoftroy/nesem.svg?style=flat
 [issues-url]: https://github.com/oracleoftroy/nesem/issues
-<!-- [license-shield]: https://img.shields.io/github/license/oracleoftroy/nesem.svg?style=for-the-badge -->
+<!-- [license-shield]: https://img.shields.io/github/license/oracleoftroy/nesem.svg?style=flat -->
 <!-- [license-url]: https://github.com/oracleoftroy/nesem/blob/master/LICENSE.txt -->
