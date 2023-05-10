@@ -1,0 +1,4 @@
+[submodule "ext/vcpkg"]
+	path = ext/vcpkg
+	url = https://github.com/Microsoft/vcpkg.git
+	branch = master
