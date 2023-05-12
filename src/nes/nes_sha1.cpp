@@ -1,7 +1,14 @@
 #include "nes_sha1.hpp"
 
 #include <array>
-#include <ranges>
+
+// Clang is unhappy about the way forward_range and input_range are applied to chunk_view for
+// some reason, so directly include the nonstandard header for contiguous_range, if available
+#if defined(__clang__) && __clang_major__ <= 16 && __has_include(<bits/ranges_base.h>)
+#	include <bits/ranges_base.h>
+#else
+#	include <ranges>
+#endif
 
 #include <cryptopp/hex.h>
 #include <cryptopp/sha.h>

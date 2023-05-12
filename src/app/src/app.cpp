@@ -25,7 +25,7 @@ namespace ui
 			SDL_Rect rect;
 			SDL_RenderGetViewport(renderer, &rect);
 
-			return cm::Rect{
+			return cm::Recti{
 				.x = rect.x,
 				.y = rect.y,
 				.w = rect.w,

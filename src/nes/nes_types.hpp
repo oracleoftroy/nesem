@@ -14,7 +14,7 @@ namespace nesem
 	using U32 = std::uint_fast32_t;
 	using U64 = std::uint_fast64_t;
 
-	enum BankSize
+	enum BankSize : U32
 	{
 		bank_1k = 0x0400,
 		bank_2k = 0x0800,

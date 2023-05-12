@@ -15,12 +15,12 @@ namespace app
 	void ControllerOverlay::update(nesem::Buttons buttons)
 	{
 		using enum nesem::Buttons;
-		constexpr uint8_t alpha = 128 + 64;
 
-		constexpr auto outline_color = cm::Color{250, 253, 243, alpha};
-		constexpr auto bg_color = cm::Color{22, 22, 22, alpha};
-		constexpr auto inactive_color = cm::Color{105, 105, 105, alpha};
-		constexpr auto active_color = cm::Color{250, 30, 15, alpha};
+		static constexpr uint8_t alpha = 128 + 64;
+		static constexpr auto outline_color = cm::Color{250, 253, 243, alpha};
+		static constexpr auto bg_color = cm::Color{22, 22, 22, alpha};
+		static constexpr auto inactive_color = cm::Color{105, 105, 105, alpha};
+		static constexpr auto active_color = cm::Color{250, 30, 15, alpha};
 
 		constexpr auto select_color = [](auto b) {
 			if (b == nesem::Buttons::None)

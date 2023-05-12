@@ -155,13 +155,13 @@ namespace nesem::mappers
 			MirroringMode mirroring;
 
 			// size in 16K units
-			int prg_rom_size;
+			U8 prg_rom_size;
 
 			// size in 8K units
-			int chr_rom_size;
+			U8 chr_rom_size;
 
 			// size in 8K units
-			int prg_ram_size;
+			U8 prg_ram_size;
 
 			// has battery backed prg-nvram
 			bool has_battery;

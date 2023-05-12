@@ -142,6 +142,23 @@ namespace cm
 		constexpr auto operator<=>(const Size &other) const noexcept = default;
 	};
 
+// Clang doesn't support C++20 template deduction guides as of version 16
+#if __cpp_deduction_guides < 201907L
+
+	template <class T>
+	Point2(T x = T{}, T y = T{}) -> Point2<T>;
+
+	template <typename T>
+	Rect(T x = T{}, T y = T{}, T w = T{}, T h = T{}) -> Rect<T>;
+
+	template <typename T>
+	Circle(T radius, Point2<T> pos) -> Circle<T>;
+
+	template <typename T>
+	Size(T w = T{}, T h = T{}) -> Size<T>;
+
+#endif
+
 	template <typename T>
 	constexpr Point2<T> &operator+=(Point2<T> &p1, Point2<T> p2) noexcept
 	{
@@ -1509,8 +1526,8 @@ namespace cm
 
 			{
 				constexpr auto size = Size{200, 150};
-				constexpr auto bad1 = Point2{.x = 210, .y = -7};
-				constexpr auto bad2 = Point2{.x = 73, .y = 71};
+				constexpr auto bad1 = Point2{210, -7};
+				constexpr auto bad2 = Point2{73, 71};
 
 				constexpr auto bounds = rect({0, 0}, size);
 				constexpr auto result = clip_line(bounds, bad1, bad2);

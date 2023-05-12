@@ -256,13 +256,13 @@ namespace nesem
 			bool has_battery = (header[6] & 0b00000010) > 0;
 
 			// size in 16K units
-			int prg_rom_size = header[4];
+			U8 prg_rom_size = header[4];
 
 			// size in 8K units
-			int chr_rom_size = header[5];
+			U8 chr_rom_size = header[5];
 
 			// size in 8K units
-			int prg_ram_size = header[8];
+			U8 prg_ram_size = header[8];
 
 			return mappers::ines_1::RomData{version, mapper, mirroring, prg_rom_size, chr_rom_size, prg_ram_size, has_battery, has_trainer, has_inst_rom};
 		}
