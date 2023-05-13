@@ -19,10 +19,10 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
-        cc: [msvc, gcc, clang]
+        cc: [cl, gcc, clang]
         exclude:
           - os: ubuntu-latest
-            cc: msvc
+            cc: cl
 
     runs-on: ${{ matrix.os }}
 
@@ -43,13 +43,19 @@ jobs:
         with:
           version: 16
 
+      - name: setup msvc
+        if: matrix.cc == 'cl'
+        uses: TheMrMilchmann/setup-msvc-dev@v2
+        with:
+          arch: x64
+
       - name: checkout
         uses: actions/checkout@v3
         with:
           submodules: recursive
 
       - name: configure
-        run: cmake . -B build
+        run: cmake . -B build -DCMAKE_C_COMPILER=${{matrix.cc}} -DCMAKE_CXX_COMPILER=${{matrix.cc}}
 
       - name: build
         run: cmake --build build
