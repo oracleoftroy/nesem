@@ -26,13 +26,12 @@ jobs:
             cc: cl
           - os: windows-latest
             cc: gcc
+          - os: windows-latest
+            cc: clang
 
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: setup mingw
-        if: matrix.os == 'windows-latest' && matrix.cc == 'gcc'
-        uses: egor-tensin/setup-mingw@v2
 
       - name: setup gcc
         if: matrix.cc == 'gcc'
@@ -46,22 +45,16 @@ jobs:
         with:
           version: 16
 
-      - name: setup msvc
-        if: matrix.cc == 'cl'
-        uses: TheMrMilchmann/setup-msvc-dev@v2
-        with:
-          arch: x64
-
       - name: checkout
         uses: actions/checkout@v3
         with:
           submodules: recursive
 
       - name: configure
-        run: cmake . -B build -DCMAKE_C_COMPILER=${{matrix.cc}} -DCMAKE_CXX_COMPILER=${{matrix.cc}}
+        run: cmake . -B build
 
       - name: build
-        run: cmake --build build
+        run: cmake --build build --config ${{env.BUILD_TYPE}}
 
       - name: test
         run: ctest --test-dir build
