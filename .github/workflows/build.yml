@@ -3,11 +3,11 @@ name: Continuous Integration
 on:
   push:
     branches:
-    - master
+    - github-build
 
   pull_request:
     branches:
-    - master
+    - github-build
 
   workflow_dispatch:
 
