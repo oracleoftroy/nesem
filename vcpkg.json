@@ -16,7 +16,7 @@
 		},
 		{
 			"name": "sdl2",
-			"platform": "windows & emscripten"
+			"platform": "windows | emscripten"
 		},
 		"spdlog",
 		"tinyxml2",
