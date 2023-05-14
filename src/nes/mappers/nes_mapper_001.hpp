@@ -10,6 +10,8 @@ namespace nesem::mappers
 
 	class NesMapper001 final : public NesCartridge
 	{
+		REGISTER_MAPPER(1, NesMapper001);
+
 		enum class PrgRamMode
 		{
 			Normal,
@@ -17,7 +19,6 @@ namespace nesem::mappers
 		};
 
 	public:
-		static constexpr int ines_mapper = 1;
 		explicit NesMapper001(const Nes &nes, NesRom &&rom) noexcept;
 
 	private:

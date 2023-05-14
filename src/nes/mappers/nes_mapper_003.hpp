@@ -6,8 +6,9 @@ namespace nesem::mappers
 {
 	class NesMapper003 final : public NesCartridge
 	{
+		REGISTER_MAPPER(3, NesMapper003);
+
 	public:
-		static constexpr int ines_mapper = 3;
 		explicit NesMapper003(const Nes &nes, NesRom &&rom) noexcept;
 
 	private:

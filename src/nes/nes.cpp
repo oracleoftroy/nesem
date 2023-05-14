@@ -87,7 +87,9 @@ namespace nesem
 
 	void Nes::reset() noexcept
 	{
-		nes_cartridge->reset();
+		if (nes_cartridge)
+			nes_cartridge->reset();
+
 		nes_cpu.reset();
 		nes_ppu.reset();
 		nes_apu.reset();

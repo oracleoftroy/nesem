@@ -8,6 +8,8 @@ add_library(
 	"nes_bus.hpp"
 	"nes_cartridge.cpp"
 	"nes_cartridge.hpp"
+	"nes_cartridge_loader.cpp"
+	"nes_cartridge_loader.hpp"
 	"nes_clock.cpp"
 	"nes_clock.hpp"
 	"nes_cpu.cpp"

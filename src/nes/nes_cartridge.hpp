@@ -5,6 +5,7 @@
 #include <optional>
 #include <vector>
 
+#include "nes_cartridge_loader.hpp"
 #include "nes_nvram.hpp"
 #include "nes_rom.hpp"
 #include "nes_types.hpp"
@@ -128,6 +129,4 @@ namespace nesem
 		std::vector<U8> prg_ram;
 		NesNvram prg_nvram;
 	};
-
-	std::unique_ptr<NesCartridge> load_cartridge(const Nes &nes, mappers::NesRom rom) noexcept;
 }

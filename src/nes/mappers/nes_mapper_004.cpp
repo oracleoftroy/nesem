@@ -51,8 +51,6 @@ namespace nesem::mappers
 	NesMapper004::NesMapper004(const Nes &nes, NesRom &&rom_data) noexcept
 		: NesCartridge(nes, std::move(rom_data)), variant(pick_variant(rom()))
 	{
-		CHECK(rom_mapper(rom()) == ines_mapper, "Wrong mapper!");
-
 		reset();
 	}
 

@@ -11,8 +11,6 @@ namespace nesem::mappers
 	NesMapper001::NesMapper001(const Nes &nes, NesRom &&rom_data) noexcept
 		: NesCartridge(nes, std::move(rom_data))
 	{
-		CHECK(rom_mapper(rom()) == ines_mapper, "Wrong mapper!");
-
 		// the amount of chr data is a multiple of 8k
 		// this calculates a mask for the significant bits of chr_bank_x for a 4k bank size
 		//   8k >> 12 - 1 == 0b00001

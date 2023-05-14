@@ -20,9 +20,9 @@ namespace nesem::mappers
 
 	class NesMapper005 final : public NesCartridge
 	{
-	public:
-		static constexpr int ines_mapper = 5;
+		REGISTER_MAPPER(5, NesMapper005);
 
+	public:
 		explicit NesMapper005(const Nes &nes, NesRom &&rom) noexcept;
 
 	private:
