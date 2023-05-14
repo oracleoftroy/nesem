@@ -423,7 +423,7 @@ namespace app
 		using enum nesem::Buttons;
 		auto result = None;
 
-		bool in_turbo = (nes.ppu().current_frame() % turbo_frame_cycle) >= (turbo_frame_cycle / 2);
+		bool in_turbo = std::cmp_greater_equal(nes.ppu().current_frame() % turbo_frame_cycle, turbo_frame_cycle / 2);
 
 		if (in_turbo && app.key_down(button_turbo_a))
 			result |= A;

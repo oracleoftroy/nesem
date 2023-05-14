@@ -173,13 +173,13 @@ namespace nesem
 		if (addr == 0x4015)
 		{
 			U8 result =
-				((channels[Pulse1].length() > 0) << 0) |
-				((channels[Pulse2].length() > 0) << 1) |
-				((channels[Triangle].length() > 0) << 2) |
-				((channels[Noise].length() > 0) << 3) |
+				U8((channels[Pulse1].length() > 0) << 0) |
+				U8((channels[Pulse2].length() > 0) << 1) |
+				U8((channels[Triangle].length() > 0) << 2) |
+				U8((channels[Noise].length() > 0) << 3) |
 				// ((Dmc.length() > 0) << 4) | // TODO: bytes remaining > 0
-				(frame_interrupt_requested << 6) |
-				(dmc_interrupt_requested << 7);
+				U8(frame_interrupt_requested << 6) |
+				U8(dmc_interrupt_requested << 7);
 
 			// reading this address always clears the frame irq
 			frame_interrupt_requested = false;

@@ -374,7 +374,7 @@ namespace nesem::mappers
 			auto bank = value;
 			auto index = bank_select & 7;
 
-			U8 bank_mask;
+			U8 bank_mask = 0;
 
 			// banks at 2-5 are 1K chr-rom banks
 			if (index < 6)

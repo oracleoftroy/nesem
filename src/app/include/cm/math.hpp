@@ -1199,7 +1199,7 @@ namespace cm
 				// y-intercept of the line
 				T c = (x[0] * y[1] - x[1] * y[0]) / (x[0] - x[1]);
 
-				for (int i = 0; i < 2; i++)
+				for (size_t i = 0; i < 2; i++)
 				{
 					if (x[i] < minx)
 					{
@@ -1231,7 +1231,7 @@ namespace cm
 			{
 				if (!(y[0] < miny || y[0] > maxy))
 				{
-					for (int i = 0; i < 2; i++)
+					for (size_t i = 0; i < 2; i++)
 					{
 						if (x[i] < minx)
 							x[i] = minx;
@@ -1256,7 +1256,7 @@ namespace cm
 			}
 			else if (!(x[0] < minx || x[0] > maxx))
 			{
-				for (int i = 0; i < 2; i++)
+				for (size_t i = 0; i < 2; i++)
 				{
 					if (y[i] < miny)
 						y[i] = miny;

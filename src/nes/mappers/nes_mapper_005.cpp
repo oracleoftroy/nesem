@@ -109,8 +109,7 @@ namespace nesem::mappers
 		if (addr == 0x5204)
 		{
 			bool in_frame = current_scanline == scanline_irq_compare;
-			U8 result = (scanline_irq_enabled << 7) | (in_frame << 6);
-			return result;
+			return U8((scanline_irq_enabled << 7) | (in_frame << 6));
 		}
 
 		else if (addr == 0x5205)
@@ -165,7 +164,7 @@ namespace nesem::mappers
 
 		// PRG RAM protect 2
 		else if (addr == 0x5103)
-			prg_ram_protect = (prg_ram_protect & 0b1100) | ((0x03 & value) << 2);
+			prg_ram_protect = (prg_ram_protect & 0b1100) | U8((0x03 & value) << 2);
 
 		// internal extended RAM mode
 		else if (addr == 0x5104)

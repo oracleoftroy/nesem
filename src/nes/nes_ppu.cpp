@@ -36,7 +36,7 @@ namespace nesem
 	constexpr U8 status_sprite_overflow = 0b001'00000;
 
 	constexpr U8 ctrl_nmi_flag       = 0b1000'0000;
-	constexpr U8 ctrl_master_flag    = 0b0100'0000;
+	// constexpr U8 ctrl_master_flag    = 0b0100'0000; // isn't normally used and is always 0 on a stock NES
 	constexpr U8 ctrl_sprite_8x16    = 0b0010'0000;
 	constexpr U8 ctrl_pattern_addr   = 0b0001'0000;
 	constexpr U8 ctrl_sprite_addr    = 0b0000'1000;
@@ -122,7 +122,7 @@ namespace nesem
 		U8 bit_hi = (hi & 0x80) > 0;
 		U8 palette = 4 | (attrib & 3);
 
-		return (palette << 2) | (bit_hi << 1) | bit_lo;
+		return U8(palette << 2) | U8(bit_hi << 1) | bit_lo;
 	}
 
 	NesPpu::NesPpu(Nes *nes) noexcept
@@ -205,7 +205,7 @@ namespace nesem
 		auto x_pos = x >> 2;
 		auto index = y * 16 * 2 + x_pos;
 
-		return (palette << 2) | ((table[index] >> x_shift) & 0b11);
+		return U8((palette << 2) | ((table[index] >> x_shift) & 0b11));
 	}
 
 	void NesPatternTable::write_pixel(U16 x, U16 y, U8 entry) noexcept
@@ -213,8 +213,8 @@ namespace nesem
 		auto x_pos = x >> 2;
 		auto index = y * 16 * 2 + x_pos;
 
-		auto x_shift = (x & 0b11) << 1;
-		U8 mask = 0b11 << x_shift;
+		U8 x_shift = U8((x & 0b11) << 1);
+		U8 mask = U8(0b11 << x_shift);
 
 		table[index] = (table[index] & ~mask) | ((entry << x_shift) & mask);
 	}
@@ -237,7 +237,7 @@ namespace nesem
 					for (U16 col = 0; col < 8; ++col)
 					{
 						U8 bit = 0x80 >> col;
-						U8 palette_index = ((tile_hi & bit) != 0) << 1 | ((tile_lo & bit) != 0);
+						U8 palette_index = U8(((tile_hi & bit) != 0) << 1 | ((tile_lo & bit) != 0));
 
 						result.write_pixel(tile_x * 8 + col, tile_y * 8 + row, palette_index);
 					}
@@ -1066,7 +1066,7 @@ namespace nesem
 	void NesPpu::ppuctrl(U8 value) noexcept
 	{
 		reg.ppuctrl = latch = value;
-		reg.tram_addr = (reg.tram_addr & ~vram_nametable_mask) | ((value & 3) << vram_nametable_shift);
+		reg.tram_addr = (reg.tram_addr & ~vram_nametable_mask) | ((reg.ppuctrl & ctrl_nametable_mask) << vram_nametable_shift);
 	}
 
 	U8 NesPpu::ppumask() noexcept

@@ -29,7 +29,7 @@ namespace nesem::mappers
 		void reset() noexcept override;
 		Banks report_cpu_mapping() const noexcept override;
 		Banks report_ppu_mapping() const noexcept override;
-		MirroringMode mirroring() const noexcept;
+		MirroringMode mirroring() const noexcept override;
 
 		size_t map_addr_cpu(U16 addr) const noexcept;
 		size_t map_addr_ppu(U16 addr) const noexcept;

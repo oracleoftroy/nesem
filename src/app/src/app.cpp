@@ -258,6 +258,11 @@ namespace ui
 			case SDL_LOG_PRIORITY_CRITICAL:
 				level = LOG_LEVEL_CRITICAL;
 				break;
+
+			case SDL_NUM_LOG_PRIORITIES:
+				// satisfy -Wswitch, but shouldn't ever happen in the real world
+				std::unreachable();
+				break;
 			}
 
 			LOG(level, "SDL {}: {}", category_str, message);
@@ -457,7 +462,7 @@ namespace ui
 
 	void App::fullscreen(bool mode) noexcept
 	{
-		int flags = 0;
+		Uint32 flags = 0;
 		if (mode)
 			flags = SDL_WINDOW_FULLSCREEN_DESKTOP;
 
@@ -700,8 +705,8 @@ namespace ui
 		int num_keys;
 		SDL_GetKeyboardState(&num_keys);
 
-		last_keys.resize(num_keys);
-		current_keys.resize(num_keys);
+		last_keys.resize(static_cast<size_t>(num_keys));
+		current_keys.resize(static_cast<size_t>(num_keys));
 	}
 
 	void InputState::update(const App::Core &app) noexcept
@@ -768,7 +773,7 @@ namespace ui
 			return false;
 		}
 
-		return current_keys[scancode.value];
+		return current_keys[static_cast<size_t>(scancode.value)];
 	}
 
 	bool InputState::key_up(Scancode scancode) const noexcept
@@ -782,7 +787,7 @@ namespace ui
 			return false;
 		}
 
-		return !current_keys[scancode.value];
+		return !current_keys[static_cast<size_t>(scancode.value)];
 	}
 
 	bool InputState::key_pressed(Scancode scancode) const noexcept
@@ -798,7 +803,7 @@ namespace ui
 
 		// 'pressed' is the transition from up to down, so just keys
 		// that were up last frame but are now down return true
-		return !last_keys[scancode.value] && key_down(scancode);
+		return !last_keys[static_cast<size_t>(scancode.value)] && key_down(scancode);
 	}
 
 	bool InputState::key_released(Scancode scancode) const noexcept
@@ -814,7 +819,7 @@ namespace ui
 
 		// 'released' is the transition from down to up, so just keys
 		// that were down last frame but are now up return true
-		return last_keys[scancode.value] && key_up(scancode);
+		return last_keys[static_cast<size_t>(scancode.value)] && key_up(scancode);
 	}
 
 	KeyMods InputState::modifiers() const noexcept
