@@ -20,7 +20,7 @@ namespace nesem
 	namespace detail
 	{
 		using MakeCartFn = std::function<std::unique_ptr<NesCartridge>(const Nes &nes, mappers::NesRom &&rom)>;
-		bool register_cart(int ines_mapper, MakeCartFn &&fn);
+		bool register_cart(int ines_mapper, std::move_only_function<MakeCartFn()> fn);
 
 		template <typename T>
 		auto construct_helper()
@@ -31,5 +31,10 @@ namespace nesem
 		}
 	}
 
-#define REGISTER_MAPPER(ines, Type) inline static const auto PP_UNIQUE_VAR(cart_is_registered_detail_) = detail::register_cart(ines, detail::construct_helper<Type>())
+#define REGISTER_MAPPER(ines, Type)                                         \
+	static inline bool PP_UNIQUE_VAR(do_register_mapper_)()                 \
+	{                                                                       \
+		return detail::register_cart(ines, detail::construct_helper<Type>); \
+	}                                                                       \
+	inline static const auto PP_UNIQUE_VAR(cart_is_registered_detail_) = PP_UNIQUE_VAR(do_register_mapper_)()
 }
