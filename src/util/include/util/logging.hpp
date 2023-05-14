@@ -7,6 +7,8 @@
 
 #include <debugbreak.h>
 
+#include <util/preprocessor.hpp>
+
 #define LOG_LEVEL_TRACE 0
 #define LOG_LEVEL_DEBUG 1
 #define LOG_LEVEL_INFO 2
@@ -42,10 +44,6 @@
 #define LOG_WARN SPDLOG_WARN
 #define LOG_ERROR SPDLOG_ERROR
 #define LOG_CRITICAL SPDLOG_CRITICAL
-
-#define PP_CONCAT1(X, Y) X##Y
-#define PP_CONCAT(X, Y) PP_CONCAT1(X, Y)
-#define PP_UNIQUE_VAR(name) PP_CONCAT(name, __LINE__)
 
 #define LOG_ONCE(DO_LOG, ...)                            \
 	do                                                   \
