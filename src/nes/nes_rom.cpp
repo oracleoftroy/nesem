@@ -324,4 +324,13 @@ namespace nesem::mappers
 
 		return false;
 	}
+
+	int region(const NesRom &rom) noexcept
+	{
+		if (rom.v2)
+			return rom.v2->console.region;
+
+		// nesdev wiki indicates that this field was not widely used in ines 1 headers, so just default to JP/US
+		return 0;
+	}
 }

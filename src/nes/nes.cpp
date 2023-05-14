@@ -8,6 +8,36 @@
 
 namespace nesem
 {
+	constexpr ClockRate clock_for_region(int region) noexcept
+	{
+		switch (region)
+		{
+		default: // shouldn't ever happen, but we will default to NTSC if it does
+			LOG_WARN("invalid region {}, defaulting to NTSC", region);
+			break;
+
+		case 0: // RP2C02
+			LOG_INFO("Region {}: North America, Japan, South Korea, Taiwan", region);
+			break;
+
+		case 2: // Multiple
+			LOG_INFO("Region {}: Mult-region cart", region);
+			// neswiki says to make this user selectable or just use whatever clock was used last, but we fallback to NTSC for now
+			// TODO: consider supporting a user default and/or user switchable clock rate
+			break;
+
+		case 1: // RP2C07
+			LOG_INFO("Region {}: Western Europe, Australia", region);
+			return pal();
+
+		case 3: // UA6538
+			LOG_INFO("Region {}: Eastern Europe, Russia, Mainland China, India, Africa", region);
+			return dendy();
+		}
+
+		return ntsc();
+	}
+
 	Nes::Nes(NesSettings &&settings)
 		: on_error(std::move(settings.error)),
 		  draw(std::move(settings.draw)),
@@ -37,6 +67,8 @@ namespace nesem
 		unload_rom();
 
 		nes_cartridge = std::move(cart);
+
+		nes_clock = NesClock{this, clock_for_region(region(nes_cartridge->rom()))};
 		nes_bus.load_cartridge(nes_cartridge.get());
 		nes_ppu.load_cartridge(nes_cartridge.get());
 
@@ -91,8 +123,7 @@ namespace nesem
 	{
 		// components requesting an interrupt should hold the interrupt signal until the CPU writes back saying
 		// it handled the interrupt. Multiple devices can signal an irq at the same time, so this gives us a
-		// central location where all active interrupt requests can be accessed at once. Right now, only the APU
-		// signals irqs, but some mappers can request interrupts as well as I understand. It is the programmer's
+		// central location where all active interrupt requests can be accessed at once. It is the programmer's
 		// responsibility to figure out which device(s) signaled the interrupt and handle it appropriately.
 
 		return (nes_cartridge && nes_cartridge->irq()) || nes_apu.irq();

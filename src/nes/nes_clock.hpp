@@ -11,8 +11,8 @@ namespace nesem
 	// see: https://www.nesdev.org/wiki/Cycle_reference_chart
 	struct ClockRate
 	{
-		using duration = std::chrono::duration<double, std::nano>;
-		duration frequency{0.0};
+		using duration = std::chrono::nanoseconds;
+		duration frequency{0};
 		U64 cpu_divisor = 0;
 		U64 ppu_divisor = 0;
 		U64 apu_divisor = 0;
@@ -20,41 +20,59 @@ namespace nesem
 
 	constexpr ClockRate ntsc() noexcept
 	{
-		// NTSC timings happen to be evenly divisiable by 4 to an even 1 CPU/APU tick per 3 PPU tick
+		// NTSC timings happen to be evenly divisible by 4 to an even 1 CPU/APU tick per 3 PPU tick
 		// contrast that with the 16 by 5 ratio used for PAL
 		constexpr U64 common_divisor = 4;
 
-		using clockrate_NTSC = std::ratio<11, 236250000 / common_divisor>;
-		using duration_NTSC = std::chrono::duration<double, clockrate_NTSC>;
-		constexpr U64 ppu_divisor_NTSC = 4 / common_divisor;
-		constexpr U64 cpu_divisor_NTSC = 12 / common_divisor;
+		using clockrate = std::ratio<11, 236250000 / common_divisor>;
+		using duration = std::chrono::duration<U64, clockrate>;
+		constexpr U64 ppu_divisor = 4 / common_divisor;
+		constexpr U64 cpu_divisor = 12 / common_divisor;
 
 		// APU is clocked half as often as the cpu
-		constexpr U64 apu_divisor_NTSC = 24 / common_divisor;
+		constexpr U64 apu_divisor = (cpu_divisor * 2) / common_divisor;
 
 		return {
-			.frequency = duration_cast<ClockRate::duration>(duration_NTSC(1)),
-			.cpu_divisor = cpu_divisor_NTSC,
-			.ppu_divisor = ppu_divisor_NTSC,
-			.apu_divisor = apu_divisor_NTSC,
+			.frequency = duration_cast<ClockRate::duration>(duration(1)),
+			.cpu_divisor = cpu_divisor,
+			.ppu_divisor = ppu_divisor,
+			.apu_divisor = apu_divisor,
 		};
 	}
 
 	constexpr ClockRate pal() noexcept
 	{
-		using clockrate_PAL = std::ratio<10, 266017125>;
-		using duration_PAL = std::chrono::duration<double, clockrate_PAL>;
-		constexpr U64 ppu_divisor_PAL = 5;
-		constexpr U64 cpu_divisor_PAL = 16;
+		using clockrate = std::ratio<10, 266017125>;
+		using duration = std::chrono::duration<U64, clockrate>;
+		constexpr U64 ppu_divisor = 5;
+		constexpr U64 cpu_divisor = 16;
 
 		// APU is clocked half as often as the cpu
-		constexpr U64 apu_divisor_PAL = 32;
+		constexpr U64 apu_divisor = (cpu_divisor * 2);
 
 		return {
-			.frequency = duration_cast<ClockRate::duration>(duration_PAL(1)),
-			.cpu_divisor = cpu_divisor_PAL,
-			.ppu_divisor = ppu_divisor_PAL,
-			.apu_divisor = apu_divisor_PAL,
+			.frequency = duration_cast<ClockRate::duration>(duration(1)),
+			.cpu_divisor = cpu_divisor,
+			.ppu_divisor = ppu_divisor,
+			.apu_divisor = apu_divisor,
+		};
+	}
+
+	constexpr ClockRate dendy() noexcept
+	{
+		using clockrate = std::ratio<10, 266017125>;
+		using duration = std::chrono::duration<U64, clockrate>;
+		constexpr U64 ppu_divisor = 5;
+		constexpr U64 cpu_divisor = 15;
+
+		// APU is clocked half as often as the cpu
+		constexpr U64 apu_divisor = (cpu_divisor * 2);
+
+		return {
+			.frequency = duration_cast<ClockRate::duration>(duration(1)),
+			.cpu_divisor = cpu_divisor,
+			.ppu_divisor = ppu_divisor,
+			.apu_divisor = apu_divisor,
 		};
 	}
 
@@ -86,6 +104,6 @@ namespace nesem
 
 		bool force_stop = false;
 		U64 tickcount = 0;
-		ClockRate::duration accumulator{0.0};
+		ClockRate::duration accumulator{0};
 	};
 }

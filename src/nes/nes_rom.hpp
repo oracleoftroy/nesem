@@ -203,4 +203,6 @@ namespace nesem::mappers
 	size_t prgram_size(const NesRom &rom) noexcept;
 
 	bool has_bus_conflicts(const NesRom &rom) noexcept;
+
+	int region(const NesRom &rom) noexcept;
 }
