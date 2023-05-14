@@ -7,7 +7,7 @@ namespace nesem::mappers
 	NesMapper003::NesMapper003(const Nes &nes, NesRom &&rom_data) noexcept
 		: NesCartridge(nes, std::move(rom_data))
 	{
-		CHECK(mapper(rom()) == ines_mapper, "Wrong mapper!");
+		CHECK(rom_mapper(rom()) == ines_mapper, "Wrong mapper!");
 	}
 
 	void NesMapper003::reset() noexcept
@@ -17,7 +17,7 @@ namespace nesem::mappers
 
 	Banks NesMapper003::report_cpu_mapping() const noexcept
 	{
-		if (prgrom_banks(rom(), bank_16k) == 1)
+		if (rom_prgrom_banks(rom(), bank_16k) == 1)
 		{
 			return {
 				.size = 2,
@@ -57,7 +57,7 @@ namespace nesem::mappers
 		}
 
 		U16 addr_mask = 0x7FFF;
-		if (prgrom_banks(rom(), bank_16k) == 1)
+		if (rom_prgrom_banks(rom(), bank_16k) == 1)
 			addr_mask = 0x3FFF;
 
 		return rom().prg_rom[addr & addr_mask];
@@ -82,7 +82,7 @@ namespace nesem::mappers
 		}
 
 		// writes, regardless of the address, adjust the current CHR-ROM bank we are reading from
-		bank_select = U8((value & 0x03) % chr_banks(rom(), bank_8k));
+		bank_select = U8((value & 0x03) % rom_chr_banks(rom(), bank_8k));
 	}
 
 	std::optional<U8> NesMapper003::on_ppu_peek(U16 &addr) const noexcept

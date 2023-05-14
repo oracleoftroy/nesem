@@ -7,7 +7,7 @@ namespace nesem::mappers
 	NesMapper002::NesMapper002(const Nes &nes, NesRom &&rom_data) noexcept
 		: NesCartridge(nes, std::move(rom_data))
 	{
-		CHECK(mapper(rom()) == ines_mapper, "Wrong mapper!");
+		CHECK(rom_mapper(rom()) == ines_mapper, "Wrong mapper!");
 	}
 
 	void NesMapper002::reset() noexcept
@@ -17,7 +17,7 @@ namespace nesem::mappers
 
 	Banks NesMapper002::report_cpu_mapping() const noexcept
 	{
-		auto last_bank = U16(prgrom_banks(rom(), bank_16k) - 1);
+		auto last_bank = U16(rom_prgrom_banks(rom(), bank_16k) - 1);
 		return {
 			.size = 2,
 			.banks{Bank{.addr = 0x8000, .bank = bank_select, .size = bank_16k},
@@ -57,7 +57,7 @@ namespace nesem::mappers
 			return rom().prg_rom[bank_select * bank_16k + (addr & 0x3FFF)];
 
 		// always fixed to the last 16K bank
-		return rom().prg_rom[(prgrom_banks(rom(), bank_16k) - 1) * bank_16k + (addr & (bank_16k - 1))];
+		return rom().prg_rom[(rom_prgrom_banks(rom(), bank_16k) - 1) * bank_16k + (addr & (bank_16k - 1))];
 	}
 
 	void NesMapper002::on_cpu_write(U16 addr, U8 value) noexcept
@@ -79,7 +79,7 @@ namespace nesem::mappers
 		}
 
 		// writes, regardless of the address, adjust the current PRG-ROM bank we are reading from
-		bank_select = U8((value & 0x0F) % prgrom_banks(rom(), bank_16k));
+		bank_select = U8((value & 0x0F) % rom_prgrom_banks(rom(), bank_16k));
 	}
 
 	std::optional<U8> NesMapper002::on_ppu_peek(U16 &addr) const noexcept

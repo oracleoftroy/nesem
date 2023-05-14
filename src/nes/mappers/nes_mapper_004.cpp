@@ -51,7 +51,7 @@ namespace nesem::mappers
 	NesMapper004::NesMapper004(const Nes &nes, NesRom &&rom_data) noexcept
 		: NesCartridge(nes, std::move(rom_data)), variant(pick_variant(rom()))
 	{
-		CHECK(mapper(rom()) == ines_mapper, "Wrong mapper!");
+		CHECK(rom_mapper(rom()) == ines_mapper, "Wrong mapper!");
 
 		reset();
 	}
@@ -80,7 +80,7 @@ namespace nesem::mappers
 	Banks NesMapper004::report_cpu_mapping() const noexcept
 	{
 		int mode = (bank_select >> 6) & 1;
-		auto num_banks = prgrom_banks(rom(), bank_8k);
+		auto num_banks = rom_prgrom_banks(rom(), bank_8k);
 
 		U16 bank0 = bank_map[6];
 		U16 bank1 = bank_map[7];
@@ -143,7 +143,7 @@ namespace nesem::mappers
 	{
 		using enum MirroringMode;
 
-		auto hw_mode = mirroring_mode(rom());
+		auto hw_mode = rom_mirroring_mode(rom());
 
 		switch (hw_mode)
 		{
@@ -167,7 +167,7 @@ namespace nesem::mappers
 		// 0 or 1
 		int mode = (bank_select >> 6) & 1;
 
-		auto num_banks = prgrom_banks(rom(), bank_8k);
+		auto num_banks = rom_prgrom_banks(rom(), bank_8k);
 
 		// everything from E000 - FFFF uses the last bank.
 		auto bank = num_banks - 1;
@@ -380,11 +380,11 @@ namespace nesem::mappers
 
 			// banks at 2-5 are 1K chr-rom banks
 			if (index < 6)
-				bank_mask = U8(chr_banks(rom(), bank_1k) - 1);
+				bank_mask = U8(rom_chr_banks(rom(), bank_1k) - 1);
 
 			// banks 6-7 are prg-rom banks. According to the NESdev wiki, the MMC3 only has 6 prg-rom address lines, so the high bits are ignored. Some romhacks use all 8.
 			else if (index < 8)
-				bank_mask = U8(prgrom_banks(rom(), bank_8k) - 1);
+				bank_mask = U8(rom_prgrom_banks(rom(), bank_8k) - 1);
 
 			// banks at 0 and 1 are 2K chr-rom banks. Only even numbered banks are allowed, and the hardware ignores the low bit
 			if (index < 2)

@@ -7,7 +7,7 @@ namespace nesem::mappers
 	NesMapper000::NesMapper000(const Nes &nes, NesRom &&rom_data) noexcept
 		: NesCartridge(nes, std::move(rom_data))
 	{
-		CHECK(mapper(rom()) == ines_mapper, "Wrong mapper!");
+		CHECK(rom_mapper(rom()) == ines_mapper, "Wrong mapper!");
 	}
 
 	void NesMapper000::reset() noexcept
@@ -68,7 +68,7 @@ namespace nesem::mappers
 		}
 
 		U16 addr_mask = 0x7FFF;
-		if (prgrom_banks(rom(), bank_16k) == 1)
+		if (rom_prgrom_banks(rom(), bank_16k) == 1)
 			addr_mask = 0x3FFF;
 
 		return rom().prg_rom[addr & addr_mask];

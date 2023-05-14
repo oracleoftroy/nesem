@@ -7,7 +7,7 @@ namespace nesem::mappers
 	NesMapper066::NesMapper066(const Nes &nes, NesRom &&rom_data) noexcept
 		: NesCartridge(nes, std::move(rom_data))
 	{
-		CHECK(mapper(rom()) == ines_mapper, "Wrong mapper!");
+		CHECK(rom_mapper(rom()) == ines_mapper, "Wrong mapper!");
 	}
 
 	void NesMapper066::reset() noexcept
@@ -45,8 +45,8 @@ namespace nesem::mappers
 			return;
 
 		// writes, regardless of the address, adjust the current PRG-ROM and CHR-ROM bank we are reading from
-		prg_bank_select = U8(((value >> 4) & 3) % prgrom_banks(rom(), bank_16k));
-		chr_bank_select = U8(((value >> 0) & 3) % chr_banks(rom(), bank_8k));
+		prg_bank_select = U8(((value >> 4) & 3) % rom_prgrom_banks(rom(), bank_16k));
+		chr_bank_select = U8(((value >> 0) & 3) % rom_chr_banks(rom(), bank_8k));
 	}
 
 	std::optional<U8> NesMapper066::on_ppu_peek(U16 &addr) const noexcept

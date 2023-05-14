@@ -20,12 +20,12 @@ namespace nesem
 	NesCartridge::NesCartridge(const Nes &nes, mappers::NesRom &&rom_data) noexcept
 		: nes(&nes), nes_rom(std::move(rom_data))
 	{
-		if (has_chrram(rom()))
+		if (rom_has_chrram(rom()))
 		{
 			if (!rom().chr_rom.empty())
 				LOG_WARN("CHR-ROM not empty, but we assume CHR-ROM and CHR-RAM are mutually exclusive!");
 
-			chr_ram.resize(chrram_size(rom()));
+			chr_ram.resize(rom_chrram_size(rom()));
 		}
 
 		if (rom().v2)
@@ -46,13 +46,13 @@ namespace nesem
 				prg_ram.resize(size);
 		}
 
-		emulate_bus_conflicts = has_bus_conflicts(nes_rom);
+		emulate_bus_conflicts = rom_has_bus_conflicts(nes_rom);
 	}
 
 	mappers::MirroringMode NesCartridge::mirroring() const noexcept
 	{
 		// default implementation returns whatever the ROM tells us
-		return mirroring_mode(nes_rom);
+		return rom_mirroring_mode(nes_rom);
 	}
 
 	U8 NesCartridge::cpu_peek(U16 addr) const noexcept
@@ -122,7 +122,7 @@ namespace nesem
 
 	size_t NesCartridge::chr_size() const noexcept
 	{
-		if (has_chrram(nes_rom))
+		if (rom_has_chrram(nes_rom))
 			return size(chr_ram);
 
 		return size(nes_rom.chr_rom);
@@ -135,7 +135,7 @@ namespace nesem
 
 	U8 NesCartridge::chr_read(size_t addr) const noexcept
 	{
-		if (has_chrram(nes_rom))
+		if (rom_has_chrram(nes_rom))
 			return chr_ram[addr];
 
 		return nes_rom.chr_rom[addr];
@@ -143,7 +143,7 @@ namespace nesem
 
 	bool NesCartridge::chr_write(size_t addr, U8 value) noexcept
 	{
-		if (has_chrram(nes_rom))
+		if (rom_has_chrram(nes_rom))
 			chr_ram[addr] = value;
 		else
 			LOG_ERROR("Write to CHR-ROM not allowed");
@@ -302,18 +302,18 @@ namespace nesem
 		else
 		{
 			LOG_INFO("iNES 1 info");
-			LOG_INFO("mapper: {}", mapper(rom));
+			LOG_INFO("mapper: {}", rom_mapper(rom));
 			LOG_INFO("PRG-ROM size: {0}K ({1:L})", size(rom.prg_rom) / 1024, size(rom.prg_rom));
 			LOG_INFO("CHR-ROM size: {0}K ({1:L})", size(rom.chr_rom) / 1024, size(rom.chr_rom));
 		}
 
-		LOG_INFO("mirroring: {}", to_string(mirroring_mode(rom)));
-		LOG_INFO("has bus conflicts: {}", has_bus_conflicts(rom));
+		LOG_INFO("mirroring: {}", to_string(rom_mirroring_mode(rom)));
+		LOG_INFO("has bus conflicts: {}", rom_has_bus_conflicts(rom));
 
-		switch (mapper(rom))
+		switch (rom_mapper(rom))
 		{
 		default:
-			LOG_WARN("ROM uses unsupported mapper: {}", mapper(rom));
+			LOG_WARN("ROM uses unsupported mapper: {}", rom_mapper(rom));
 			return {};
 
 		case mappers::NesMapper000::ines_mapper:

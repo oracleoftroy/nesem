@@ -68,7 +68,7 @@ namespace nesem
 
 		nes_cartridge = std::move(cart);
 
-		nes_clock = NesClock{this, clock_for_region(region(nes_cartridge->rom()))};
+		nes_clock = NesClock{this, clock_for_region(rom_region(nes_cartridge->rom()))};
 		nes_bus.load_cartridge(nes_cartridge.get());
 		nes_ppu.load_cartridge(nes_cartridge.get());
 

@@ -154,7 +154,7 @@ namespace nesem::mappers
 		}
 	}
 
-	MirroringMode mirroring_mode(const NesRom &rom) noexcept
+	MirroringMode rom_mirroring_mode(const NesRom &rom) noexcept
 	{
 		if (rom.v2)
 			return rom.v2->pcb.mirroring;
@@ -162,7 +162,7 @@ namespace nesem::mappers
 		return rom.v1.mirroring;
 	}
 
-	int prgrom_banks(const NesRom &rom, BankSize bank_size) noexcept
+	int rom_prgrom_banks(const NesRom &rom, BankSize bank_size) noexcept
 	{
 		if (rom.v2)
 			return int(rom.v2->prgrom.size / bank_size);
@@ -170,7 +170,7 @@ namespace nesem::mappers
 		return (rom.v1.prg_rom_size * bank_16k) / bank_size;
 	}
 
-	int chrrom_banks(const NesRom &rom, BankSize bank_size) noexcept
+	int rom_chrrom_banks(const NesRom &rom, BankSize bank_size) noexcept
 	{
 		if (rom.v2)
 			return int(rom.v2->chrrom.has_value() ? (rom.v2->chrrom->size / bank_size) : 0);
@@ -178,15 +178,15 @@ namespace nesem::mappers
 		return (rom.v1.chr_rom_size * bank_8k) / bank_size;
 	}
 
-	int chr_banks(const NesRom &rom, BankSize bank_size) noexcept
+	int rom_chr_banks(const NesRom &rom, BankSize bank_size) noexcept
 	{
-		if (has_chrram(rom))
-			return int(chrram_size(rom) / bank_size);
+		if (rom_has_chrram(rom))
+			return int(rom_chrram_size(rom) / bank_size);
 
-		return chrrom_banks(rom, bank_size);
+		return rom_chrrom_banks(rom, bank_size);
 	}
 
-	bool has_chrram(const NesRom &rom) noexcept
+	bool rom_has_chrram(const NesRom &rom) noexcept
 	{
 		if (rom.v2)
 			return rom.v2->chrram.has_value();
@@ -194,7 +194,7 @@ namespace nesem::mappers
 		return rom.v1.chr_rom_size == 0;
 	}
 
-	size_t chrram_size(const NesRom &rom) noexcept
+	size_t rom_chrram_size(const NesRom &rom) noexcept
 	{
 		if (rom.v2)
 			return rom.v2->chrram.has_value() ? rom.v2->chrram->size : 0;
@@ -202,7 +202,7 @@ namespace nesem::mappers
 		return rom.v1.chr_rom_size == 0 ? bank_8k : 0;
 	}
 
-	int mapper(const NesRom &rom) noexcept
+	int rom_mapper(const NesRom &rom) noexcept
 	{
 		if (rom.v2)
 			return rom.v2->pcb.mapper;
@@ -210,7 +210,7 @@ namespace nesem::mappers
 		return rom.v1.mapper;
 	}
 
-	bool has_prgram(const NesRom &rom) noexcept
+	bool rom_has_prgram(const NesRom &rom) noexcept
 	{
 		// TODO: should we report true if there is a battery but not prgnvram or chrnvram?
 		// I see 18 entries in nesdb that have a battery but don't report any sort of ram at all
@@ -221,7 +221,7 @@ namespace nesem::mappers
 		return rom.v1.has_battery;
 	}
 
-	size_t prgram_size(const NesRom &rom) noexcept
+	size_t rom_prgram_size(const NesRom &rom) noexcept
 	{
 		size_t size = 0;
 
@@ -236,7 +236,7 @@ namespace nesem::mappers
 		return size;
 	}
 
-	bool has_bus_conflicts(const NesRom &rom) noexcept
+	bool rom_has_bus_conflicts(const NesRom &rom) noexcept
 	{
 		// https://www.nesdev.org/wiki/Category:Mappers_with_bus_conflicts
 		// INES Mapper 003
@@ -288,7 +288,7 @@ namespace nesem::mappers
 			}
 		}
 
-		switch (mapper(rom))
+		switch (rom_mapper(rom))
 		{
 		case 34:
 			// We did not have a more precise submapper, either because it is 0 or because we only have iNES 1 info
@@ -297,11 +297,11 @@ namespace nesem::mappers
 
 			// To disambiguate the two mappers, emulators have taken various approaches:
 			// The presense of CHR larger than 8 KiB unambiguously requires NINA-001, as BNROM has no CHR banking.
-			if (chr_banks(rom, bank_8k) > 1)
+			if (rom_chr_banks(rom, bank_8k) > 1)
 				return false;
 
 			// The presence of CHR-RAM is taken to imply BNROM, because both extant BNROM games use CHR-RAM.
-			if (has_chrram(rom))
+			if (rom_has_chrram(rom))
 				return true;
 
 			// All explicit and implicit heuristics failed, we'll err on the side of no conflicts
@@ -325,7 +325,7 @@ namespace nesem::mappers
 		return false;
 	}
 
-	int region(const NesRom &rom) noexcept
+	int rom_region(const NesRom &rom) noexcept
 	{
 		if (rom.v2)
 			return rom.v2->console.region;

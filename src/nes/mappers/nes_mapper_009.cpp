@@ -7,7 +7,7 @@ namespace nesem::mappers
 	NesMapper009::NesMapper009(const Nes &nes, NesRom &&rom_data) noexcept
 		: NesCartridge(nes, std::move(rom_data))
 	{
-		CHECK(mapper(rom()) == ines_mapper, "Wrong mapper!");
+		CHECK(rom_mapper(rom()) == ines_mapper, "Wrong mapper!");
 
 		reset();
 	}
@@ -23,7 +23,7 @@ namespace nesem::mappers
 
 	Banks NesMapper009::report_cpu_mapping() const noexcept
 	{
-		const auto num_banks = U16(prgrom_banks(rom(), bank_8k));
+		const auto num_banks = U16(rom_prgrom_banks(rom(), bank_8k));
 
 		return {
 			.size = 4,
@@ -71,7 +71,7 @@ namespace nesem::mappers
 			}
 		}
 
-		auto bank = prgrom_banks(rom(), bank_8k);
+		auto bank = rom_prgrom_banks(rom(), bank_8k);
 
 		// bank-switched
 		if (addr < 0xA000)

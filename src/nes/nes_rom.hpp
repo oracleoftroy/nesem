@@ -188,21 +188,21 @@ namespace nesem::mappers
 	// this handles one and four screen modes as selecting the first or last nametable
 	// roms that provide additional nametable memory need to provide custom handling
 	void apply_hardware_nametable_mapping(MirroringMode mode, U16 &addr) noexcept;
-	MirroringMode mirroring_mode(const NesRom &rom) noexcept;
+	MirroringMode rom_mirroring_mode(const NesRom &rom) noexcept;
 
-	int prgrom_banks(const NesRom &rom, BankSize bank_size) noexcept;
-	int chrrom_banks(const NesRom &rom, BankSize bank_size) noexcept;
-	int chr_banks(const NesRom &rom, BankSize bank_size) noexcept;
+	int rom_prgrom_banks(const NesRom &rom, BankSize bank_size) noexcept;
+	int rom_chrrom_banks(const NesRom &rom, BankSize bank_size) noexcept;
+	int rom_chr_banks(const NesRom &rom, BankSize bank_size) noexcept;
 
-	bool has_chrram(const NesRom &rom) noexcept;
-	size_t chrram_size(const NesRom &rom) noexcept;
+	bool rom_has_chrram(const NesRom &rom) noexcept;
+	size_t rom_chrram_size(const NesRom &rom) noexcept;
 
-	int mapper(const NesRom &rom) noexcept;
+	int rom_mapper(const NesRom &rom) noexcept;
 
-	bool has_prgram(const NesRom &rom) noexcept;
-	size_t prgram_size(const NesRom &rom) noexcept;
+	bool rom_has_prgram(const NesRom &rom) noexcept;
+	size_t rom_prgram_size(const NesRom &rom) noexcept;
 
-	bool has_bus_conflicts(const NesRom &rom) noexcept;
+	bool rom_has_bus_conflicts(const NesRom &rom) noexcept;
 
-	int region(const NesRom &rom) noexcept;
+	int rom_region(const NesRom &rom) noexcept;
 }

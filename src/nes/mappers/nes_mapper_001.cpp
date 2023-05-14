@@ -11,7 +11,7 @@ namespace nesem::mappers
 	NesMapper001::NesMapper001(const Nes &nes, NesRom &&rom_data) noexcept
 		: NesCartridge(nes, std::move(rom_data))
 	{
-		CHECK(mapper(rom()) == ines_mapper, "Wrong mapper!");
+		CHECK(rom_mapper(rom()) == ines_mapper, "Wrong mapper!");
 
 		// the amount of chr data is a multiple of 8k
 		// this calculates a mask for the significant bits of chr_bank_x for a 4k bank size
@@ -313,7 +313,7 @@ namespace nesem::mappers
 		return PrgRomBanks{
 			.bank = bank,
 			.first_bank = first_bank,
-			.last_bank = U8((prgrom_banks(rom(), bank_16k) - 1) & last_bank_mask),
+			.last_bank = U8((rom_prgrom_banks(rom(), bank_16k) - 1) & last_bank_mask),
 		};
 	}
 
