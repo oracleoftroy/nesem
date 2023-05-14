@@ -3,6 +3,8 @@
 #include <functional>
 #include <memory>
 
+#include <util/preprocessor.hpp>
+
 namespace nesem
 {
 	class Nes;
@@ -29,5 +31,5 @@ namespace nesem
 		}
 	}
 
-#define REGISTER_MAPPER(ines, Type) inline static const auto cart_is_registered_detail_ = detail::register_cart(ines, detail::construct_helper<Type>())
+#define REGISTER_MAPPER(ines, Type) inline static const auto PP_UNIQUE_VAR(cart_is_registered_detail_) = detail::register_cart(ines, detail::construct_helper<Type>())
 }
