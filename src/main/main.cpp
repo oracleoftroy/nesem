@@ -1,5 +1,6 @@
-
 #include <filesystem>
+#include <fstream>
+#include <locale>
 
 #include "config.hpp"
 #include "nes_app.hpp"
@@ -7,7 +8,17 @@
 #include <ui/app.hpp>
 #include <util/logging.hpp>
 
-int main(int argc, char *argv[])
+const static auto logger_init = [] {
+	// use the preferred locale by default, not the "C" locale
+	std::locale::global(std::locale(""));
+
+	const auto log_file_name = std::filesystem::path("nesem.log");
+	auto base_path = ui::App::get_user_data_path("nesem");
+
+	return util::detail::LoggerInit{base_path / log_file_name};
+}();
+
+int application_main(int argc, char *argv[])
 {
 	LOG_INFO("Starting: {}", fmt::join(argv, argv + argc, " "));
 	LOG_INFO("Working directory: {}", std::filesystem::current_path().string());
@@ -22,7 +33,7 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
-	auto config_path = app.get_user_data_path("nesem") / "nesem.toml";
+	auto config_path = ui::App::get_user_data_path("nesem") / "nesem.toml";
 	auto config = app::load_config_file(config_path);
 
 	auto core = app::NesApp{app, config};

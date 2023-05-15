@@ -32,8 +32,10 @@
 #include <spdlog/async.h>
 #include <spdlog/sinks/ansicolor_sink.h>
 #include <spdlog/sinks/basic_file_sink.h>
-#include <spdlog/sinks/msvc_sink.h>
-#include <spdlog/sinks/wincolor_sink.h>
+#if defined(_WIN32)
+#	include <spdlog/sinks/msvc_sink.h>
+#	include <spdlog/sinks/wincolor_sink.h>
+#endif
 #include <spdlog/spdlog.h>
 
 #define LOG(level, ...) SPDLOG_LOGGER_CALL(spdlog::default_logger_raw(), spdlog::level::level_enum(level), __VA_ARGS__)

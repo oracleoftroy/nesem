@@ -23,5 +23,5 @@ add_executable(
 find_package(tomlplusplus CONFIG REQUIRED)
 
 target_link_libraries(nesem PRIVATE project_options)
-target_link_libraries(nesem PRIVATE nesemlib appui)
+target_link_libraries(nesem PRIVATE nesemlib appui appui_main)
 target_link_libraries(nesem PRIVATE tomlplusplus::tomlplusplus)
