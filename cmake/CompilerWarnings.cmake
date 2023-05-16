@@ -28,6 +28,7 @@ function(set_project_warnings project_name)
 		/w14928 # illegal copy-initialization; more than one user-defined conversion has been implicitly applied
 		/permissive- # standards conformance mode for MSVC compiler.
 		/utf-8 # Set Source and Executable character sets to UTF-8
+		/diagnostics:caret
 	)
 
 	set(COMMON_WARNINGS
