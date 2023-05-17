@@ -9,25 +9,21 @@ namespace nesem::op
 	struct ResultALU
 	{
 		U8 ans;
-		ProcessorStatus flags;
+		util::Flags<ProcessorStatus> flags;
 	};
 
 	// Add with carry
 	// essentially a + b + Carry
-	constexpr ResultALU ADC(U8 a, U8 b, ProcessorStatus flags) noexcept
+	constexpr ResultALU ADC(U8 a, U8 b, util::Flags<ProcessorStatus> flags) noexcept
 	{
 		using enum ProcessorStatus;
 
 		// carry bit is already 1, so just cast to number
-		auto carry = U8(flags & C);
+		auto carry = U8(flags.is_set(C));
 		auto ans = a + b + carry;
 
-		// clear affected flags
-		flags &= ~(C | Z | V | N);
-
 		// set C if 9th bit set
-		if (ans & 0x0100)
-			flags |= C;
+		flags.set(ans & 0x0100, C);
 
 		auto ans_sign = ans & 0b1000'0000;
 		auto sign_same = (a & 0b1000'0000) == (b & 0b1000'0000);
@@ -37,16 +33,13 @@ namespace nesem::op
 		// -5 + 7 -> not overflow
 		// 127 + 1 -> overflow
 		// -128 + -1 -> overflow
-		if (sign_same && ans_sign != (a & 0b1000'0000))
-			flags |= V;
+		flags.set(sign_same && ans_sign != (a & 0b1000'0000), V);
 
 		// set N if 8th bit set
-		if (ans_sign)
-			flags |= N;
+		flags.set(ans_sign, N);
 
 		// set Z if ans == 0
-		if ((ans & 0xFF) == 0)
-			flags |= Z;
+		flags.set((ans & 0xFF) == 0, Z);
 
 		return {
 			.ans = U8(ans & 0xFF),
@@ -55,7 +48,7 @@ namespace nesem::op
 	}
 
 	// Subtract Memory from Accumulator with Borrow
-	constexpr ResultALU SBC(U8 a, U8 b, ProcessorStatus flags) noexcept
+	constexpr ResultALU SBC(U8 a, U8 b, util::Flags<ProcessorStatus> flags) noexcept
 	{
 		// essentially, is just an add with the bits of b flipped. The programmer
 		// is expected to set the carry flag to handle two's compliment properly
@@ -65,21 +58,14 @@ namespace nesem::op
 	}
 
 	// AND Memory with Accumulator
-	constexpr ResultALU AND(U8 a, U8 b, ProcessorStatus flags) noexcept
+	constexpr ResultALU AND(U8 a, U8 b, util::Flags<ProcessorStatus> flags) noexcept
 	{
 		using enum ProcessorStatus;
 
 		U8 ans = a & b;
 
-		if (ans == 0)
-			flags |= Z;
-		else
-			flags &= ~Z;
-
-		if (ans & 0b1000'0000)
-			flags |= N;
-		else
-			flags &= ~N;
+		flags.set(ans == 0, Z);
+		flags.set(ans & 0b1000'0000, N);
 
 		return {
 			.ans = ans,
@@ -88,21 +74,14 @@ namespace nesem::op
 	}
 
 	// OR Memory with Accumulator
-	constexpr ResultALU ORA(U8 a, U8 b, ProcessorStatus flags) noexcept
+	constexpr ResultALU ORA(U8 a, U8 b, util::Flags<ProcessorStatus> flags) noexcept
 	{
 		using enum ProcessorStatus;
 
 		U8 ans = a | b;
 
-		if (ans == 0)
-			flags |= Z;
-		else
-			flags &= ~Z;
-
-		if (ans & 0b1000'0000)
-			flags |= N;
-		else
-			flags &= ~N;
+		flags.set(ans == 0, Z);
+		flags.set(ans & 0b1000'0000, N);
 
 		return {
 			.ans = ans,
@@ -111,21 +90,14 @@ namespace nesem::op
 	}
 
 	// Exclusive OR Memory with Accumulator
-	constexpr ResultALU EOR(U8 a, U8 b, ProcessorStatus flags) noexcept
+	constexpr ResultALU EOR(U8 a, U8 b, util::Flags<ProcessorStatus> flags) noexcept
 	{
 		using enum ProcessorStatus;
 
 		auto ans = U8(a ^ b);
 
-		if (ans == 0)
-			flags |= Z;
-		else
-			flags &= ~Z;
-
-		if (ans & 0b1000'0000)
-			flags |= N;
-		else
-			flags &= ~N;
+		flags.set(ans == 0, Z);
+		flags.set(ans & 0b1000'0000, N);
 
 		return {
 			.ans = ans,
@@ -134,80 +106,50 @@ namespace nesem::op
 	}
 
 	// Compare Memory and Accumulator
-	constexpr ProcessorStatus CMP(U8 a, U8 b, ProcessorStatus flags) noexcept
+	constexpr util::Flags<ProcessorStatus> CMP(U8 a, U8 b, util::Flags<ProcessorStatus> flags) noexcept
 	{
 		using enum ProcessorStatus;
 
-		if (a == b)
-			flags |= Z;
-		else
-			flags &= ~Z;
+		flags.set(a == b, Z);
 
 		auto ans = U8(a - b);
-		if (ans & 0b1000'0000)
-			flags |= N;
-		else
-			flags &= ~N;
-
-		// a >= b
-		if (a >= b)
-			flags |= C;
-		else
-			flags &= ~C;
+		flags.set(ans & 0b1000'0000, N);
+		flags.set(a >= b, C);
 
 		return flags;
 	}
 
 	// Test Bits in Memory with Accumulator
-	constexpr ProcessorStatus BIT(U8 a, U8 b, ProcessorStatus flags) noexcept
+	constexpr util::Flags<ProcessorStatus> BIT(U8 a, U8 b, util::Flags<ProcessorStatus> flags) noexcept
 	{
 		using enum ProcessorStatus;
 
 		auto ans = a & b;
 
 		// The bit instruction affects the N flag with N being set to the value of bit 7 of the memory being tested,..
-		if (b & 0b1000'0000)
-			flags |= N;
-		else
-			flags &= ~N;
+		flags.set(b & 0b1000'0000, N);
 
 		// the V flag with V being set equal to bit 6 of the memory being tested...
-		if (b & 0b0100'0000)
-			flags |= V;
-		else
-			flags &= ~V;
+		flags.set(b & 0b0100'0000, V);
 
 		// and Z being set by the result of the AND operation between the accumulator and the memory if the result is Zero, Z is reset otherwise.
-		if (ans == 0)
-			flags |= Z;
-		else
-			flags &= ~Z;
+		flags.set(ans == 0, Z);
 
 		return flags;
 	}
 
 	// Arithmetic Shift Left
-	constexpr ResultALU ASL(U8 value, ProcessorStatus flags) noexcept
+	constexpr ResultALU ASL(U8 value, util::Flags<ProcessorStatus> flags) noexcept
 	{
 		using enum ProcessorStatus;
 
 		// if we shift off bit, store it in carry
-		if (value & 0b1000'0000)
-			flags |= C;
-		else
-			flags &= ~C;
+		flags.set(value & 0b1000'0000, C);
 
 		value <<= 1;
 
-		if (value == 0)
-			flags |= Z;
-		else
-			flags &= ~Z;
-
-		if (value & 0b1000'0000)
-			flags |= N;
-		else
-			flags &= ~N;
+		flags.set(value == 0, Z);
+		flags.set(value & 0b1000'0000, N);
 
 		return {
 			.ans = value,
@@ -216,24 +158,18 @@ namespace nesem::op
 	}
 
 	// Logical Shift Right
-	constexpr ResultALU LSR(U8 value, ProcessorStatus flags) noexcept
+	constexpr ResultALU LSR(U8 value, util::Flags<ProcessorStatus> flags) noexcept
 	{
 		using enum ProcessorStatus;
 
 		// if we shift off bit, store it in carry
-		if (value & 1)
-			flags |= C;
-		else
-			flags &= ~C;
+		flags.set(value & 1, C);
 
 		value >>= 1;
 
-		if (value == 0)
-			flags |= Z;
-		else
-			flags &= ~Z;
+		flags.set(value == 0, Z);
 
-		flags &= ~N;
+		flags.clear(N);
 
 		return {
 			.ans = value,
@@ -242,27 +178,16 @@ namespace nesem::op
 	}
 
 	// Rotate Left
-	constexpr ResultALU ROL(U8 value, ProcessorStatus flags) noexcept
+	constexpr ResultALU ROL(U8 value, util::Flags<ProcessorStatus> flags) noexcept
 	{
 		using enum ProcessorStatus;
 
 		// Like ROR, this is a 9-bit rotate such that all bits of value are shifted left, what was in bit 7 is stored in Carry, and Carry is moved to bit 0.
-		auto ans = (value << 1) | U8(flags & C);
+		auto ans = (value << 1) | U8(flags.is_set(C));
 
-		if (ans & 0xFF00)
-			flags |= C;
-		else
-			flags &= ~C;
-
-		if ((ans & 0xFF) == 0)
-			flags |= Z;
-		else
-			flags &= ~Z;
-
-		if (ans & 0b1000'0000)
-			flags |= N;
-		else
-			flags &= ~N;
+		flags.set(ans & 0xFF00, C);
+		flags.set((ans & 0xFF) == 0, Z);
+		flags.set(ans & 0b1000'0000, N);
 
 		return {
 			.ans = U8(ans),
@@ -271,29 +196,18 @@ namespace nesem::op
 	}
 
 	// Rotate Right
-	constexpr ResultALU ROR(U8 value, ProcessorStatus flags) noexcept
+	constexpr ResultALU ROR(U8 value, util::Flags<ProcessorStatus> flags) noexcept
 	{
 		using enum ProcessorStatus;
 
 		auto tmp = value & 1;
 
 		// Like ROL, this is a 9-bit rotate such that all bits of value are shifted right, what was in bit 0 is stored in Carry, and Carry is moved to bit 7.
-		auto ans = (value >> 1) | (U8(flags & C) << 7);
+		auto ans = (value >> 1) | (U8(flags.is_set(C)) << 7);
 
-		if (tmp)
-			flags |= C;
-		else
-			flags &= ~C;
-
-		if (ans == 0)
-			flags |= Z;
-		else
-			flags &= ~Z;
-
-		if (ans & 0b1000'0000)
-			flags |= N;
-		else
-			flags &= ~N;
+		flags.set(tmp, C);
+		flags.set(ans == 0, Z);
+		flags.set(ans & 0b1000'0000, N);
 
 		return {
 			.ans = U8(ans),
@@ -315,22 +229,22 @@ namespace nesem::op
 			{
 				constexpr auto r1 = ADC(13, 211, C);
 				static_assert(r1.ans == 225);
-				static_assert(r1.flags == (N));
+				static_assert(r1.flags.is_set(N));
 
 				constexpr auto r2 = ADC(13, 211, All);
 				static_assert(r2.ans == 225);
-				static_assert(r2.flags == (I | D | B | E | N));
+				static_assert(r2.flags.is_set(I, D, B, E, N));
 			}
 
 			// Example 2.2
 			{
 				constexpr auto r1 = ADC(254, 6, C);
 				static_assert(r1.ans == 5);
-				static_assert(r1.flags == (C));
+				static_assert(r1.flags.is_set(C));
 
 				constexpr auto r2 = ADC(254, 6, All);
 				static_assert(r2.ans == 5);
-				static_assert(r2.flags == (I | D | B | E | C));
+				static_assert(r2.flags.is_set(I, D, B, E, C));
 			}
 
 			// Example 2.4
@@ -361,7 +275,7 @@ namespace nesem::op
 				// add the low bits
 				constexpr auto r1 = ADC(U8(ex5a & 0xFF), U8(ex5b & 0xFF), None);
 				static_assert(r1.ans == 0);
-				static_assert(r1.flags == (C | V | Z));
+				static_assert(r1.flags.is_set(C, V, Z));
 
 				// carry over flags from last op
 				constexpr auto r2 = ADC(U8(ex5a >> 8), U8(ex5b >> 8), r1.flags);
@@ -382,7 +296,7 @@ namespace nesem::op
 			{
 				constexpr auto r = ADC(127, 2, None);
 				static_assert(r.ans == U8(-127));
-				static_assert(r.flags == (V | N));
+				static_assert(r.flags.is_set(V, N));
 			}
 
 			// Example 2.8
@@ -403,14 +317,14 @@ namespace nesem::op
 			{
 				constexpr auto r = ADC(U8(-5), U8(-7), None);
 				static_assert(r.ans == U8(-12));
-				static_assert(r.flags == (C | N));
+				static_assert(r.flags.is_set(C, N));
 			}
 
 			// Example 2.11
 			{
 				constexpr auto r = ADC(U8(-66), U8(-65), None);
 				static_assert(r.ans == 125);
-				static_assert(r.flags == (C | V));
+				static_assert(r.flags.is_set(C, V));
 			}
 		}
 
@@ -464,7 +378,7 @@ namespace nesem::op
 				// add the low bits
 				constexpr auto r1 = SBC(U8(ex17a & 0xFF), U8(ex17b & 0xFF), C);
 				static_assert(r1.ans == U8(-1));
-				static_assert(r1.flags == (N | C));
+				static_assert(r1.flags.is_set(N, C));
 
 				// carry over flags from last op
 				constexpr auto r2 = SBC(U8(ex17a >> 8), U8(ex17b >> 8), r1.flags);
@@ -475,59 +389,4 @@ namespace nesem::op
 			}
 		}
 	}
-
-	// AND
-	// ASL
-	// BCC
-	// BCS
-	// BEQ
-	// BIT
-	// BMI
-	// BNE
-	// BPL
-	// BRK
-	// BVC
-	// BVS
-	// CLC
-	// CLD
-	// CLI
-	// CLV
-	// CMP
-	// CPX
-	// CPY
-	// DEC
-	// DEX
-	// DEY
-	// EOR
-	// INC
-	// INX
-	// INY
-	// JMP
-	// JSR
-	// LDA
-	// LDX
-	// LDY
-	// LSR
-	// NOP
-	// ORA
-	// PHA
-	// PHP
-	// PLA
-	// PLP
-	// ROL
-	// ROR
-	// RTI
-	// RTS
-	// SBC
-	// SDC
-	// SEC
-	// SED
-	// SEI
-	// STA
-	// STX
-	// STY
-	// TSX
-	// TXA
-	// TXS
-	// TYA
 }

@@ -69,7 +69,7 @@ namespace nesem::mappers
 		irq_enabled = false;
 		signal_irq(false);
 
-		a12 = 1;
+		a12 = true;
 
 		m2_state = NesBusOp::pending;
 		m2_toggle_count = 0;
@@ -157,13 +157,13 @@ namespace nesem::mappers
 		}
 	}
 
-	size_t NesMapper004::map_addr_cpu(U16 addr) const noexcept
+	size_t NesMapper004::map_addr_cpu(Addr addr) const noexcept
 	{
 		if (addr < 0x8000)
 			LOG_CRITICAL("Address is out of range!");
 
 		// 0 or 1
-		int mode = (bank_select >> 6) & 1;
+		auto mode = (bank_select >> 6) & 1;
 
 		auto num_banks = rom_prgrom_banks(rom(), bank_8k);
 
@@ -179,10 +179,10 @@ namespace nesem::mappers
 		else if (addr < 0xE000)
 			bank = mode == 0 ? num_banks - 2 : bank_map[6];
 
-		return bank * bank_8k + (addr & (bank_8k - 1));
+		return to_rom_addr(bank, bank_8k, addr);
 	}
 
-	size_t NesMapper004::map_addr_ppu(U16 addr) const noexcept
+	size_t NesMapper004::map_addr_ppu(Addr addr) const noexcept
 	{
 		if (addr >= 0x2000)
 			LOG_CRITICAL("Address is out of range!");
@@ -207,7 +207,7 @@ namespace nesem::mappers
 		else if (addr < 0x2000)
 			bank = mode == 0 ? bank_map[5] : bank_map[1] + 1;
 
-		return bank_1k * bank + (addr & (bank_1k - 1));
+		return to_rom_addr(bank, bank_1k, addr);
 	}
 
 	void NesMapper004::signal_m2(bool rising) noexcept
@@ -220,20 +220,20 @@ namespace nesem::mappers
 
 		// As I understand it, there are three S/R latches with a12 set to the reset and m2 the clock
 		// m2 is a cpu output pin that goes low at the start of each cycle
-		if (a12 == 0)
+		if (!a12)
 			++m2_toggle_count;
 		else
 			m2_toggle_count = 0;
 	}
 
-	void NesMapper004::update_a12(U16 addr) noexcept
+	void NesMapper004::update_a12(Addr addr) noexcept
 	{
 		// counter decremented on the rising edge of address line 12
-		auto old_a12 = std::exchange(a12, U16((addr >> 12) & 1));
+		auto old_a12 = std::exchange(a12, (addr & (1 << 12)) > 0);
 
 		// NesDev - https://www.nesdev.org/wiki/MMC3
 		// The MMC3 scanline counter is based entirely on PPU A12, triggered on a rising edge after the line has remained low for three falling edges of M2.
-		if (old_a12 == 0 && a12 == 1 && m2_toggle_count >= 3)
+		if (!old_a12 && a12 && m2_toggle_count >= 3)
 		{
 			// record the previous count and whether this is a force reload so we can handle board variants later on
 			auto prev_count = irq_counter;
@@ -282,7 +282,7 @@ namespace nesem::mappers
 		return false;
 	}
 
-	U8 NesMapper004::on_cpu_peek(U16 addr) const noexcept
+	U8 NesMapper004::on_cpu_peek(Addr addr) const noexcept
 	{
 		if (addr < 0x6000)
 			return open_bus_read();
@@ -304,18 +304,17 @@ namespace nesem::mappers
 					return open_bus_read();
 
 				// If only one bank is enabled for reading, the other reads back as zero.
-				auto ram_addr = addr & 0x3FF;
-				auto enabled_bit = (ram_addr & 512) ? prg_ram_protect_read_hi : prg_ram_protect_read_lo;
+				auto enabled_bit = (addr & 512) != 0 ? prg_ram_protect_read_hi : prg_ram_protect_read_lo;
 
 				if (prg_ram_protect & enabled_bit)
-					return do_read_ram(ram_addr);
+					return do_read_ram(to_rom_addr(0, bank_1k, addr));
 				else
 					return 0;
 			}
 			else
 			{
 				if (prg_ram_protect & prg_ram_enable)
-					return do_read_ram(addr & (bank_8k - 1));
+					return do_read_ram(to_rom_addr(0, bank_8k, addr));
 				else
 					return open_bus_read();
 			}
@@ -325,7 +324,7 @@ namespace nesem::mappers
 		return rom().prg_rom[map_addr_cpu(addr)];
 	}
 
-	void NesMapper004::on_cpu_write(U16 addr, U8 value) noexcept
+	void NesMapper004::on_cpu_write(Addr addr, U8 value) noexcept
 	{
 		if (addr < 0x6000)
 			return;
@@ -339,17 +338,16 @@ namespace nesem::mappers
 
 			if (variant == NesMapper004Variants::MMC6)
 			{
-				auto ram_addr = addr & 0x3FF;
-				auto enabled_bits = (ram_addr & 512) ? prg_ram_protect_write_hi : prg_ram_protect_write_lo;
+				auto enabled_bits = (addr & 512) != 0 ? prg_ram_protect_write_hi : prg_ram_protect_write_lo;
 
 				// The write-enable bits only have effect if that bank is enabled for reading, otherwise the bank is not writable.
 				if ((prg_ram_protect & enabled_bits) == enabled_bits)
-					do_read_write(ram_addr, value);
+					do_read_write(to_rom_addr(0, bank_1k, addr), value);
 			}
 			else
 			{
 				if ((prg_ram_protect & prg_ram_write_protect) == 0)
-					do_read_write(addr & (bank_8k - 1), value);
+					do_read_write(to_rom_addr(0, bank_8k, addr), value);
 			}
 
 			return;
@@ -357,12 +355,12 @@ namespace nesem::mappers
 
 		// mask off the unimportant bits of the address so we can switch to the correct register
 		// each 4k region has an even and odd register
-		U16 reg = addr & 0b11100000'00000001;
+		U16 reg = to_integer(addr & 0b11100000'00000001);
 
 		switch (reg)
 		{
 		default:
-			LOG_CRITICAL("Unexpected write to reg {:04X} addr {:04X} with value {}, switch should be exhaustive", reg, addr, value);
+			LOG_CRITICAL("Unexpected write to reg {:04X} addr {} with value {}, switch should be exhaustive", reg, addr, value);
 			break;
 
 		case 0x8000:
@@ -424,7 +422,7 @@ namespace nesem::mappers
 			prg_ram_protect = 0;
 	}
 
-	std::optional<U8> NesMapper004::on_ppu_peek(U16 &addr) const noexcept
+	std::optional<U8> NesMapper004::on_ppu_peek(Addr &addr) const noexcept
 	{
 		if (addr < 0x2000)
 			return chr_read(map_addr_ppu(addr));
@@ -436,14 +434,14 @@ namespace nesem::mappers
 		return std::nullopt;
 	}
 
-	std::optional<U8> NesMapper004::on_ppu_read(U16 &addr) noexcept
+	std::optional<U8> NesMapper004::on_ppu_read(Addr &addr) noexcept
 	{
 		update_a12(addr);
 
 		return on_ppu_peek(addr);
 	}
 
-	bool NesMapper004::on_ppu_write(U16 &addr, U8 value) noexcept
+	bool NesMapper004::on_ppu_write(Addr &addr, U8 value) noexcept
 	{
 		update_a12(addr);
 

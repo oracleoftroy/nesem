@@ -98,7 +98,7 @@ namespace nesem
 	constexpr int nmi_sequence = -2;
 	constexpr int irq_sequence = -3;
 
-	std::string decompile(U8 instruction, NesBus &bus, U16 pc) noexcept
+	std::string decompile(U8 instruction, NesBus &bus, Addr pc) noexcept
 	{
 		std::string_view name = CpuOps::ops[instruction].name;
 
@@ -154,7 +154,7 @@ namespace nesem
 		{
 			// relative address is signed
 			int value = int8_t(bus.peek(pc));
-			return fmt::format("{} *{:+} <${:04X}>", name, value, pc + value + 1);
+			return fmt::format("{} *{:+} <${}>", name, value, pc + value + 1);
 		}
 
 		// Immediate 1 - "INS #dec <$hex>"
@@ -338,12 +338,12 @@ namespace nesem
 	}
 
 	// format the instruction in an nestest.log compatible format
-	std::string format_nestest(U8 instruction, NesBus &bus, U16 pc) noexcept
+	std::string format_nestest(U8 instruction, NesBus &bus, Addr pc) noexcept
 	{
 		std::string_view name = CpuOps::ops[instruction].name;
 
-		//                      PC     INS   DISASM
-		constexpr auto fmt = "{0:04X}  {1:9} {2:31}";
+		//                    PC   INS   DISASM
+		constexpr auto fmt = "{0}  {1:9} {2:31}";
 
 		switch (instruction)
 		{
@@ -397,7 +397,7 @@ namespace nesem
 		{
 			// relative address is signed
 			int value = int8_t(bus.peek(pc));
-			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{} ${:04X}", name, pc + value + 1));
+			return fmt::format(fmt, pc - 1, fmt::format("{:02X} {:02X}", instruction, value), fmt::format("{} ${}", name, pc + value + 1));
 		}
 
 		// Immediate 1 - "INS #dec <$hex>"
@@ -599,7 +599,7 @@ namespace nesem
 
 			// designed to be compatible with nestest.log
 			// pc  raw bytes *di
-			cpu_log->trace("{} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} PPU: XXX,XXX CYC:{}", format_nestest(U8(instruction), nes->bus(), PC), A, X, Y, U8(P), S, cycles);
+			cpu_log->trace("{} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} PPU: XXX,XXX CYC:{}", format_nestest(U8(instruction), nes->bus(), PC), A, X, Y, P.raw_value(), S, cycles);
 		}
 	}
 
@@ -611,7 +611,7 @@ namespace nesem
 	}
 
 	// signals
-	void NesCpu::reset(U16 addr) noexcept
+	void NesCpu::reset(Addr addr) noexcept
 	{
 		PC = addr;
 
@@ -639,7 +639,7 @@ namespace nesem
 	{
 		using enum ProcessorStatus;
 
-		return ((P & I) == None) && nes->interrupt_requested();
+		return P.is_clear(I) && nes->interrupt_requested();
 	}
 
 	void NesCpu::nmi() noexcept
@@ -678,7 +678,7 @@ namespace nesem
 
 			// do the dma transfer, read on even steps, write on odd steps
 			if ((dma_step & 1) == 0)
-				scratch = nes->bus().read(U16((dma_page << 8) | (dma_step >> 1)), NesBusOp::ready);
+				scratch = nes->bus().read(Addr{U16((dma_page << 8) | (dma_step >> 1))}, NesBusOp::ready);
 			else
 				nes->ppu().oamdata(scratch);
 
@@ -701,10 +701,10 @@ namespace nesem
 		if (instruction == startup_sequence)
 		{
 			if (step == 6)
-				PC = nes->bus().read(0xFFFC, NesBusOp::ready);
+				PC = Addr{nes->bus().read(cpu_reset_lo, NesBusOp::ready)};
 			else if (step == 7)
 			{
-				PC |= nes->bus().read(0xFFFD, NesBusOp::ready) << 8;
+				PC |= nes->bus().read(cpu_reset_hi, NesBusOp::ready) << 8;
 
 				// reset finished. set instruction to a dummy value (BRK in this case)
 				instruction = 0;
@@ -728,21 +728,21 @@ namespace nesem
 				push(U8(PC & 0xFF));
 				break;
 			case 5:
-				P |= I;
-				push(U8(P));
+				P.set(I);
+				push(P.raw_value());
 				break;
 			case 6:
 				if (instruction == nmi_sequence)
-					PC = nes->bus().read(0xFFFA, NesBusOp::ready);
+					PC = Addr{nes->bus().read(cpu_nmi_lo, NesBusOp::ready)};
 				else if (instruction == irq_sequence)
-					PC = nes->bus().read(0xFFFE, NesBusOp::ready);
+					PC = Addr{nes->bus().read(cpu_irq_lo, NesBusOp::ready)};
 
 				break;
 			case 7:
 				if (instruction == nmi_sequence)
-					PC |= nes->bus().read(0xFFFB, NesBusOp::ready) << 8;
+					PC |= nes->bus().read(cpu_nmi_hi, NesBusOp::ready) << 8;
 				else if (instruction == irq_sequence)
-					PC |= nes->bus().read(0xFFFF, NesBusOp::ready) << 8;
+					PC |= nes->bus().read(cpu_irq_hi, NesBusOp::ready) << 8;
 
 				instruction = 0;
 				step = 0;
@@ -768,7 +768,7 @@ namespace nesem
 			}
 
 			instruction = readPC();
-			LOG_TRACE("{:>5}: [{:04X}] {:<35} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}", cycles, PC - 1, decompile(U8(instruction), nes->bus(), PC), A, X, Y, U8(P), S);
+			LOG_TRACE("{:>5}: [{}] {:<35} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}", cycles, PC - 1, decompile(U8(instruction), nes->bus(), PC), A, X, Y, U8(P), S);
 			log_instruction();
 		}
 		else
@@ -798,14 +798,14 @@ namespace nesem
 
 	void NesCpu::push(U8 value) noexcept
 	{
-		nes->bus().write(0x0100 | S, value, NesBusOp::ready);
+		nes->bus().write(cpu_stack_page | S, value, NesBusOp::ready);
 		--S;
 	}
 
 	U8 NesCpu::pop() noexcept
 	{
 		++S;
-		return nes->bus().read(0x0100 | S, NesBusOp::ready);
+		return nes->bus().read(cpu_stack_page | S, NesBusOp::ready);
 	}
 
 	U8 NesCpu::readPC() noexcept
@@ -864,7 +864,7 @@ namespace nesem
 	// invalid instruction
 	bool NesCpu::xxx() noexcept
 	{
-		LOG_CRITICAL("{:>5}: PC:{:04X} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}", cycles, PC - 1, A, X, Y, U8(P), S);
+		LOG_CRITICAL("{:>5}: PC:{} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X}", cycles, PC - 1, A, X, Y, P.raw_value(), S);
 		LOG_CRITICAL("Invalid instruction {:02X}", instruction);
 
 		nes->error("Invalid CPU instruction");
@@ -1056,21 +1056,21 @@ namespace nesem
 	bool NesCpu::BCC() noexcept
 	{
 		using enum ProcessorStatus;
-		return branch((P & C) == None);
+		return branch(P.is_clear(C));
 	}
 
 	// Branch if Carry Set
 	bool NesCpu::BCS() noexcept
 	{
 		using enum ProcessorStatus;
-		return branch((P & C) == C);
+		return branch(P.is_set(C));
 	}
 
 	// Branch if Equal
 	bool NesCpu::BEQ() noexcept
 	{
 		using enum ProcessorStatus;
-		return branch((P & Z) == Z);
+		return branch(P.is_set(Z));
 	}
 
 	// Bit Test
@@ -1090,21 +1090,21 @@ namespace nesem
 	bool NesCpu::BMI() noexcept
 	{
 		using enum ProcessorStatus;
-		return branch((P & N) == N);
+		return branch(P.is_set(N));
 	}
 
 	// Branch if Not Equal
 	bool NesCpu::BNE() noexcept
 	{
 		using enum ProcessorStatus;
-		return branch((P & Z) == None);
+		return branch(P.is_clear(Z));
 	}
 
 	// Branch if Positive
 	bool NesCpu::BPL() noexcept
 	{
 		using enum ProcessorStatus;
-		return branch((P & N) == None);
+		return branch(P.is_clear(N));
 	}
 
 	// Force Interrupt
@@ -1123,8 +1123,10 @@ namespace nesem
 			break;
 
 		case 3:
+			// Set software break flag now, will be pushed onto the stack with flag set in step 5
+			P.set(B);
+
 			// push PCH on stack
-			P |= B;
 			push(U8(PC >> 8));
 			break;
 
@@ -1135,19 +1137,17 @@ namespace nesem
 
 		case 5:
 			// push P on stack
-			// We set B as it technically isn't part of the processor status, but indicates whether
-			// hardware interrupts (nmi or irq) or software (BRK, PHP) pushed the status to the stack
-			push(U8(P | B));
+			push(P.raw_value());
 			break;
 
 		case 6:
 			// fetch PCL from $FFFE
-			PC = nes->bus().read(0xFFFE, NesBusOp::ready);
+			PC = Addr{nes->bus().read(cpu_irq_lo, NesBusOp::ready)};
 			break;
 
 		case 7:
 			// fetch PCH from $FFFF
-			PC = (nes->bus().read(0xFFFF, NesBusOp::ready) << 8) | PC;
+			PC |= nes->bus().read(cpu_irq_hi, NesBusOp::ready) << 8;
 			return true;
 		}
 		return false;
@@ -1157,14 +1157,14 @@ namespace nesem
 	bool NesCpu::BVC() noexcept
 	{
 		using enum ProcessorStatus;
-		return branch((P & V) == None);
+		return branch(P.is_clear(V));
 	}
 
 	// Branch if Overflow Set
 	bool NesCpu::BVS() noexcept
 	{
 		using enum ProcessorStatus;
-		return branch((P & V) == V);
+		return branch(P.is_set(V));
 	}
 
 	// Clear Carry Flag
@@ -1176,7 +1176,7 @@ namespace nesem
 		// dummy read
 		nes->bus().read(PC, NesBusOp::pending);
 
-		P &= ~C;
+		P.clear(C);
 		return true;
 	}
 
@@ -1189,7 +1189,7 @@ namespace nesem
 		// dummy read
 		nes->bus().read(PC, NesBusOp::pending);
 
-		P &= ~D;
+		P.clear(D);
 		return true;
 	}
 
@@ -1202,7 +1202,7 @@ namespace nesem
 		// dummy read
 		nes->bus().read(PC, NesBusOp::pending);
 
-		P &= ~I;
+		P.clear(I);
 		return true;
 	}
 
@@ -1215,7 +1215,7 @@ namespace nesem
 		// dummy read
 		nes->bus().read(PC, NesBusOp::pending);
 
-		P &= ~V;
+		P.clear(V);
 		return true;
 	}
 
@@ -1275,15 +1275,8 @@ namespace nesem
 		{
 			--scratch;
 
-			if (scratch == 0)
-				P |= Z;
-			else
-				P &= ~Z;
-
-			if (scratch & 0b1000'0000)
-				P |= N;
-			else
-				P &= ~N;
+			P.set(scratch == 0, Z);
+			P.set(scratch & 0b1000'0000, N);
 		}
 
 		return false;
@@ -1300,15 +1293,8 @@ namespace nesem
 
 		--X;
 
-		if (X == 0)
-			P |= Z;
-		else
-			P &= ~Z;
-
-		if (X & 0b1000'0000)
-			P |= N;
-		else
-			P &= ~N;
+		P.set(X == 0, Z);
+		P.set(X & 0b1000'0000, N);
 
 		return true;
 	}
@@ -1324,15 +1310,8 @@ namespace nesem
 
 		--Y;
 
-		if (Y == 0)
-			P |= Z;
-		else
-			P &= ~Z;
-
-		if (Y & 0b1000'0000)
-			P |= N;
-		else
-			P &= ~N;
+		P.set(Y == 0, Z);
+		P.set(Y & 0b1000'0000, N);
 
 		return true;
 	}
@@ -1369,15 +1348,8 @@ namespace nesem
 		{
 			++scratch;
 
-			if (scratch == 0)
-				P |= Z;
-			else
-				P &= ~Z;
-
-			if (scratch & 0b1000'0000)
-				P |= N;
-			else
-				P &= ~N;
+			P.set(scratch == 0, Z);
+			P.set(scratch & 0b1000'0000, N);
 		}
 
 		return false;
@@ -1394,15 +1366,8 @@ namespace nesem
 
 		++X;
 
-		if (X == 0)
-			P |= Z;
-		else
-			P &= ~Z;
-
-		if (X & 0b1000'0000)
-			P |= N;
-		else
-			P &= ~N;
+		P.set(X == 0, Z);
+		P.set(X & 0b1000'0000, N);
 
 		return true;
 	}
@@ -1418,15 +1383,8 @@ namespace nesem
 
 		++Y;
 
-		if (Y == 0)
-			P |= Z;
-		else
-			P &= ~Z;
-
-		if (Y & 0b1000'0000)
-			P |= N;
-		else
-			P &= ~N;
+		P.set(Y == 0, Z);
+		P.set(Y & 0b1000'0000, N);
 
 		return true;
 	}
@@ -1442,7 +1400,7 @@ namespace nesem
 
 		case 3:
 		{
-			PC = (readPC() << 8) | scratch;
+			PC = Addr(readPC() << 8) | scratch;
 
 			// if this is an absolute addressing mode JMP, we are done
 			if (instruction == 0x4C)
@@ -1461,12 +1419,12 @@ namespace nesem
 			scratch = readPC();
 
 			// force PC to current page, e.g. 0x02FF + 1 == 0x0200
-			PC = U16(hi | (PC & 0x00FF));
+			PC = hi | (PC & 0x00FF);
 			break;
 		}
 
 		case 5:
-			PC = (readPC() << 8) | scratch;
+			PC = Addr{readPC()} << 8 | scratch;
 			return true;
 		}
 
@@ -1501,7 +1459,7 @@ namespace nesem
 
 		case 6:
 			// copy low address byte to PCL, fetch high address byte to PCH
-			PC = (readPC() << 8) | scratch;
+			PC = Addr{readPC()} << 8 | scratch;
 			return true;
 		}
 
@@ -1517,15 +1475,9 @@ namespace nesem
 		if (status == AddressStatus::read_complete)
 		{
 			A = scratch;
-			if (A == 0)
-				P |= Z;
-			else
-				P &= ~Z;
 
-			if (A & 0b1000'0000)
-				P |= N;
-			else
-				P &= ~N;
+			P.set(A == 0, Z);
+			P.set(A & 0b1000'0000, N);
 
 			return true;
 		}
@@ -1542,15 +1494,9 @@ namespace nesem
 		if (status == AddressStatus::read_complete)
 		{
 			X = scratch;
-			if (X == 0)
-				P |= Z;
-			else
-				P &= ~Z;
 
-			if (X & 0b1000'0000)
-				P |= N;
-			else
-				P &= ~N;
+			P.set(X == 0, Z);
+			P.set(X & 0b1000'0000, N);
 
 			return true;
 		}
@@ -1567,15 +1513,9 @@ namespace nesem
 		if (status == AddressStatus::read_complete)
 		{
 			Y = scratch;
-			if (Y == 0)
-				P |= Z;
-			else
-				P &= ~Z;
 
-			if (Y & 0b1000'0000)
-				P |= N;
-			else
-				P &= ~N;
+			P.set(Y == 0, Z);
+			P.set(Y & 0b1000'0000, N);
 
 			return true;
 		}
@@ -1669,9 +1609,10 @@ namespace nesem
 
 		else if (step == 3)
 		{
-			// We set B as it technically isn't part of the processor status, but indicates whether
-			// hardware interrupts (nmi or irq) or software (BRK, PHP) pushed the status to the stack
-			push(U8(P | B));
+			// the processor state is always pushed with the break flag set
+			auto P_copy = P;
+			P_copy.set(B);
+			push(P_copy.raw_value());
 			return true;
 		}
 
@@ -1695,15 +1636,8 @@ namespace nesem
 		{
 			A = pop();
 
-			if (A == 0)
-				P |= Z;
-			else
-				P &= ~Z;
-
-			if (A & 0b1000'0000)
-				P |= N;
-			else
-				P &= ~N;
+			P.set(A == 0, Z);
+			P.set(A & 0b1000'0000, N);
 
 			return true;
 		}
@@ -1726,9 +1660,11 @@ namespace nesem
 		// I'm assuming that incrementing S is not observable, so we won't break this into separate steps
 		else if (step == 4)
 		{
-			// explicitly set E and unset B when pulling our flags. Neither are actual status flags.
-			// E is hardwired to on, and B indicates how the value got on to the stack and doesn't have meaning otherwise
-			P = (ProcessorStatus(pop()) | E) & ~B;
+			// explicitly set E and unset B when pulling our flags.
+			P = ProcessorStatus(pop());
+			P.set(E);
+			P.clear(B);
+
 			return true;
 		}
 		return false;
@@ -1822,13 +1758,17 @@ namespace nesem
 		case 4:
 			// pop P from stack
 			// Note: explicitly set E as it is hardwired high.
-			// Clear B as it isn't a real flag and is more an artifact of how the interrupt was generated
-			P = (ProcessorStatus(pop()) | E) & ~B;
+			// Clear B now that the interrupt is complete
+			// Force set E as that is hardwired
+			P = ProcessorStatus(pop());
+			P.set(E);
+			P.clear(B);
+
 			break;
 
 		case 5:
 			// pop PCL from stack
-			PC = pop();
+			PC = Addr{pop()};
 			break;
 
 		case 6:
@@ -1856,14 +1796,13 @@ namespace nesem
 
 		case 3:
 			// dummy read of S
-			// not observable by the cart, so no need, but would look like:
-			// nes->bus().read(0x0100 | S, NesBusOp::pending);
+			nes->bus().read(cpu_stack_page | S, NesBusOp::pending);
 
 			break;
 
 		case 4:
 			// pop PCL from stack
-			PC = pop();
+			PC = Addr{pop()};
 			break;
 
 		case 5:
@@ -1906,7 +1845,8 @@ namespace nesem
 		// dummy read
 		nes->bus().read(PC, NesBusOp::pending);
 
-		P |= C;
+		P.set(C);
+
 		return true;
 	}
 
@@ -1919,7 +1859,8 @@ namespace nesem
 		// dummy read
 		nes->bus().read(PC, NesBusOp::pending);
 
-		P |= D;
+		P.set(D);
+
 		return true;
 	}
 
@@ -1932,7 +1873,7 @@ namespace nesem
 		// dummy read
 		nes->bus().read(PC, NesBusOp::pending);
 
-		P |= I;
+		P.set(I);
 		return true;
 	}
 
@@ -1989,15 +1930,8 @@ namespace nesem
 
 		X = A;
 
-		if (X == 0)
-			P |= Z;
-		else
-			P &= ~Z;
-
-		if (X & 0b1000'0000)
-			P |= N;
-		else
-			P &= ~N;
+		P.set(X == 0, Z);
+		P.set(X & 0b1000'0000, N);
 
 		return true;
 	}
@@ -2013,15 +1947,8 @@ namespace nesem
 
 		Y = A;
 
-		if (Y == 0)
-			P |= Z;
-		else
-			P &= ~Z;
-
-		if (Y & 0b1000'0000)
-			P |= N;
-		else
-			P &= ~N;
+		P.set(Y == 0, Z);
+		P.set(Y & 0b1000'0000, N);
 
 		return true;
 	}
@@ -2037,15 +1964,8 @@ namespace nesem
 
 		X = S;
 
-		if (X == 0)
-			P |= Z;
-		else
-			P &= ~Z;
-
-		if (X & 0b1000'0000)
-			P |= N;
-		else
-			P &= ~N;
+		P.set(X == 0, Z);
+		P.set(X & 0b1000'0000, N);
 
 		return true;
 	}
@@ -2061,15 +1981,8 @@ namespace nesem
 
 		A = X;
 
-		if (A == 0)
-			P |= Z;
-		else
-			P &= ~Z;
-
-		if (A & 0b1000'0000)
-			P |= N;
-		else
-			P &= ~N;
+		P.set(A == 0, Z);
+		P.set(A & 0b1000'0000, N);
 
 		return true;
 	}
@@ -2097,15 +2010,8 @@ namespace nesem
 
 		A = Y;
 
-		if (A == 0)
-			P |= Z;
-		else
-			P &= ~Z;
-
-		if (A & 0b1000'0000)
-			P |= N;
-		else
-			P &= ~N;
+		P.set(A == 0, Z);
+		P.set(A & 0b1000'0000, N);
 
 		return true;
 	}
@@ -2115,7 +2021,7 @@ namespace nesem
 		switch (step)
 		{
 		case 2:
-			effective_addr = readPC();
+			effective_addr = Addr{readPC()};
 			return AddressStatus::pending;
 
 		case 3:
@@ -2132,7 +2038,7 @@ namespace nesem
 		case 5:
 		{
 			auto hi = nes->bus().read((effective_addr + 1) & 255, NesBusOp::ready);
-			effective_addr = (hi << 8) | scratch;
+			effective_addr = Addr{hi} << 8 | scratch;
 
 			if (type == OpType::write)
 				return AddressStatus::write_ready;
@@ -2175,7 +2081,7 @@ namespace nesem
 		switch (step)
 		{
 		case 2:
-			effective_addr = readPC();
+			effective_addr = Addr{readPC()};
 
 			if (type == OpType::write)
 				return AddressStatus::write_ready;
@@ -2227,12 +2133,12 @@ namespace nesem
 		switch (step)
 		{
 		case 2:
-			effective_addr = readPC();
+			effective_addr = Addr{readPC()};
 			return AddressStatus::pending;
 
 		case 3:
 		{
-			effective_addr |= U16(readPC() << 8);
+			effective_addr |= readPC() << 8;
 
 			if (type == OpType::write)
 				return AddressStatus::write_ready;
@@ -2285,7 +2191,7 @@ namespace nesem
 		switch (step)
 		{
 		case 2:
-			effective_addr = readPC();
+			effective_addr = Addr{readPC()};
 			return AddressStatus::pending;
 
 		case 3:
@@ -2295,14 +2201,14 @@ namespace nesem
 		case 4:
 		{
 			auto hi = nes->bus().read((effective_addr + 1) & 255, NesBusOp::ready);
-			effective_addr = U16((hi << 8) | scratch);
+			effective_addr = Addr{hi} << 8 | scratch;
 			effective_addr += Y;
 			effective_addr &= 0xFFFF;
 
 			// we need an extra cycle to "fix" the address if it crosses a page boundary
 			// we model this by skipping the next step if we didn't overflow
 			// For some reason, write always takes the extra step regardless
-			if (type != OpType::write && std::cmp_equal(hi, effective_addr & 0xFF00))
+			if (type != OpType::write && hi == (effective_addr >> 8) & 0xFF)
 				++step;
 
 			return AddressStatus::pending;
@@ -2356,7 +2262,7 @@ namespace nesem
 		switch (step)
 		{
 		case 2:
-			effective_addr = readPC();
+			effective_addr = Addr{readPC()};
 			return AddressStatus::pending;
 
 		case 3:
@@ -2406,7 +2312,7 @@ namespace nesem
 		switch (step)
 		{
 		case 2:
-			effective_addr = readPC();
+			effective_addr = Addr{readPC()};
 			return AddressStatus::pending;
 
 		case 3:
@@ -2456,7 +2362,7 @@ namespace nesem
 		switch (step)
 		{
 		case 2:
-			effective_addr = readPC();
+			effective_addr = Addr{readPC()};
 			return AddressStatus::pending;
 
 		case 3:
@@ -2469,7 +2375,7 @@ namespace nesem
 			// if adding the index pushes us to the next page, add a cycle
 			// in this implementation, we will skip cycle 4 if we are still in the same page
 			// this only applies to reads, writes always have the extra cycle
-			if (type == OpType::read && std::cmp_equal(hi, effective_addr & 0xFF00))
+			if (type == OpType::read && hi == (effective_addr >> 8) & 0xFF)
 				++step;
 
 			return AddressStatus::pending;
@@ -2521,7 +2427,7 @@ namespace nesem
 		switch (step)
 		{
 		case 2:
-			effective_addr = readPC();
+			effective_addr = Addr{readPC()};
 			return AddressStatus::pending;
 
 		case 3:
@@ -2534,7 +2440,7 @@ namespace nesem
 			// if adding the index pushes us to the next page, add a cycle
 			// in this implementation, we will skip cycle 4 if we are still in the same page
 			// this only applies to reads, writes always have the extra cycle
-			if (type == OpType::read && std::cmp_equal(hi, effective_addr & 0xFF00))
+			if (type == OpType::read && hi == (effective_addr >> 8) & 0xFF)
 				++step;
 
 			return AddressStatus::pending;

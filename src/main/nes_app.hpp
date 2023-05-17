@@ -49,7 +49,7 @@ namespace app
 		void on_error(ui::App &app, std::string_view message);
 		void on_change_debug_mode(DebugMode mode);
 		void on_change_current_palette(nesem::U8 palette);
-		void on_nes_pixel(int x, int y, nesem::U8 color_index, nesem::NesColorEmphasis emphasis) noexcept;
+		void on_nes_pixel(int x, int y, nesem::U8 color_index, util::Flags<nesem::NesColorEmphasis> emphasis) noexcept;
 		void on_nes_frame_ready() noexcept;
 
 		void tick(ui::App &app, ui::Renderer &canvas, double deltatime);

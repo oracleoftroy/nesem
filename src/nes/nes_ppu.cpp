@@ -1,6 +1,7 @@
 #include "nes_ppu.hpp"
 
 #include "nes.hpp"
+#include "nes_ppu_register_bits.hpp"
 
 #include <util/logging.hpp>
 
@@ -15,46 +16,7 @@ namespace
 
 namespace nesem
 {
-	// clang-format off
-	constexpr U16 vram_fine_y_mask    = 0b0'111'00'00000'00000;
-	constexpr U16 vram_nametable_mask = 0b0'000'11'00000'00000;
-	constexpr U16 vram_nametable_y_mask = 0b0'000'10'00000'00000;
-	constexpr U16 vram_nametable_x_mask = 0b0'000'01'00000'00000;
-	constexpr U16 vram_coarse_y_mask  = 0b0'000'00'11111'00000;
-	constexpr U16 vram_coarse_x_mask  = 0b0'000'00'00000'11111;
-	// clang-format on
-
-	constexpr U16 vram_fine_y_shift = 12;
-	constexpr U16 vram_nametable_shift = 10;
-	constexpr U16 vram_coarse_y_shift = 5;
-	constexpr U16 vram_coarse_x_shift = 0;
-
-	// clang-format off
-	// NOTE: first 5 bits of PPUSTATUS are unused
-	constexpr U8 status_vblank          = 0b100'00000;
-	constexpr U8 status_sprite0_hit     = 0b010'00000;
-	constexpr U8 status_sprite_overflow = 0b001'00000;
-
-	constexpr U8 ctrl_nmi_flag       = 0b1000'0000;
-	// constexpr U8 ctrl_master_flag    = 0b0100'0000; // isn't normally used and is always 0 on a stock NES
-	constexpr U8 ctrl_sprite_8x16    = 0b0010'0000;
-	constexpr U8 ctrl_pattern_addr   = 0b0001'0000;
-	constexpr U8 ctrl_sprite_addr    = 0b0000'1000;
-	constexpr U8 ctrl_vram_addr_inc  = 0b0000'0100;
-	constexpr U8 ctrl_nametable_mask = 0b0000'0011;
-
-	constexpr U8 mask_emphasize_blue           = 0b1000'0000;
-	constexpr U8 mask_emphasize_green          = 0b0100'0000;
-	constexpr U8 mask_emphasize_red            = 0b0010'0000;
-	constexpr U8 mask_show_sprites             = 0b0001'0000;
-	constexpr U8 mask_show_background          = 0b0000'1000;
-	constexpr U8 mask_show_leftmost_sprites    = 0b0000'0100;
-	constexpr U8 mask_show_leftmost_background = 0b0000'0010;
-	constexpr U8 mask_grayscale                = 0b0000'0001;
-
-	// clang-format on
-
-	U16 NesPpu::OAMSprite::pattern_addr(U8 ppuctrl, int scanline) noexcept
+	Addr NesPpu::OAMSprite::pattern_addr(U8 ppuctrl, int scanline) noexcept
 	{
 		U16 sprite_row = U16(scanline - y);
 
@@ -76,12 +38,12 @@ namespace nesem
 			if ((sprite_row < 8 && flip_y()) || (sprite_row >= 8 && !flip_y()))
 				++cell;
 
-			return ((index & 1) << 12) | (cell << 4) | row;
+			return Addr{((index & 1) << 12) | (cell << 4) | row};
 		}
 		else
 		{
 			// 8x8 sprite
-			return ((ppuctrl & ctrl_sprite_addr) ? 0x1000 : 0) | (index << 4) | row;
+			return ((ppuctrl & ctrl_sprite_addr) ? ppu_pattern_1 : ppu_pattern_0) | (index << 4) | row;
 		}
 	}
 
@@ -139,10 +101,10 @@ namespace nesem
 		reg.ppuctrl = 0;
 		reg.ppumask = 0;
 		reg.ppustatus = 0;
-		reg.oamaddr = 0;
+		reg.oamaddr = Addr{0};
 		reg.addr_latch = false;
-		reg.tram_addr = 0;
-		reg.vram_addr = 0;
+		reg.tram_addr = Addr{0};
+		reg.vram_addr = Addr{0};
 
 		reg.fine_x = 0;
 		reg.ppudata = 0;
@@ -231,8 +193,8 @@ namespace nesem
 
 				for (U16 row = 0; row < 8; ++row)
 				{
-					U8 tile_lo = peek(U16(index * 0x1000 + offset + row + 0x0000));
-					U8 tile_hi = peek(U16(index * 0x1000 + offset + row + 0x0008));
+					U8 tile_lo = peek(Addr{index * to_integer(ppu_pattern_1) + offset + row + 0x0000});
+					U8 tile_hi = peek(Addr{index * to_integer(ppu_pattern_1) + offset + row + 0x0008});
 
 					for (U16 col = 0; col < 8; ++col)
 					{
@@ -268,8 +230,8 @@ namespace nesem
 			for (U16 tile_x = 0; tile_x < 32; ++tile_x)
 			{
 				index = index ? 3 : 0;
-				U16 nt_addr = 0x2000 | ((index & 3) << vram_nametable_shift) | (tile_y << vram_coarse_y_shift) | tile_x;
-				U16 attr_addr = 0x23C0 | ((index & 3) << vram_nametable_shift) | ((tile_y << 1) & 0b111000) | (tile_x >> 2);
+				auto nt_addr = ppu_nametable_base | ((index & 3) << vram_nametable_shift) | (tile_y << vram_coarse_y_shift) | tile_x;
+				auto attr_addr = ppu_attribute_base | ((index & 3) << vram_nametable_shift) | ((tile_y << 1) & 0b111000) | (tile_x >> 2);
 
 				auto nt = peek(nt_addr);
 				auto attr = peek(attr_addr);
@@ -287,7 +249,7 @@ namespace nesem
 					for (U16 col = 0; col < 8; ++col)
 					{
 						auto tile = pattern[pattern_index].read_pixel((nt & 0xF) * 8 + col, ((nt >> 4) & 0xF) * 8 + row, attr);
-						result.write_pixel(tile_x * 8 + col, tile_y * 8 + row, peek(0x3F00 + tile));
+						result.write_pixel(tile_x * 8 + col, tile_y * 8 + row, peek(ppu_palette_base + tile));
 					}
 				}
 			}
@@ -410,15 +372,15 @@ namespace nesem
 		return (reg.ppumask & mask_show_sprites) == mask_show_sprites;
 	}
 
-	U16 NesPpu::make_chrrom_addr() noexcept
+	Addr NesPpu::make_chrrom_addr() noexcept
 	{
-		U16 pattern_start = (reg.ppuctrl & ctrl_pattern_addr) != 0 ? 0x1000 : 0;
+		auto pattern_start = (reg.ppuctrl & ctrl_pattern_addr) != 0 ? ppu_pattern_1 : ppu_pattern_0;
 		return pattern_start | (next_tile_id << 4) | ((reg.vram_addr & vram_fine_y_mask) >> vram_fine_y_shift);
 	}
 
 	void NesPpu::read_nt() noexcept
 	{
-		next_tile_id = read(0x2000 | (reg.vram_addr & 0x0FFF));
+		next_tile_id = read(ppu_nametable_base | (reg.vram_addr & 0x0FFF));
 	}
 
 	void NesPpu::read_at() noexcept
@@ -429,13 +391,13 @@ namespace nesem
 		// construct an address into the attribute table
 		// 0x2000 - base address of the name table or'ed with the nametable we wish to use
 		// 0x03C0 - the offset into the nametable where attribute data lives
-		auto addr = U16(0x23C0 | (reg.vram_addr & vram_nametable_mask)
+		auto addr = ppu_attribute_base | (reg.vram_addr & vram_nametable_mask)
 			// shift the coarse_y into place and take the top three bits
 		    // coarse_y is bits 5-9, so we end up with bit 7-9 shifted into bit 3-5
 			| ((coarse_y << 1) & 0b111000)
 			// shift the coarse_x into place and take the top three bits,
 		    // moving bits 2-4 to 0-2
-			| ((coarse_x >> 2) & 0b000111));
+			| ((coarse_x >> 2) & 0b000111);
 
 		auto attr = read(addr);
 
@@ -459,7 +421,7 @@ namespace nesem
 			// by this palette location will be shown on screen instead of the backdrop color. This can be used to display
 			// colors from the normally unused $3F04/$3F08/$3F0C palette locations.
 
-			color_index = palettes[reg.vram_addr & 0x1F];
+			color_index = palettes[to_integer(reg.vram_addr & 0x1F)];
 		}
 		else
 		{
@@ -551,29 +513,29 @@ namespace nesem
 		return apply_grayscale(color_index);
 	}
 
-	NesColorEmphasis NesPpu::color_emphasis() const noexcept
+	util::Flags<NesColorEmphasis> NesPpu::color_emphasis() const noexcept
 	{
 		using enum NesColorEmphasis;
 
-		NesColorEmphasis result = none;
+		util::Flags<NesColorEmphasis> result = none;
 
 		// TODO: Bit 5 emphasizes red on the NTSC PPU, and green on the PAL & Dendy PPUs.
 		if (reg.ppumask & mask_emphasize_red)
-			result |= red;
+			result.set(red);
 
 		// TODO: Bit 6 emphasizes green on the NTSC PPU, and red on the PAL & Dendy PPUs.
 		if (reg.ppumask & mask_emphasize_green)
-			result |= green;
+			result.set(green);
 
 		if (reg.ppumask & mask_emphasize_blue)
-			result |= blue;
+			result.set(blue);
 
 		return result;
 	}
 
 	U8 NesPpu::apply_grayscale(U8 color_index) const noexcept
 	{
-		// the NesDev wiki seems inconsistant on how to interpret the grayscale bit
+		// the NesDev wiki seems inconsistent on how to interpret the grayscale bit
 
 		// https://www.nesdev.org/wiki/NTSC_video#Brightness_Levels
 		// When grayscale is active, all colors between $x1-$xD are treated as $x0.
@@ -587,7 +549,7 @@ namespace nesem
 		// 	color_index &= 0x30;
 
 		// https://www.nesdev.org/wiki/PPU_registers#Color_Control
-		// Bit 0 controls a greyscale mode, which causes the palette to use only the colors from the grey column: $00, $10, $20, $30.
+		// Bit 0 controls a grayscale mode, which causes the palette to use only the colors from the grey column: $00, $10, $20, $30.
 		// This is implemented as a bitwise AND with $30 on any value read from PPU $3F00-$3FFF, both on the display and through PPUDATA.
 		// Writes to the palette through PPUDATA are not affected. Also note that black colours like $0F will be replaced by a non-black grey $00.
 
@@ -704,9 +666,9 @@ namespace nesem
 
 			if (cycle >= 257 && cycle < 321)
 			{
-				// explictly set to 0 every tick of these cycles
+				// explicitly set to 0 every tick of these cycles
 				// maybe this should be considered part of the foreground handling, but this happens on the pre-render scanline as well, so it is here
-				reg.oamaddr = 0;
+				reg.oamaddr = Addr{0};
 			}
 
 			if (cycle == 337)
@@ -754,7 +716,7 @@ namespace nesem
 				// remember where oamaddr started for sprite 0 evaluation
 				// NesDev wiki is a bit unclear. The page documenting sprite evaluation (https://wiki.nesdev.org/w/index.php?title=PPU_sprite_evaluation)
 				// has no mention of oamaddr or where sprite 0 starts, but the registers page (https://wiki.nesdev.org/w/index.php?title=PPU_registers#OAMADDR)
-				// indicates that sprite evaluation begins whereever oamaddr happens to point, and sprite 0 thus can be other than the sprite at oamaddr 0
+				// indicates that sprite evaluation begins wherever oamaddr happens to point, and sprite 0 thus can be other than the sprite at oamaddr 0
 				// and potentially even a misaligned starting address. This also skips any sprite that is stored before oamaddr
 				// TODO: find out if any games actually require this behavior and test
 				sprite_0_addr = reg.oamaddr;
@@ -784,7 +746,7 @@ namespace nesem
 					// 	1. Starting at n = 0, read a sprite's Y-coordinate (OAM[n][0], copying it to the next open slot in secondary OAM (unless 8 sprites have been found, in which case the write is ignored).
 					if (evaluated_sprite_count < 8)
 					{
-						auto y = oam[reg.oamaddr];
+						auto y = oam[to_integer(reg.oamaddr)];
 						evaluated_sprite_addr[evaluated_sprite_count] = U8(reg.oamaddr);
 
 						auto pos = scanline - y;
@@ -801,17 +763,17 @@ namespace nesem
 
 					// 1a. If Y-coordinate is in range, copy remaining bytes of sprite data (OAM[n][1] thru OAM[n][3]) into secondary OAM.
 				case step1a:
-					evaluated_sprites[evaluated_sprite_count * 4 + 1] = oam[reg.oamaddr + 1];
+					evaluated_sprites[evaluated_sprite_count * 4 + 1] = oam[to_integer(reg.oamaddr + 1)];
 					sprite_evaluation_step = step1b;
 					break;
 
 				case step1b:
-					evaluated_sprites[evaluated_sprite_count * 4 + 2] = oam[reg.oamaddr + 2];
+					evaluated_sprites[evaluated_sprite_count * 4 + 2] = oam[to_integer(reg.oamaddr + 2)];
 					sprite_evaluation_step = step1c;
 					break;
 
 				case step1c:
-					evaluated_sprites[evaluated_sprite_count * 4 + 3] = oam[reg.oamaddr + 3];
+					evaluated_sprites[evaluated_sprite_count * 4 + 3] = oam[to_integer(reg.oamaddr + 3)];
 					++evaluated_sprite_count;
 					sprite_evaluation_step = step2;
 					break;
@@ -838,7 +800,7 @@ namespace nesem
 					// 		3b. If the value is not in range, increment n and m (without carry). If n overflows to 0, go to 4; otherwise go to 3
 					// 			- The m increment is a hardware bug - if only n was incremented, the overflow flag would be set whenever more than 8 sprites were present on the same scanline, as expected.
 
-					if (auto pos = scanline - oam[reg.oamaddr++];
+					if (auto pos = scanline - oam[to_integer(reg.oamaddr++)];
 						pos >= 0 && pos < sprite_size())
 					{
 						reg.ppustatus |= status_sprite_overflow;
@@ -930,9 +892,9 @@ namespace nesem
 		}
 	}
 
-	U8 NesPpu::peek(U16 addr) const noexcept
+	U8 NesPpu::peek(Addr addr) const noexcept
 	{
-		U16 effective_addr = addr & 0x3FFF;
+		auto effective_addr = addr & 0x3FFF;
 
 		if (cartridge)
 		{
@@ -944,9 +906,9 @@ namespace nesem
 		return read_internal(effective_addr);
 	}
 
-	U8 NesPpu::read(U16 addr) noexcept
+	U8 NesPpu::read(Addr addr) noexcept
 	{
-		U16 effective_addr = addr & 0x3FFF;
+		auto effective_addr = addr & 0x3FFF;
 
 		if (cartridge)
 		{
@@ -959,7 +921,7 @@ namespace nesem
 	}
 
 	// read internal memory. shared by both peek and read
-	U8 NesPpu::read_internal(U16 addr) const noexcept
+	U8 NesPpu::read_internal(Addr addr) const noexcept
 	{
 		if (!VERIFY(!(addr < 0x2000), "The cart should have handled this range!"))
 			return 0;
@@ -973,7 +935,7 @@ namespace nesem
 			// $3000-$3EFF mirror
 			// always treat nametables as vertically mirrored and let the cartridge remap addr as needed
 			// TODO: This may not work for some mappers... but we'll figure it out when we get there
-			return nametable[(addr >> vram_nametable_shift) & 1][addr & 0x03FF];
+			return nametable[to_integer((addr >> vram_nametable_shift) & 1)][to_integer(addr & 0x03FF)];
 		}
 
 		if (addr < 0x4000)
@@ -982,32 +944,32 @@ namespace nesem
 			addr &= 0x1F;
 
 			// Addresses $3F10/$3F14/$3F18/$3F1C are mirrors of $3F00/$3F04/$3F08/$3F0C.
-			switch (addr)
+			switch (to_integer(addr))
 			{
 			case 0x0010:
-				addr = 0x0000;
+				addr = Addr{0x0000};
 				break;
 			case 0x0014:
-				addr = 0x0004;
+				addr = Addr{0x0004};
 				break;
 			case 0x0018:
-				addr = 0x0008;
+				addr = Addr{0x0008};
 				break;
 			case 0x001C:
-				addr = 0x000C;
+				addr = Addr{0x000C};
 				break;
 			}
 
-			return apply_grayscale(palettes[addr]);
+			return apply_grayscale(palettes[to_integer(addr)]);
 		}
 
-		CHECK(false, fmt::format("We shouldn't get here, addr ${:04X}", addr));
+		CHECK(false, fmt::format("We shouldn't get here, addr ${}", addr));
 		return 0;
 	}
 
-	void NesPpu::write(U16 addr, U8 value) noexcept
+	void NesPpu::write(Addr addr, U8 value) noexcept
 	{
-		U16 effective_addr = addr & 0x3FFF;
+		auto effective_addr = addr & 0x3FFF;
 
 		if (cartridge && cartridge->ppu_write(effective_addr, value))
 		{
@@ -1025,7 +987,7 @@ namespace nesem
 			// $2C00-$2FFF Nametable 3
 			// always treat nametables as vertically mirrored and let the cartridge remap addr as needed
 			// TODO: This may not work for some mappers... but we'll figure it out when we get there
-			nametable[(effective_addr >> vram_nametable_shift) & 1][effective_addr & 0x03FF] = value;
+			nametable[to_integer((effective_addr >> vram_nametable_shift) & 1)][to_integer(effective_addr & 0x03FF)] = value;
 			return;
 		}
 
@@ -1035,23 +997,23 @@ namespace nesem
 			effective_addr &= 0x1F;
 
 			// Addresses $3F10/$3F14/$3F18/$3F1C are mirrors of $3F00/$3F04/$3F08/$3F0C.
-			switch (effective_addr)
+			switch (to_integer(effective_addr))
 			{
 			case 0x0010:
-				effective_addr = 0x0000;
+				effective_addr = Addr{0x0000};
 				break;
 			case 0x0014:
-				effective_addr = 0x0004;
+				effective_addr = Addr{0x0004};
 				break;
 			case 0x0018:
-				effective_addr = 0x0008;
+				effective_addr = Addr{0x0008};
 				break;
 			case 0x001C:
-				effective_addr = 0x000C;
+				effective_addr = Addr{0x000C};
 				break;
 			}
 
-			palettes[effective_addr] = value;
+			palettes[to_integer(effective_addr)] = value;
 			return;
 		}
 
@@ -1083,7 +1045,7 @@ namespace nesem
 	{
 		// reading status not only returns the status register, it also resets the address latch and clears the vertical blank flag
 		// the unused bits of status are filled with the latched value from other write operations
-		latch = (0b11100000 & reg.ppustatus) | (0b00011111 & latch);
+		latch = (reg.ppustatus & ~status_unused) | (latch & status_unused);
 
 		reg.ppustatus &= U8(~status_vblank);
 		reg.addr_latch = false;
@@ -1103,7 +1065,8 @@ namespace nesem
 
 	void NesPpu::oamaddr(U8 value) noexcept
 	{
-		reg.oamaddr = latch = value;
+		latch = value;
+		reg.oamaddr = Addr{value};
 	}
 
 	U8 NesPpu::oamdata() const noexcept
@@ -1112,12 +1075,12 @@ namespace nesem
 		if (oam_clear)
 			return 0xFF;
 
-		return oam[reg.oamaddr & 0xFF];
+		return oam[to_integer(reg.oamaddr & 0xFF)];
 	}
 
 	void NesPpu::oamdata(U8 value) noexcept
 	{
-		oam[reg.oamaddr++ & 0xFF] = value;
+		oam[to_integer(reg.oamaddr++ & 0xFF)] = value;
 	}
 
 	U8 NesPpu::ppuscroll() noexcept

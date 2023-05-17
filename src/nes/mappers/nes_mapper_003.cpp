@@ -37,7 +37,7 @@ namespace nesem::mappers
 			.banks{Bank{.addr = 0x0000, .bank = bank_select, .size = bank_8k}}};
 	}
 
-	U8 NesMapper003::on_cpu_peek(U16 addr) const noexcept
+	U8 NesMapper003::on_cpu_peek(Addr addr) const noexcept
 	{
 		if (addr < 0x6000)
 			return open_bus_read();
@@ -50,7 +50,7 @@ namespace nesem::mappers
 				if (size > bank_8k) [[unlikely]]
 					LOG_WARN("Cart has more than 8k of RAM, but we aren't doing any special bank switching? Mapper bug?");
 
-				return cpu_ram_read(addr & (size - 1));
+				return cpu_ram_read(to_rom_addr(0, size, addr));
 			}
 
 			return open_bus_read();
@@ -60,10 +60,10 @@ namespace nesem::mappers
 		if (rom_prgrom_banks(rom(), bank_16k) == 1)
 			addr_mask = 0x3FFF;
 
-		return rom().prg_rom[addr & addr_mask];
+		return rom().prg_rom[to_integer(addr & addr_mask)];
 	}
 
-	void NesMapper003::on_cpu_write(U16 addr, U8 value) noexcept
+	void NesMapper003::on_cpu_write(Addr addr, U8 value) noexcept
 	{
 		if (addr < 0x6000)
 			return;
@@ -76,7 +76,7 @@ namespace nesem::mappers
 				if (size > bank_8k) [[unlikely]]
 					LOG_WARN("Cart has more than 8k of RAM, but we aren't doing any special bank switching? Mapper bug?");
 
-				cpu_ram_write(addr & (size - 1), value);
+				cpu_ram_write(to_rom_addr(0, size, addr), value);
 			}
 			return;
 		}
@@ -85,11 +85,11 @@ namespace nesem::mappers
 		bank_select = U8((value & 0x03) % rom_chr_banks(rom(), bank_8k));
 	}
 
-	std::optional<U8> NesMapper003::on_ppu_peek(U16 &addr) const noexcept
+	std::optional<U8> NesMapper003::on_ppu_peek(Addr &addr) const noexcept
 	{
 		// return value based on the selected CHR-ROM bank
 		if (addr < 0x2000)
-			return chr_read(bank_select * bank_8k + addr);
+			return chr_read(to_rom_addr(bank_select, bank_8k, addr));
 
 		// reading from the nametable
 		else if (addr < 0x3F00)
@@ -98,10 +98,10 @@ namespace nesem::mappers
 		return std::nullopt;
 	}
 
-	bool NesMapper003::on_ppu_write(U16 &addr, U8 value) noexcept
+	bool NesMapper003::on_ppu_write(Addr &addr, U8 value) noexcept
 	{
 		if (addr < 0x2000)
-			return chr_write(bank_select * bank_8k + addr, value);
+			return chr_write(to_rom_addr(bank_select, bank_8k, addr), value);
 
 		else if (addr < 0x3F00)
 			apply_hardware_nametable_mapping(mirroring(), addr);

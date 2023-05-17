@@ -87,8 +87,8 @@ namespace nesem
 		void clock() noexcept;
 		bool irq() noexcept;
 
-		U8 read(U16 addr) noexcept;
-		void write(U16 addr, U8 value) noexcept;
+		U8 read(Addr addr) noexcept;
+		void write(Addr addr, U8 value) noexcept;
 
 	private:
 		Nes *nes;
@@ -104,7 +104,7 @@ namespace nesem
 
 		Sequencer seq_pulse_1;
 
-		ApuStatus status = ApuStatus::none;
+		util::Flags<ApuStatus> status = ApuStatus::none;
 		ApuStepMode step_mode = ApuStepMode::four_step;
 		bool frame_interrupt_enabled = false;
 		bool dmc_interrupt_enabled = false;

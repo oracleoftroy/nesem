@@ -19,22 +19,22 @@ namespace nesem
 			cartridge->signal_m2(false);
 	}
 
-	U8 NesBus::peek(U16 addr) const noexcept
+	U8 NesBus::peek(Addr addr) const noexcept
 	{
 		if (addr < 0x2000)
-			return ram[addr & 0x7FF] & 255;
+			return ram[to_integer(addr & 0x7FF)] & 255;
 
 		// this range maps to PPU registers
 		if (addr < 0x4000)
 		{
-			LOG_WARN("Peek of PPU registers ignored for addr ${:04X}", addr);
+			LOG_WARN("Peek of PPU registers ignored for addr ${}", addr);
 			return 0;
 		}
 
 		if (addr < 0x6000)
 		{
 			// no peek for input, apu, and other stuff
-			LOG_WARN("Peek ignored for addr ${:04X}", addr);
+			LOG_WARN("Peek ignored for addr ${}", addr);
 			return 0;
 		}
 
@@ -43,7 +43,7 @@ namespace nesem
 			return cartridge->cpu_peek(addr);
 		else
 		{
-			LOG_WARN("no cartridge, ignoring peek for ${:04X}", addr);
+			LOG_WARN("no cartridge, ignoring peek for ${}", addr);
 			return 0;
 		}
 
@@ -51,7 +51,7 @@ namespace nesem
 		return 0;
 	}
 
-	U8 NesBus::read(U16 addr, NesBusOp op) noexcept
+	U8 NesBus::read(Addr addr, NesBusOp op) noexcept
 	{
 		// cartridge can observe all reads. This allows e.g. MMC3 to observe m2 changes and MMC5 to mirror PPU state
 		if (cartridge)
@@ -60,14 +60,14 @@ namespace nesem
 		// the NES has 2k of ram mirrored 4 times between addr 0 - 0x1FFF
 		// thus, reads/writes to 0x0001 are observable at address 0x0801, 0x1001, 0x1801
 		if (addr < 0x2000)
-			last_read_value = ram[addr & 0x7FF] & 255;
+			last_read_value = ram[to_integer(addr & 0x7FF)] & 255;
 
 		// this range maps to PPU registers
 		else if (addr < 0x4000)
 		{
 			if (op == NesBusOp::ready)
 			{
-				switch (addr & 7)
+				switch (to_integer(addr & 7))
 				{
 				case 0: // PPUCTRL
 					last_read_value = nes->ppu().ppuctrl();
@@ -127,12 +127,12 @@ namespace nesem
 
 		// unused area, intended for hardware testing and APU features, but disabled on commercial NES units
 		else if (addr < 0x4020)
-			LOG_WARN("disabled address, ignoring read from ${:04X}", addr);
+			LOG_WARN("disabled address, ignoring read from ${}", addr);
 
 		return last_read_value;
 	}
 
-	void NesBus::write(U16 addr, U8 value, NesBusOp op) noexcept
+	void NesBus::write(Addr addr, U8 value, NesBusOp op) noexcept
 	{
 		// cartridge can observe all writes. This allows e.g. MMC3 to observe m2 changes and MMC5 to mirror PPU state
 		if (cartridge)
@@ -142,7 +142,7 @@ namespace nesem
 		// thus, reads/writes to 0x0001 are observable at address 0x0801, 0x1001, 0x1801
 		if (addr < 0x2000)
 		{
-			ram[addr & 0x7FF] = value & 255;
+			ram[to_integer(addr & 0x7FF)] = value & 255;
 			return;
 		}
 
@@ -151,7 +151,7 @@ namespace nesem
 		{
 			if (op == NesBusOp::ready)
 			{
-				switch (addr & 7)
+				switch (to_integer(addr & 7))
 				{
 				case 0: // PPUCTRL
 					nes->ppu().ppuctrl(value);
@@ -215,7 +215,7 @@ namespace nesem
 		// unused area, intended for hardware testing and APU features, but disabled on commercial NES units
 		if (addr < 0x4020)
 		{
-			LOG_WARN("disabled address, ignoring write to ${:04X}", addr);
+			LOG_WARN("disabled address, ignoring write to ${}", addr);
 			return;
 		}
 	}

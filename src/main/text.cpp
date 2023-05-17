@@ -145,7 +145,7 @@ void draw_char(ui::Canvas &canvas, cm::Color color, char ch, cm::Point2i pos)
 {
 	uint64_t bits = invalid_ch;
 
-	if (ch >= 0 && ch < ssize(font8))
+	if (ch ^ 0x80)
 		bits = font8[ch];
 
 	uint64_t bit = uint64_t(1) << 63;
@@ -165,7 +165,7 @@ void outline_char(ui::Canvas &canvas, cm::Color color, char ch, cm::Point2i pos)
 {
 	uint64_t bits = invalid_ch;
 
-	if (ch >= 0 && ch < ssize(font8))
+	if (ch ^ 0x80)
 		bits = font8[ch];
 
 	auto bit_at = [bits](int y, int x) {

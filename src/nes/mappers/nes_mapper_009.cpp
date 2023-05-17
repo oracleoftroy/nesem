@@ -52,7 +52,7 @@ namespace nesem::mappers
 		return MirroringMode::vertical;
 	}
 
-	U8 NesMapper009::on_cpu_peek(U16 addr) const noexcept
+	U8 NesMapper009::on_cpu_peek(Addr addr) const noexcept
 	{
 		if (addr < 0x6000)
 			return open_bus_read();
@@ -61,10 +61,10 @@ namespace nesem::mappers
 		if (addr < 0x8000)
 		{
 			if (cpu_ram_size() > 0)
-				return cpu_ram_read(addr & (bank_8k - 1));
+				return cpu_ram_read(to_rom_addr(0, bank_8k, addr));
 			else
 			{
-				LOG_ERROR("Read from invalid address ${:04X}, ignoring", addr);
+				LOG_ERROR("Read from invalid address ${}, ignoring", addr);
 				return open_bus_read();
 			}
 		}
@@ -85,10 +85,10 @@ namespace nesem::mappers
 		else
 			bank -= 1;
 
-		return rom().prg_rom[bank * bank_8k + (addr & (bank_8k - 1))];
+		return rom().prg_rom[to_rom_addr(bank, bank_8k, addr)];
 	}
 
-	void NesMapper009::on_cpu_write(U16 addr, U8 value) noexcept
+	void NesMapper009::on_cpu_write(Addr addr, U8 value) noexcept
 	{
 		if (addr < 0x6000)
 			return;
@@ -96,21 +96,21 @@ namespace nesem::mappers
 		if (addr < 0x8000)
 		{
 			if (cpu_ram_size() > 0)
-				cpu_ram_write(addr & (bank_8k - 1), value);
+				cpu_ram_write(to_rom_addr(0, bank_8k, addr), value);
 			else
-				LOG_ERROR("Write to invalid address ${:04X} with value {:02X}, ignoring", addr, value);
+				LOG_ERROR("Write to invalid address ${} with value {:02X}, ignoring", addr, value);
 
 			return;
 		}
 
 		if (addr < 0xA000)
 		{
-			LOG_ERROR("Write to invalid address ${:04X} with value {:02X}, ignoring", addr, value);
+			LOG_ERROR("Write to invalid address ${} with value {:02X}, ignoring", addr, value);
 			return;
 		}
 
 		// everything from $A000-FFFF is mapped to internal registers
-		switch (addr & 0xF000)
+		switch (to_integer(addr & 0xF000))
 		{
 		case 0xA000:
 			// prgrom_bank = U8(value % prgrom_banks(rom(), bank_8k));
@@ -134,18 +134,18 @@ namespace nesem::mappers
 		}
 	}
 
-	std::optional<U8> NesMapper009::on_ppu_peek(U16 &addr) const noexcept
+	std::optional<U8> NesMapper009::on_ppu_peek(Addr &addr) const noexcept
 	{
 		if (addr < 0x1000)
 		{
 			auto bank = chr_0 ? chr_0_fe : chr_0_fd;
-			return chr_read(bank * bank_4k + (addr & (bank_4k - 1)));
+			return chr_read(to_rom_addr(bank, bank_4k, addr));
 		}
 
 		if (addr < 0x2000)
 		{
 			auto bank = chr_1 ? chr_1_fe : chr_1_fd;
-			return chr_read(bank * bank_4k + (addr & (bank_4k - 1)));
+			return chr_read(to_rom_addr(bank, bank_4k, addr));
 		}
 
 		// reading from the nametable
@@ -155,7 +155,7 @@ namespace nesem::mappers
 		return std::nullopt;
 	}
 
-	std::optional<U8> NesMapper009::on_ppu_read(U16 &addr) noexcept
+	std::optional<U8> NesMapper009::on_ppu_read(Addr &addr) noexcept
 	{
 		auto value = on_ppu_peek(addr);
 
@@ -180,10 +180,10 @@ namespace nesem::mappers
 		return value;
 	}
 
-	bool NesMapper009::on_ppu_write(U16 &addr, U8 value) noexcept
+	bool NesMapper009::on_ppu_write(Addr &addr, U8 value) noexcept
 	{
 		if (addr < 0x2000)
-			return chr_write(addr, value);
+			return chr_write(to_integer(addr), value);
 
 		else if (addr < 0x3F00)
 			apply_hardware_nametable_mapping(mirroring(), addr);

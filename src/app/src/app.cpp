@@ -57,7 +57,7 @@ namespace ui
 
 		void update(const App::Core &core) noexcept;
 
-		[[nodiscard]] KeyMods modifiers() const noexcept;
+		[[nodiscard]] util::Flags<KeyMods> modifiers() const noexcept;
 		[[nodiscard]] bool key_down(Key key) const noexcept;
 		[[nodiscard]] bool key_down(Scancode code) const noexcept;
 		[[nodiscard]] bool key_up(Key key) const noexcept;
@@ -75,7 +75,7 @@ namespace ui
 	private:
 		std::vector<uint8_t> last_keys;
 		std::vector<uint8_t> current_keys;
-		KeyMods mods = KeyMods::none;
+		util::Flags<KeyMods> mods = KeyMods::none;
 
 		cm::Point2i mouse_pos{};
 		uint32_t last_mouse_buttons = 0;
@@ -506,14 +506,14 @@ namespace ui
 		return SDL_GetScancodeName(static_cast<SDL_Scancode>(value));
 	}
 
-	KeyMods App::modifiers() const noexcept
+	util::Flags<KeyMods> App::modifiers() const noexcept
 	{
 		return core->input.modifiers();
 	}
 
-	bool App::modifiers(KeyMods mods) const noexcept
+	bool App::modifiers(util::Flags<KeyMods> mods) const noexcept
 	{
-		return (core->input.modifiers() & mods) != KeyMods::none;
+		return core->input.modifiers().any_set(mods.value());
 	}
 
 	bool App::key_down(Key key) const noexcept
@@ -683,23 +683,22 @@ namespace ui
 		static_assert(SDL_SCANCODE_UNKNOWN == 0);
 
 		// KeyMods should directly map to SDL_KeyMod
-		static_assert(util::to_underlying(KeyMods::none) == KMOD_NONE);
-		static_assert(util::to_underlying(KeyMods::none) == KMOD_NONE);
-		static_assert(util::to_underlying(KeyMods::left_shift) == KMOD_LSHIFT);
-		static_assert(util::to_underlying(KeyMods::right_shift) == KMOD_RSHIFT);
-		static_assert(util::to_underlying(KeyMods::left_ctrl) == KMOD_LCTRL);
-		static_assert(util::to_underlying(KeyMods::right_ctrl) == KMOD_RCTRL);
-		static_assert(util::to_underlying(KeyMods::left_alt) == KMOD_LALT);
-		static_assert(util::to_underlying(KeyMods::right_alt) == KMOD_RALT);
-		static_assert(util::to_underlying(KeyMods::left_gui) == KMOD_LGUI);
-		static_assert(util::to_underlying(KeyMods::right_gui) == KMOD_RGUI);
-		static_assert(util::to_underlying(KeyMods::numlock) == KMOD_NUM);
-		static_assert(util::to_underlying(KeyMods::capslock) == KMOD_CAPS);
-		static_assert(util::to_underlying(KeyMods::alt_gr) == KMOD_MODE);
-		static_assert(util::to_underlying(KeyMods::ctrl) == KMOD_CTRL);
-		static_assert(util::to_underlying(KeyMods::shift) == KMOD_SHIFT);
-		static_assert(util::to_underlying(KeyMods::alt) == KMOD_ALT);
-		static_assert(util::to_underlying(KeyMods::gui) == KMOD_GUI);
+		static_assert(std::to_underlying(KeyMods::none) == KMOD_NONE);
+		static_assert(std::to_underlying(KeyMods::left_shift) == KMOD_LSHIFT);
+		static_assert(std::to_underlying(KeyMods::right_shift) == KMOD_RSHIFT);
+		static_assert(std::to_underlying(KeyMods::left_ctrl) == KMOD_LCTRL);
+		static_assert(std::to_underlying(KeyMods::right_ctrl) == KMOD_RCTRL);
+		static_assert(std::to_underlying(KeyMods::left_alt) == KMOD_LALT);
+		static_assert(std::to_underlying(KeyMods::right_alt) == KMOD_RALT);
+		static_assert(std::to_underlying(KeyMods::left_gui) == KMOD_LGUI);
+		static_assert(std::to_underlying(KeyMods::right_gui) == KMOD_RGUI);
+		static_assert(std::to_underlying(KeyMods::numlock) == KMOD_NUM);
+		static_assert(std::to_underlying(KeyMods::capslock) == KMOD_CAPS);
+		static_assert(std::to_underlying(KeyMods::alt_gr) == KMOD_MODE);
+		static_assert(std::to_underlying(KeyMods::ctrl) == KMOD_CTRL);
+		static_assert(std::to_underlying(KeyMods::shift) == KMOD_SHIFT);
+		static_assert(std::to_underlying(KeyMods::alt) == KMOD_ALT);
+		static_assert(std::to_underlying(KeyMods::gui) == KMOD_GUI);
 
 		// the number of keys on a keyboard shouldn't change, so size our vectors now while we aren't on a hot path
 		int num_keys;
@@ -822,7 +821,7 @@ namespace ui
 		return last_keys[static_cast<size_t>(scancode.value)] && key_up(scancode);
 	}
 
-	KeyMods InputState::modifiers() const noexcept
+	util::Flags<KeyMods> InputState::modifiers() const noexcept
 	{
 		return mods;
 	}

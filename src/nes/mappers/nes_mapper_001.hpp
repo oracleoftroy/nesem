@@ -26,11 +26,11 @@ namespace nesem::mappers
 		Banks report_cpu_mapping() const noexcept override;
 		Banks report_ppu_mapping() const noexcept override;
 
-		U8 on_cpu_peek(U16 addr) const noexcept override;
-		std::optional<U8> on_ppu_peek(U16 &addr) const noexcept override;
+		U8 on_cpu_peek(Addr addr) const noexcept override;
+		std::optional<U8> on_ppu_peek(Addr &addr) const noexcept override;
 
-		void on_cpu_write(U16 addr, U8 value) noexcept override;
-		bool on_ppu_write(U16 &addr, U8 value) noexcept override;
+		void on_cpu_write(Addr addr, U8 value) noexcept override;
+		bool on_ppu_write(Addr &addr, U8 value) noexcept override;
 
 		MirroringMode mirroring() const noexcept override;
 		std::optional<U8> shift(U8 value) noexcept;
@@ -43,9 +43,9 @@ namespace nesem::mappers
 		};
 
 		PrgRomBanks calculate_banks() const noexcept;
-		size_t map_prgram_addr(U16 addr) const noexcept;
-		size_t map_prgrom_addr(U16 addr) const noexcept;
-		size_t map_ppu_addr(U16 addr) const noexcept;
+		size_t map_prgram_addr(Addr addr) const noexcept;
+		size_t map_prgrom_addr(Addr addr) const noexcept;
+		size_t map_ppu_addr(Addr addr) const noexcept;
 
 	private:
 		PrgRamMode prg_ram_mode = PrgRamMode::Normal;

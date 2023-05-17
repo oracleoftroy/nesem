@@ -9,7 +9,7 @@
 
 #include <cm/math.hpp>
 #include <ui/canvas.hpp>
-#include <util/enum.hpp>
+#include <util/flags.hpp>
 
 namespace ui
 {
@@ -75,11 +75,11 @@ namespace ui
 
 		// get the current modifier keys (shift, alt, etc)
 		// TODO: consider deprecating...
-		[[nodiscard]] KeyMods modifiers() const noexcept;
+		[[nodiscard]] util::Flags<KeyMods> modifiers() const noexcept;
 
 		// test if any of the selected modifiers are active
 		// caution, modifiers(alt | ctrl) triggers if either key is down, use modifiers(alt) && modifiers(ctrl) if you need both
-		[[nodiscard]] bool modifiers(KeyMods mods) const noexcept;
+		[[nodiscard]] bool modifiers(util::Flags<KeyMods> mods) const noexcept;
 
 		// returns true if the key is down regardless of previous state
 		[[nodiscard]] bool key_down(Key key) const noexcept;
@@ -155,7 +155,6 @@ namespace ui
 		alt = left_alt | right_alt,
 		gui = left_gui | right_gui
 	};
-	MAKE_FLAGS_ENUM(KeyMods)
 
 	class Key
 	{

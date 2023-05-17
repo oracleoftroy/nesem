@@ -46,18 +46,18 @@ namespace nesem
 		return rom_mirroring_mode(nes_rom);
 	}
 
-	U8 NesCartridge::cpu_peek(U16 addr) const noexcept
+	U8 NesCartridge::cpu_peek(Addr addr) const noexcept
 	{
 		return on_cpu_peek(addr);
 	}
 
-	U8 NesCartridge::cpu_read(U16 addr) noexcept
+	U8 NesCartridge::cpu_read(Addr addr) noexcept
 	{
 		signal_m2(true);
 		return on_cpu_read(addr);
 	}
 
-	void NesCartridge::cpu_write(U16 addr, U8 value) noexcept
+	void NesCartridge::cpu_write(Addr addr, U8 value) noexcept
 	{
 		signal_m2(true);
 
@@ -67,36 +67,36 @@ namespace nesem
 		on_cpu_write(addr, value);
 	}
 
-	std::optional<U8> NesCartridge::ppu_peek(U16 &addr) const noexcept
+	std::optional<U8> NesCartridge::ppu_peek(Addr &addr) const noexcept
 	{
 		if (addr >= 0x4000) [[unlikely]]
-			LOG_ERROR("address out of range? PPU should properly mirror addresses, but we got ${:04X}", addr);
+			LOG_ERROR("address out of range? PPU should properly mirror addresses, but we got ${}", addr);
 
 		return on_ppu_peek(addr);
 	}
 
-	std::optional<U8> NesCartridge::ppu_read(U16 &addr) noexcept
+	std::optional<U8> NesCartridge::ppu_read(Addr &addr) noexcept
 	{
 		if (addr >= 0x4000) [[unlikely]]
-			LOG_ERROR("address out of range? PPU should properly mirror addresses, but we got ${:04X}", addr);
+			LOG_ERROR("address out of range? PPU should properly mirror addresses, but we got ${}", addr);
 
 		return on_ppu_read(addr);
 	}
 
-	bool NesCartridge::ppu_write(U16 &addr, U8 value) noexcept
+	bool NesCartridge::ppu_write(Addr &addr, U8 value) noexcept
 	{
 		if (addr >= 0x4000) [[unlikely]]
-			LOG_ERROR("address out of range? PPU should properly mirror addresses, but we got ${:04X}", addr);
+			LOG_ERROR("address out of range? PPU should properly mirror addresses, but we got ${}", addr);
 
 		return on_ppu_write(addr, value);
 	}
 
-	U8 NesCartridge::on_cpu_read(U16 addr) noexcept
+	U8 NesCartridge::on_cpu_read(Addr addr) noexcept
 	{
 		return on_cpu_peek(addr);
 	}
 
-	std::optional<U8> NesCartridge::on_ppu_read(U16 &addr) noexcept
+	std::optional<U8> NesCartridge::on_ppu_read(Addr &addr) noexcept
 	{
 		return on_ppu_peek(addr);
 	}

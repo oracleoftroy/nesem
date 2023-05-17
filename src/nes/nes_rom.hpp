@@ -187,12 +187,12 @@ namespace nesem::mappers
 	// utility function for mappers representing physically soldered nametable maps
 	// this handles one and four screen modes as selecting the first or last nametable
 	// roms that provide additional nametable memory need to provide custom handling
-	void apply_hardware_nametable_mapping(MirroringMode mode, U16 &addr) noexcept;
+	void apply_hardware_nametable_mapping(MirroringMode mode, Addr &addr) noexcept;
 	MirroringMode rom_mirroring_mode(const NesRom &rom) noexcept;
 
-	int rom_prgrom_banks(const NesRom &rom, BankSize bank_size) noexcept;
-	int rom_chrrom_banks(const NesRom &rom, BankSize bank_size) noexcept;
-	int rom_chr_banks(const NesRom &rom, BankSize bank_size) noexcept;
+	U32 rom_prgrom_banks(const NesRom &rom, BankSize bank_size) noexcept;
+	U32 rom_chrrom_banks(const NesRom &rom, BankSize bank_size) noexcept;
+	U32 rom_chr_banks(const NesRom &rom, BankSize bank_size) noexcept;
 
 	bool rom_has_chrram(const NesRom &rom) noexcept;
 	size_t rom_chrram_size(const NesRom &rom) noexcept;

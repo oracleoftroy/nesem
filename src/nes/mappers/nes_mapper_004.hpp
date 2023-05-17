@@ -28,18 +28,18 @@ namespace nesem::mappers
 		Banks report_ppu_mapping() const noexcept override;
 		MirroringMode mirroring() const noexcept override;
 
-		size_t map_addr_cpu(U16 addr) const noexcept;
-		size_t map_addr_ppu(U16 addr) const noexcept;
+		size_t map_addr_cpu(Addr addr) const noexcept;
+		size_t map_addr_ppu(Addr addr) const noexcept;
 
 		void signal_m2(bool rising) noexcept override;
-		void update_a12(U16 addr) noexcept;
+		void update_a12(Addr addr) noexcept;
 
-		U8 on_cpu_peek(U16 addr) const noexcept override;
-		std::optional<U8> on_ppu_peek(U16 &addr) const noexcept override;
+		U8 on_cpu_peek(Addr addr) const noexcept override;
+		std::optional<U8> on_ppu_peek(Addr &addr) const noexcept override;
 
-		void on_cpu_write(U16 addr, U8 value) noexcept override;
-		std::optional<U8> on_ppu_read(U16 &addr) noexcept override;
-		bool on_ppu_write(U16 &addr, U8 value) noexcept override;
+		void on_cpu_write(Addr addr, U8 value) noexcept override;
+		std::optional<U8> on_ppu_read(Addr &addr) noexcept override;
+		bool on_ppu_write(Addr &addr, U8 value) noexcept override;
 
 		U8 do_read_ram(size_t addr) const noexcept;
 		bool do_read_write(size_t addr, U8 value) noexcept;
@@ -61,7 +61,7 @@ namespace nesem::mappers
 		// E000-FFFF, even to disable, odd to enable
 		bool irq_enabled = false;
 
-		U16 a12 = 0;
+		bool a12 = false;
 
 		NesBusOp m2_state = NesBusOp::pending;
 		int m2_toggle_count = 0;

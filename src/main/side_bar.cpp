@@ -55,14 +55,22 @@ namespace app
 		pos.y += 14;
 		{
 			using enum nesem::ProcessorStatus;
-			// C | Z | I | D | B | E | V | N
-			// draw_string(canvas, {255, 255, 255}, fmt::format("PC: {:04X}  Flags:  {}{}{}{}{}{}{}{}", state.PC, (state.P & N) == N ? 'N' : '-', (state.P & V) == V ? 'V' : '-', (state.P & E) == E ? 'E' : '-', (state.P & B) == B ? 'B' : '-', (state.P & D) == D ? 'D' : '-', (state.P & I) == I ? 'I' : '-', (state.P & Z) == Z ? 'Z' : '-', (state.P & C) == C ? 'C' : '-'), pos);
-			draw_string(canvas, {255, 255, 255}, fmt::format("Flags:  {} {} {} {} {} {} {} {}  S: {:02X}", (state.P & N) == N ? 'N' : '-', (state.P & V) == V ? 'V' : '-', (state.P & E) == E ? 'E' : '-', (state.P & B) == B ? 'B' : '-', (state.P & D) == D ? 'D' : '-', (state.P & I) == I ? 'I' : '-', (state.P & Z) == Z ? 'Z' : '-', (state.P & C) == C ? 'C' : '-', state.S), pos);
+			draw_string(canvas, {255, 255, 255},
+				fmt::format("Flags:  {} {} {} {} {} {} {} {}  S: {:02X}",
+					state.P.is_set(N) ? 'N' : '-',
+					state.P.is_set(V) ? 'V' : '-',
+					state.P.is_set(E) ? 'E' : '-',
+					state.P.is_set(B) ? 'B' : '-',
+					state.P.is_set(D) ? 'D' : '-',
+					state.P.is_set(I) ? 'I' : '-',
+					state.P.is_set(Z) ? 'Z' : '-',
+					state.P.is_set(C) ? 'C' : '-',
+					state.S),
+				pos);
 		}
 
 		pos.y += 14;
-		// draw_string(canvas, {255, 255, 255}, fmt::format("A:  {:02X}   X:  {:02X}   Y:  {:02X}  S: {:02X}", state.A, state.X, state.Y, state.S), pos);
-		draw_string(canvas, {255, 255, 255}, fmt::format("PC: {:04X}   A: {:02X}  X: {:02X}  Y: {:02X}", state.PC, state.A, state.X, state.Y), pos);
+		draw_string(canvas, {255, 255, 255}, fmt::format("PC: {}   A: {:02X}  X: {:02X}  Y: {:02X}", state.PC, state.A, state.X, state.Y), pos);
 
 		pos.y += 16;
 
@@ -309,7 +317,7 @@ namespace app
 			{
 				auto fn = [&](const cm::Point2i pos) {
 					auto palette_entry = pattern_tables[index].read_pixel(static_cast<nesem::U16>(pos.x), static_cast<nesem::U16>(pos.y), current_palette);
-					auto color_index = nes.ppu().peek(nesem::U16(0x3F00 + palette_entry));
+					auto color_index = nes.ppu().peek(nesem::ppu_palette_base + palette_entry);
 
 					return colors.color_at_index(color_index);
 				};
@@ -339,7 +347,7 @@ namespace app
 				color_pos.x += (color_size.w) * i;
 				auto color_rect = rect(color_pos, color_size);
 
-				auto color_index = nes.ppu().peek(nesem::U16(0x3F00 + (p * 4 + i)));
+				auto color_index = nes.ppu().peek(nesem::ppu_palette_base + (p * 4 + i));
 				auto color = colors.color_at_index(color_index);
 
 				canvas.fill_rect(color, color_rect);

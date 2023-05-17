@@ -4,7 +4,7 @@
 
 #include "../nes_cartridge.hpp"
 
-#include <util/enum.hpp>
+#include <util/flags.hpp>
 
 namespace nesem::mappers
 {
@@ -15,8 +15,6 @@ namespace nesem::mappers
 		show_background = 0x02,
 		show_sprites = 0x4,
 	};
-
-	MAKE_FLAGS_ENUM(PpuStateMirror);
 
 	class NesMapper005 final : public NesCartridge
 	{
@@ -31,18 +29,18 @@ namespace nesem::mappers
 		Banks report_ppu_mapping() const noexcept override;
 		MirroringMode mirroring() const noexcept override;
 
-		size_t map_addr_cpu(U16 addr) const noexcept;
-		size_t map_addr_ppu(U16 addr) const noexcept;
+		size_t map_addr_cpu(Addr addr) const noexcept;
+		size_t map_addr_ppu(Addr addr) const noexcept;
 
-		U8 on_cpu_peek(U16 addr) const noexcept override;
-		void on_cpu_write(U16 addr, U8 value) noexcept override;
+		U8 on_cpu_peek(Addr addr) const noexcept override;
+		void on_cpu_write(Addr addr, U8 value) noexcept override;
 
-		std::optional<U8> on_ppu_peek(U16 &addr) const noexcept override;
-		std::optional<U8> on_ppu_read(U16 &addr) noexcept override;
-		bool on_ppu_write(U16 &addr, U8 value) noexcept override;
+		std::optional<U8> on_ppu_peek(Addr &addr) const noexcept override;
+		std::optional<U8> on_ppu_read(Addr &addr) noexcept override;
+		bool on_ppu_write(Addr &addr, U8 value) noexcept override;
 
 	private:
-		PpuStateMirror ppu_state;
+		util::Flags<PpuStateMirror> ppu_state;
 		U8 prg_mode;
 		U8 chr_mode;
 		U8 prg_ram_protect;

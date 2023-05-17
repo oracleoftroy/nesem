@@ -21,7 +21,7 @@ namespace app
 		explicit ControllerOverlay() = default;
 		explicit ControllerOverlay(ui::App &app, cm::Recti area);
 
-		void update(nesem::Buttons buttons);
+		void update(util::Flags<nesem::Buttons> buttons);
 		void render(ui::Renderer &renderer);
 
 	private:

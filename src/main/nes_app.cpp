@@ -391,7 +391,7 @@ namespace app
 		controller_overlay.render(renderer);
 	}
 
-	void NesApp::on_nes_pixel(int x, int y, nesem::U8 color_index, nesem::NesColorEmphasis emphasis) noexcept
+	void NesApp::on_nes_pixel(int x, int y, nesem::U8 color_index, util::Flags<nesem::NesColorEmphasis> emphasis) noexcept
 	{
 		nes_screen[y * nes_resolution.w + x] = to_color_index(color_index, emphasis);
 	}
@@ -421,43 +421,43 @@ namespace app
 	nesem::U8 NesApp::read_controller(ui::App &app)
 	{
 		using enum nesem::Buttons;
-		auto result = None;
+		util::Flags<nesem::Buttons> result = None;
 
 		bool in_turbo = std::cmp_greater_equal(nes.ppu().current_frame() % turbo_frame_cycle, turbo_frame_cycle / 2);
 
 		if (in_turbo && app.key_down(button_turbo_a))
-			result |= A;
+			result.set(A);
 		if (in_turbo && app.key_down(button_turbo_b))
-			result |= B;
+			result.set(B);
 
 		if (app.key_down(button_a))
-			result |= A;
+			result.set(A);
 		if (app.key_down(button_b))
-			result |= B;
+			result.set(B);
 		if (app.key_down(button_select))
-			result |= Select;
+			result.set(Select);
 		if (app.key_down(button_start))
-			result |= Start;
+			result.set(Start);
 		if (app.key_down(button_up))
-			result |= Up;
+			result.set(Up);
 		if (app.key_down(button_down))
-			result |= Down;
+			result.set(Down);
 		if (app.key_down(button_left))
-			result |= Left;
+			result.set(Left);
 		if (app.key_down(button_right))
-			result |= Right;
+			result.set(Right);
 
 		// The physical NES controller can't have both up and down or both left and right, and weird things can happen in some games if both are set.
 		// We will treat both buttons down as neither button down, as if the buttons cancel each other out
 
-		if ((result & (Up | Down)) == (Up | Down))
-			result &= ~(Up | Down);
+		if (result.is_set(Up, Down))
+			result.clear(Up, Down);
 
-		if ((result & (Left | Right)) == (Left | Right))
-			result &= ~(Left | Right);
+		if (result.is_set(Left, Right))
+			result.clear(Left, Right);
 
 		controller_overlay.update(result);
-		return static_cast<nesem::U8>(result);
+		return result.raw_value();
 	}
 
 	nesem::U8 NesApp::read_zapper(ui::App &app)

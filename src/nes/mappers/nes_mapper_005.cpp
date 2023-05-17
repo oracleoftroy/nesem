@@ -1,5 +1,7 @@
 #include "nes_mapper_005.hpp"
 
+#include "nes_ppu_register_bits.hpp"
+
 namespace nesem::mappers
 {
 	NesMapper005::NesMapper005(const Nes &nes, NesRom &&rom) noexcept
@@ -53,7 +55,7 @@ namespace nesem::mappers
 		return MirroringMode::horizontal;
 	}
 
-	size_t NesMapper005::map_addr_cpu(U16 addr) const noexcept
+	size_t NesMapper005::map_addr_cpu(Addr addr) const noexcept
 	{
 		// PRG mode 0
 		// CPU $6000-$7FFF: 8 KB switchable PRG RAM bank
@@ -78,7 +80,7 @@ namespace nesem::mappers
 		return 0;
 	}
 
-	size_t NesMapper005::map_addr_ppu(U16 addr) const noexcept
+	size_t NesMapper005::map_addr_ppu(Addr addr) const noexcept
 	{
 		// CHR mode 0
 		// PPU $0000-$1FFF: 8 KB switchable CHR bank
@@ -104,7 +106,7 @@ namespace nesem::mappers
 		return 0;
 	}
 
-	U8 NesMapper005::on_cpu_peek(U16 addr) const noexcept
+	U8 NesMapper005::on_cpu_peek(Addr addr) const noexcept
 	{
 		if (addr == 0x5204)
 		{
@@ -124,7 +126,7 @@ namespace nesem::mappers
 		return open_bus_read();
 	}
 
-	void NesMapper005::on_cpu_write(U16 addr, U8 value) noexcept
+	void NesMapper005::on_cpu_write(Addr addr, U8 value) noexcept
 	{
 		// Observe PPU register stuff
 		// NesWiki indicates that the MMC5 observes other PPU state, but with no known effect.
@@ -132,16 +134,14 @@ namespace nesem::mappers
 		// PPUCTRL
 		if (addr == 0x2000)
 		{
-			using enum PpuStateMirror;
-			ppu_state = ((ppu_state & ~sprite8x16) | ((value & 0b0010'0000) ? sprite8x16 : none));
+			ppu_state.set(value & ctrl_sprite_8x16, PpuStateMirror::sprite8x16);
 		}
 
 		// PPUMASK
 		else if (addr == 0x2001)
 		{
-			using enum PpuStateMirror;
-
-			ppu_state = ((ppu_state & ~(show_sprites | show_background)) | ((value & 0b0000'1000) ? show_background : none) | ((value & 0b0001'0000) ? show_sprites : none));
+			ppu_state.set(value & mask_show_sprites, PpuStateMirror::show_sprites);
+			ppu_state.set(value & mask_show_background, PpuStateMirror::show_background);
 		}
 
 		// sound (not implemented)
@@ -184,11 +184,11 @@ namespace nesem::mappers
 
 		// PRG bankswitching
 		else if (addr >= 0x5113 && addr < 0x5118)
-			prg_banks[addr - 0x5113] = value;
+			prg_banks[to_integer(addr - 0x5113)] = value;
 
 		// CHR bankswitching
 		else if (addr >= 0x5120 && addr < 0x512c)
-			chr_banks[addr - 0x5120] = value;
+			chr_banks[to_integer(addr - 0x5120)] = value;
 
 		// Vertical split mode
 		else if (addr == 0x5200)
@@ -248,19 +248,19 @@ namespace nesem::mappers
 		}
 	}
 
-	std::optional<U8> NesMapper005::on_ppu_peek(U16 &addr) const noexcept
+	std::optional<U8> NesMapper005::on_ppu_peek(Addr &addr) const noexcept
 	{
 		// TODO: implement me
 		return std::nullopt;
 	}
 
-	std::optional<U8> NesMapper005::on_ppu_read(U16 &addr) noexcept
+	std::optional<U8> NesMapper005::on_ppu_read(Addr &addr) noexcept
 	{
 		// TODO: implement me
 		return std::nullopt;
 	}
 
-	bool NesMapper005::on_ppu_write(U16 &addr, U8 value) noexcept
+	bool NesMapper005::on_ppu_write(Addr &addr, U8 value) noexcept
 	{
 		// TODO: implement me
 		return false;

@@ -5,7 +5,9 @@
 #include <string_view>
 #include <version>
 
-#include <util/enum.hpp>
+#include "nes_addr.hpp"
+
+#include <util/flags.hpp>
 
 namespace nesem
 {
@@ -40,7 +42,6 @@ namespace nesem
 		Default = E | I,
 		All = C | Z | I | D | B | E | V | N,
 	};
-	MAKE_FLAGS_ENUM(ProcessorStatus);
 
 	enum class Buttons : U8
 	{
@@ -54,7 +55,6 @@ namespace nesem
 		Left = 0x40,
 		Right = 0x80,
 	};
-	MAKE_FLAGS_ENUM(Buttons);
 
 	enum class ApuStatus : U8
 	{
@@ -65,7 +65,6 @@ namespace nesem
 		noise = 0x08,
 		dmc = 0x10,
 	};
-	MAKE_FLAGS_ENUM(ApuStatus);
 
 	enum class NesColorEmphasis : U8
 	{
@@ -74,7 +73,6 @@ namespace nesem
 		green = 0x2,
 		blue = 0x4,
 	};
-	MAKE_FLAGS_ENUM(NesColorEmphasis);
 
 	// Indicate whether this read or write is ready to be handled by the issuing device
 	// the 6502 always issues a read or write every cycle. Roughly equal to the CPU M2 pin
@@ -85,12 +83,12 @@ namespace nesem
 	};
 
 #if defined(__cpp_lib_move_only_function)
-	using DrawFn = std::move_only_function<void(int x, int y, U8 color_index, NesColorEmphasis emphasis)>;
+	using DrawFn = std::move_only_function<void(int x, int y, U8 color_index, util::Flags<NesColorEmphasis> emphasis)>;
 	using FrameReadyFn = std::move_only_function<void()>;
 	using PollInputFn = std::move_only_function<U8()>;
 	using ErrorFn = std::move_only_function<void(std::string_view message)>;
 #else
-	using DrawFn = std::function<void(int x, int y, U8 color_index, NesColorEmphasis emphasis)>;
+	using DrawFn = std::function<void(int x, int y, U8 color_index, util::Flags<NesColorEmphasis> emphasis)>;
 	using FrameReadyFn = std::function<void()>;
 	using PollInputFn = std::function<U8()>;
 	using ErrorFn = std::function<void(std::string_view message)>;

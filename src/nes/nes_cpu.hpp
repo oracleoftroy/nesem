@@ -8,13 +8,21 @@ namespace nesem
 
 	struct NesCpuState
 	{
-		U16 PC;
+		Addr PC;
 		U8 S;
-		ProcessorStatus P;
+		util::Flags<ProcessorStatus> P;
 		U8 A;
 		U8 X;
 		U8 Y;
 	};
+
+	constexpr Addr cpu_nmi_lo = Addr{0xFFFA};
+	constexpr Addr cpu_nmi_hi = Addr{0xFFFB};
+	constexpr Addr cpu_reset_lo = Addr{0xFFFC};
+	constexpr Addr cpu_reset_hi = Addr{0xFFFD};
+	constexpr Addr cpu_irq_lo = Addr{0xFFFE};
+	constexpr Addr cpu_irq_hi = Addr{0xFFFF};
+	constexpr Addr cpu_stack_page = Addr{0x0100};
 
 	// The NES used a Ricoh 2A03, a custom 6502 CPU with decimal mode disabled and an integrated audio processing unit
 	class NesCpu final
@@ -23,7 +31,7 @@ namespace nesem
 		explicit NesCpu(Nes *nes) noexcept;
 
 		// signals
-		void reset(U16 pc_addr = 0) noexcept;
+		void reset(Addr pc_addr = Addr{0}) noexcept;
 		void nmi() noexcept;
 		void dma(U8 page) noexcept;
 
@@ -157,9 +165,9 @@ namespace nesem
 		Nes *nes;
 
 		// 6502 registers
-		U16 PC = 0; // program counter
+		Addr PC{0}; // program counter
 		U8 S = 0; // stack pointer, starts from the top of page 1 and grows downward
-		ProcessorStatus P; // processor status
+		util::Flags<ProcessorStatus> P; // processor status
 		U8 A; // Accumulator
 		U8 X; // Index register X
 		U8 Y; // Index register Y
@@ -171,7 +179,7 @@ namespace nesem
 		int instruction = -1; // the current instruction being executed, or -1 for reset
 		U8 step = 0; // the current step for the current instruction
 		U8 scratch = 0xFF; // place for instructions to store intermediate value
-		U16 effective_addr = 0xFEFE; // temporary address for address modes
+		Addr effective_addr{0xFEFE}; // temporary address for address modes
 
 		bool nmi_requested = false;
 		bool in_dma = false;

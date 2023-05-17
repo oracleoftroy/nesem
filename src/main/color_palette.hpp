@@ -11,9 +11,9 @@
 
 namespace app
 {
-	constexpr nesem::U16 to_color_index(nesem::U8 color_index, nesem::NesColorEmphasis emphasis) noexcept
+	constexpr nesem::U16 to_color_index(nesem::U8 color_index, util::Flags<nesem::NesColorEmphasis> emphasis) noexcept
 	{
-		return (color_index & 0x3F) | (nesem::U16(emphasis) << 5);
+		return (color_index & 0x3F) | (emphasis.raw_value() << 5);
 	}
 
 	class ColorPalette final

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <bit>
 #include <filesystem>
 #include <optional>
 #include <vector>
@@ -9,6 +10,8 @@
 #include "nes_nvram.hpp"
 #include "nes_rom.hpp"
 #include "nes_types.hpp"
+
+#include <util/logging.hpp>
 
 namespace nesem
 {
@@ -54,6 +57,13 @@ namespace nesem
 #endif
 	};
 
+	// map a system address to an address on the rom.
+	constexpr size_t to_rom_addr(size_t bank, size_t bank_size, Addr addr) noexcept
+	{
+		CHECK(std::has_single_bit(bank_size), "banks must be a power of two");
+		return bank * bank_size + to_integer(addr & (bank_size - 1));
+	}
+
 	class NesCartridge
 	{
 	public:
@@ -67,14 +77,14 @@ namespace nesem
 		virtual Banks report_ppu_mapping() const noexcept = 0;
 		virtual mappers::MirroringMode mirroring() const noexcept;
 
-		U8 cpu_peek(U16 addr) const noexcept;
-		std::optional<U8> ppu_peek(U16 &addr) const noexcept;
+		U8 cpu_peek(Addr addr) const noexcept;
+		std::optional<U8> ppu_peek(Addr &addr) const noexcept;
 
-		U8 cpu_read(U16 addr) noexcept;
-		void cpu_write(U16 addr, U8 value) noexcept;
+		U8 cpu_read(Addr addr) noexcept;
+		void cpu_write(Addr addr, U8 value) noexcept;
 
-		std::optional<U8> ppu_read(U16 &addr) noexcept;
-		bool ppu_write(U16 &addr, U8 value) noexcept;
+		std::optional<U8> ppu_read(Addr &addr) noexcept;
+		bool ppu_write(Addr &addr, U8 value) noexcept;
 
 		const mappers::NesRom &rom() const noexcept;
 		bool irq() noexcept;
@@ -84,13 +94,13 @@ namespace nesem
 		virtual void signal_m2(bool rising) noexcept;
 
 	private:
-		virtual U8 on_cpu_peek(U16 addr) const noexcept = 0;
-		virtual U8 on_cpu_read(U16 addr) noexcept;
-		virtual void on_cpu_write(U16 addr, U8 value) noexcept = 0;
+		virtual U8 on_cpu_peek(Addr addr) const noexcept = 0;
+		virtual U8 on_cpu_read(Addr addr) noexcept;
+		virtual void on_cpu_write(Addr addr, U8 value) noexcept = 0;
 
-		virtual std::optional<U8> on_ppu_peek(U16 &addr) const noexcept = 0;
-		virtual std::optional<U8> on_ppu_read(U16 &addr) noexcept;
-		virtual bool on_ppu_write(U16 &addr, U8 value) noexcept = 0;
+		virtual std::optional<U8> on_ppu_peek(Addr &addr) const noexcept = 0;
+		virtual std::optional<U8> on_ppu_read(Addr &addr) noexcept;
+		virtual bool on_ppu_write(Addr &addr, U8 value) noexcept = 0;
 
 	protected:
 		U8 chr_read(size_t addr) const noexcept;

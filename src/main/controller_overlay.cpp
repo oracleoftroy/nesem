@@ -12,7 +12,7 @@ namespace app
 		texture.enable_blending(true);
 	}
 
-	void ControllerOverlay::update(nesem::Buttons buttons)
+	void ControllerOverlay::update(util::Flags<nesem::Buttons> buttons)
 	{
 		using enum nesem::Buttons;
 
@@ -22,11 +22,11 @@ namespace app
 		static constexpr auto inactive_color = cm::Color{105, 105, 105, alpha};
 		static constexpr auto active_color = cm::Color{250, 30, 15, alpha};
 
-		constexpr auto select_color = [](auto b) {
-			if (b == nesem::Buttons::None)
-				return inactive_color;
+		constexpr auto select_color = [](auto button_down) {
+			if (button_down)
+				return active_color;
 
-			return active_color;
+			return inactive_color;
 		};
 
 		auto [canvas, lock] = texture.lock();
@@ -57,10 +57,10 @@ namespace app
 		// dpad
 
 		canvas.fill_rect(inactive_color, dpad_center);
-		canvas.fill_rect(select_color(buttons & Left), dpad_left);
-		canvas.fill_rect(select_color(buttons & Up), dpad_up);
-		canvas.fill_rect(select_color(buttons & Right), dpad_right);
-		canvas.fill_rect(select_color(buttons & Down), dpad_down);
+		canvas.fill_rect(select_color(buttons.is_set(Left)), dpad_left);
+		canvas.fill_rect(select_color(buttons.is_set(Up)), dpad_up);
+		canvas.fill_rect(select_color(buttons.is_set(Right)), dpad_right);
+		canvas.fill_rect(select_color(buttons.is_set(Down)), dpad_down);
 
 		// outline the dpad
 		canvas.draw_line(outline_color, bottom_left(dpad_up), top_left(dpad_up));
@@ -81,15 +81,15 @@ namespace app
 
 		// select and start buttons
 
-		canvas.fill_rect(select_color(buttons & Select), select_area);
-		canvas.fill_rect(select_color(buttons & Start), start_area);
+		canvas.fill_rect(select_color(buttons.is_set(Select)), select_area);
+		canvas.fill_rect(select_color(buttons.is_set(Start)), start_area);
 		canvas.draw_rect(outline_color, select_area);
 		canvas.draw_rect(outline_color, start_area);
 
 		// a and b buttons
 
-		canvas.fill_circle(select_color(buttons & B), b_button_area);
-		canvas.fill_circle(select_color(buttons & A), a_button_area);
+		canvas.fill_circle(select_color(buttons.is_set(B)), b_button_area);
+		canvas.fill_circle(select_color(buttons.is_set(A)), a_button_area);
 		canvas.draw_circle(outline_color, b_button_area);
 		canvas.draw_circle(outline_color, a_button_area);
 	}

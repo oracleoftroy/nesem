@@ -168,7 +168,7 @@ namespace nesem
 		return frame_interrupt_requested || dmc_interrupt_requested;
 	}
 
-	U8 NesApu::read(U16 addr) noexcept
+	U8 NesApu::read(Addr addr) noexcept
 	{
 		if (addr == 0x4015)
 		{
@@ -186,27 +186,27 @@ namespace nesem
 			return result;
 		}
 
-		LOG_WARN_ONCE("Attempted read of audio register at addr: {:04X}", addr);
+		LOG_WARN_ONCE("Attempted read of audio register at addr: {}", addr);
 		return nes->bus().open_bus_read();
 	}
 
-	void NesApu::write(U16 addr, U8 value) noexcept
+	void NesApu::write(Addr addr, U8 value) noexcept
 	{
 		// first, check for writes to addresses the apu will handle directly, as well as invalid addresses
-		switch (addr)
+		switch (to_integer(addr))
 		{
 		case 0x4010:
 		case 0x4011:
 		case 0x4012:
 		case 0x4013:
-			LOG_WARN_ONCE("DMC channel not implemented, ignoring write to {:04X} with value: {:02X}", addr, value);
+			LOG_WARN_ONCE("DMC channel not implemented, ignoring write to {} with value: {:02X}", addr, value);
 			return;
 
 		case 0x4015:
 			status = static_cast<ApuStatus>(value);
 
 			// disabling a channel immediately silences and sets length to 0
-			if ((status & ApuStatus::pulse_1) == ApuStatus::none)
+			if (status.is_clear(ApuStatus::pulse_1))
 			{
 				// TODO: silence?
 				seq_pulse_1.length = 0;
@@ -239,14 +239,14 @@ namespace nesem
 		case 0x400D:
 		case 0x4014:
 		case 0x4016:
-			LOG_WARN_ONCE("Write to unused APU addr: {:04X} with value: {:02X}", addr, value);
+			LOG_WARN_ONCE("Write to unused APU addr: {} with value: {:02X}", addr, value);
 			return;
 		}
 
 		if (addr >= 0x4000 && addr < 0x4010)
 		{
-			auto index = (addr >> 2) & 3;
-			auto byte = addr & 3;
+			auto index = to_integer((addr >> 2) & 3);
+			auto byte = to_integer(addr & 3);
 
 			channels[index].set(byte, value);
 
@@ -274,7 +274,7 @@ namespace nesem
 			return;
 		}
 
-		LOG_WARN("Out of range write to APU addr {:04X} with value {:02X}", addr, value);
+		LOG_WARN("Out of range write to APU addr {} with value {:02X}", addr, value);
 	}
 
 	void NesApu::clock_quarter_frame()

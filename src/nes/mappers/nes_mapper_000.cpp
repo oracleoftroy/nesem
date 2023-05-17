@@ -48,7 +48,7 @@ namespace nesem::mappers
 		};
 	}
 
-	U8 NesMapper000::on_cpu_peek(U16 addr) const noexcept
+	U8 NesMapper000::on_cpu_peek(Addr addr) const noexcept
 	{
 		if (addr < 0x6000)
 			return open_bus_read();
@@ -61,7 +61,7 @@ namespace nesem::mappers
 				if (size > bank_8k) [[unlikely]]
 					LOG_WARN("Cart has more than 8k of RAM, but we aren't doing any special bank switching? Mapper bug?");
 
-				return cpu_ram_read(addr & (size - 1));
+				return cpu_ram_read(to_integer(addr & (size - 1)));
 			}
 
 			return open_bus_read();
@@ -71,10 +71,10 @@ namespace nesem::mappers
 		if (rom_prgrom_banks(rom(), bank_16k) == 1)
 			addr_mask = 0x3FFF;
 
-		return rom().prg_rom[addr & addr_mask];
+		return rom().prg_rom[to_integer(addr & addr_mask)];
 	}
 
-	void NesMapper000::on_cpu_write(U16 addr, U8 value) noexcept
+	void NesMapper000::on_cpu_write(Addr addr, U8 value) noexcept
 	{
 		if (addr < 0x6000)
 			return;
@@ -87,7 +87,7 @@ namespace nesem::mappers
 				if (size > bank_8k) [[unlikely]]
 					LOG_WARN("Cart has more than 8k of RAM, but we aren't doing any special bank switching? Mapper bug?");
 
-				cpu_ram_write(addr & (size - 1), value);
+				cpu_ram_write(to_integer(addr & (size - 1)), value);
 			}
 			return;
 		}
@@ -95,10 +95,10 @@ namespace nesem::mappers
 		LOG_WARN("Write to PRG-ROM not allowed!");
 	}
 
-	std::optional<U8> NesMapper000::on_ppu_peek(U16 &addr) const noexcept
+	std::optional<U8> NesMapper000::on_ppu_peek(Addr &addr) const noexcept
 	{
 		if (addr < 0x2000)
-			return chr_read(addr);
+			return chr_read(to_integer(addr));
 
 		// reading from the nametable
 		else if (addr < 0x3F00)
@@ -107,10 +107,10 @@ namespace nesem::mappers
 		return std::nullopt;
 	}
 
-	bool NesMapper000::on_ppu_write(U16 &addr, U8 value) noexcept
+	bool NesMapper000::on_ppu_write(Addr &addr, U8 value) noexcept
 	{
 		if (addr < 0x2000)
-			return chr_write(addr, value);
+			return chr_write(to_integer(addr), value);
 
 		if (addr < 0x3F00)
 			apply_hardware_nametable_mapping(mirroring(), addr);

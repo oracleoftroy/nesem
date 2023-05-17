@@ -42,7 +42,7 @@ namespace nesem
 		// returns true if a component is signaling an interrupt
 		bool interrupt_requested() noexcept;
 
-		void screen_out(int x, int y, U8 color_index, NesColorEmphasis emphasis) noexcept;
+		void screen_out(int x, int y, U8 color_index, util::Flags<NesColorEmphasis> emphasis) noexcept;
 		void frame_complete() noexcept;
 
 		NesInputDevice &player1() noexcept;

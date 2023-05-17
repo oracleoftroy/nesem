@@ -29,6 +29,12 @@ namespace nesem
 		void write_pixel(U16 x, U16 y, U8 palette) noexcept;
 	};
 
+	constexpr Addr ppu_pattern_0 = Addr{0x0000};
+	constexpr Addr ppu_pattern_1 = Addr{0x1000};
+	constexpr Addr ppu_nametable_base = Addr{0x2000};
+	constexpr Addr ppu_attribute_base = Addr{0x23C0};
+	constexpr Addr ppu_palette_base = Addr{0x3F00};
+
 	// models a 2C02
 	class NesPpu final
 	{
@@ -41,8 +47,8 @@ namespace nesem
 
 		// PPU bus IO
 
-		U8 read(U16 addr) noexcept;
-		void write(U16 addr, U8 value) noexcept;
+		U8 read(Addr addr) noexcept;
+		void write(Addr addr, U8 value) noexcept;
 
 		// PPU registers
 
@@ -88,7 +94,7 @@ namespace nesem
 
 			// address of the low bits, add 8 to get the high bits
 			// NOTE: this presumes the sprite intersects the provided scanline
-			U16 pattern_addr(U8 ppuctrl, int scanline) noexcept;
+			Addr pattern_addr(U8 ppuctrl, int scanline) noexcept;
 			void read_lo(NesPpu &ppu, U8 ppuctrl, int scanline) noexcept;
 			void read_hi(NesPpu &ppu, U8 ppuctrl, int scanline) noexcept;
 			bool flip_x() noexcept;
@@ -114,7 +120,7 @@ namespace nesem
 		std::array<U8, 8 * 4> evaluated_sprites;
 
 		// the address sprite evaluation started at, usually 0
-		U16 sprite_0_addr = 0xFFFF;
+		Addr sprite_0_addr{0xFFFF};
 
 		// the oamaddr this sprite started at
 		std::array<U8, 8> evaluated_sprite_addr;
@@ -158,11 +164,11 @@ namespace nesem
 
 			// This is really an 8-bit address into OAM memory. using 16 bit addr so we can easily detect when
 			// we've finished sprite evaluation, but oamdata write calls will wrap the address appropriately
-			U16 oamaddr = 0; // write
+			Addr oamaddr{0}; // write
 
 			bool addr_latch = false;
-			U16 tram_addr = 0; // writex2
-			U16 vram_addr = 0; // writex2
+			Addr tram_addr{0}; // write x2
+			Addr vram_addr{0}; // write x2
 
 			U8 fine_x = 0;
 			U8 ppudata = 0;
@@ -187,7 +193,7 @@ namespace nesem
 		void reload() noexcept;
 		void shift_bg() noexcept;
 		void shift_fg() noexcept;
-		U16 make_chrrom_addr() noexcept;
+		Addr make_chrrom_addr() noexcept;
 		void increment_x() noexcept;
 		void increment_y() noexcept;
 		void transfer_x() noexcept;
@@ -201,7 +207,7 @@ namespace nesem
 		void prepare_foreground() noexcept;
 
 		U8 get_color_index() noexcept;
-		NesColorEmphasis color_emphasis() const noexcept;
+		util::Flags<NesColorEmphasis> color_emphasis() const noexcept;
 		U8 apply_grayscale(U8 color_index) const noexcept;
 
 		// rendering state
@@ -211,7 +217,7 @@ namespace nesem
 		U16 attribute_lo = 0;
 		U16 attribute_hi = 0;
 
-		U8 read_internal(U16 addr) const noexcept;
+		U8 read_internal(Addr addr) const noexcept;
 
 	public:
 		// debugging help
@@ -223,7 +229,7 @@ namespace nesem
 			U8 nt;
 		};
 
-		U8 peek(U16 addr) const noexcept;
+		U8 peek(Addr addr) const noexcept;
 
 		U64 current_tick() const noexcept;
 		U64 current_frame() const noexcept;

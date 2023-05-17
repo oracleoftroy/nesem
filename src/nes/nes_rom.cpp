@@ -1,5 +1,7 @@
 #include "nes_rom.hpp"
 
+#include <util/logging.hpp>
+
 namespace nesem::mappers::ines_2
 {
 	std::string_view expansion_device_name(Expansion expansion) noexcept
@@ -123,7 +125,22 @@ namespace nesem::mappers::ines_2
 
 namespace nesem::mappers
 {
-	void apply_hardware_nametable_mapping(MirroringMode mode, U16 &addr) noexcept
+	template <typename R>
+	constexpr R checked_cast(auto value) noexcept
+	{
+		if (std::is_constant_evaluated())
+		{
+			if (std::in_range<R>(value))
+				return static_cast<R>(value);
+		}
+		else
+		{
+			CHECK(std::in_range<R>(value), "value out of range");
+			return static_cast<R>(value);
+		}
+	}
+
+	void apply_hardware_nametable_mapping(MirroringMode mode, Addr &addr) noexcept
 	{
 		using enum MirroringMode;
 
@@ -162,26 +179,26 @@ namespace nesem::mappers
 		return rom.v1.mirroring;
 	}
 
-	int rom_prgrom_banks(const NesRom &rom, BankSize bank_size) noexcept
+	U32 rom_prgrom_banks(const NesRom &rom, BankSize bank_size) noexcept
 	{
 		if (rom.v2)
-			return int(rom.v2->prgrom.size / bank_size);
+			return checked_cast<U32>(rom.v2->prgrom.size / bank_size);
 
 		return (rom.v1.prg_rom_size * bank_16k) / bank_size;
 	}
 
-	int rom_chrrom_banks(const NesRom &rom, BankSize bank_size) noexcept
+	U32 rom_chrrom_banks(const NesRom &rom, BankSize bank_size) noexcept
 	{
 		if (rom.v2)
-			return int(rom.v2->chrrom.has_value() ? (rom.v2->chrrom->size / bank_size) : 0);
+			return rom.v2->chrrom.has_value() ? checked_cast<U32>(rom.v2->chrrom->size / bank_size) : 0;
 
 		return (rom.v1.chr_rom_size * bank_8k) / bank_size;
 	}
 
-	int rom_chr_banks(const NesRom &rom, BankSize bank_size) noexcept
+	U32 rom_chr_banks(const NesRom &rom, BankSize bank_size) noexcept
 	{
 		if (rom_has_chrram(rom))
-			return int(rom_chrram_size(rom) / bank_size);
+			return checked_cast<U32>(rom_chrram_size(rom) / bank_size);
 
 		return rom_chrrom_banks(rom, bank_size);
 	}
@@ -296,7 +313,7 @@ namespace nesem::mappers
 			// From: https://www.nesdev.org/wiki/NES_2.0_submappers#034:_BNROM_/_NINA-001
 
 			// To disambiguate the two mappers, emulators have taken various approaches:
-			// The presense of CHR larger than 8 KiB unambiguously requires NINA-001, as BNROM has no CHR banking.
+			// The presence of CHR larger than 8 KiB unambiguously requires NINA-001, as BNROM has no CHR banking.
 			if (rom_chr_banks(rom, bank_8k) > 1)
 				return false;
 

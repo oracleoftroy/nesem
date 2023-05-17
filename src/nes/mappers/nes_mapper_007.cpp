@@ -40,7 +40,7 @@ namespace nesem::mappers
 			return MirroringMode::one_screen;
 	}
 
-	U8 NesMapper007::on_cpu_peek(U16 addr) const noexcept
+	U8 NesMapper007::on_cpu_peek(Addr addr) const noexcept
 	{
 		if (addr < 0x6000)
 			return open_bus_read();
@@ -48,7 +48,7 @@ namespace nesem::mappers
 		// prg-ram
 		if (addr < 0x8000)
 		{
-			LOG_ERROR_ONCE("Mapper 007 doesn't have PRG-RAM... read from addr: {:04X}", addr);
+			LOG_ERROR_ONCE("Mapper 007 doesn't have PRG-RAM... read from addr: {}", addr);
 			return open_bus_read();
 		}
 
@@ -56,25 +56,25 @@ namespace nesem::mappers
 		auto bank = bank_select & 0x0F;
 		bank &= num_banks - 1;
 
-		return rom().prg_rom[bank * bank_32k + (addr & (bank_32k - 1))];
+		return rom().prg_rom[to_rom_addr(bank, bank_32k, addr)];
 	}
 
-	void NesMapper007::on_cpu_write(U16 addr, U8 value) noexcept
+	void NesMapper007::on_cpu_write(Addr addr, U8 value) noexcept
 	{
 		if (addr < 0x6000)
 			return;
 
 		// prg-ram
 		if (addr < 0x8000)
-			LOG_ERROR_ONCE("Mapper 007 doesn't have PRG-RAM... write to addr: {:04X} value: {:02X}", addr, value);
+			LOG_ERROR_ONCE("Mapper 007 doesn't have PRG-RAM... write to addr: {} value: {:02X}", addr, value);
 
 		bank_select = value;
 	}
 
-	std::optional<U8> NesMapper007::on_ppu_peek(U16 &addr) const noexcept
+	std::optional<U8> NesMapper007::on_ppu_peek(Addr &addr) const noexcept
 	{
 		if (addr < 0x2000)
-			return chr_read(addr);
+			return chr_read(to_integer(addr));
 
 		// reading from the nametable
 		else if (addr < 0x3F00)
@@ -83,10 +83,10 @@ namespace nesem::mappers
 		return std::nullopt;
 	}
 
-	bool NesMapper007::on_ppu_write(U16 &addr, U8 value) noexcept
+	bool NesMapper007::on_ppu_write(Addr &addr, U8 value) noexcept
 	{
 		if (addr < 0x2000)
-			return chr_write(addr, value);
+			return chr_write(to_integer(addr), value);
 
 		else if (addr < 0x3F00)
 			apply_hardware_nametable_mapping(mirroring(), addr);

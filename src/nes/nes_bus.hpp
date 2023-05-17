@@ -17,10 +17,10 @@ namespace nesem
 		void clock() noexcept;
 
 		// just read addr without any additional handling, useful for visualizers, debuggers, etc
-		U8 peek(U16 addr) const noexcept;
+		U8 peek(Addr addr) const noexcept;
 
-		U8 read(U16 addr, NesBusOp op) noexcept;
-		void write(U16 addr, U8 value, NesBusOp op) noexcept;
+		U8 read(Addr addr, NesBusOp op) noexcept;
+		void write(Addr addr, U8 value, NesBusOp op) noexcept;
 
 		void load_cartridge(NesCartridge *cartridge) noexcept;
 

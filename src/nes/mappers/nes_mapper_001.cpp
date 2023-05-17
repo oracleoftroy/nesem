@@ -116,7 +116,7 @@ namespace nesem::mappers
 		}
 	}
 
-	U8 NesMapper001::on_cpu_peek(U16 addr) const noexcept
+	U8 NesMapper001::on_cpu_peek(Addr addr) const noexcept
 	{
 		if (addr < 0x6000)
 			return 0;
@@ -152,7 +152,7 @@ namespace nesem::mappers
 		return rom().prg_rom[map_prgrom_addr(addr)];
 	}
 
-	void NesMapper001::on_cpu_write(U16 addr, U8 value) noexcept
+	void NesMapper001::on_cpu_write(Addr addr, U8 value) noexcept
 	{
 		if (addr < 0x6000)
 			return;
@@ -190,10 +190,10 @@ namespace nesem::mappers
 			load.has_value())
 		{
 			// we have the value we want to load, so store it
-			switch (addr & 0xE000)
+			switch (to_integer(addr & 0xE000))
 			{
 			default:
-				LOG_CRITICAL("BUG, all address ranges above $8000 should be handled, but address ${:04X} got here?", addr);
+				LOG_CRITICAL("BUG, all address ranges above $8000 should be handled, but address ${} got here?", addr);
 				break;
 
 			case 0x8000: // address between [8000-A000)
@@ -215,7 +215,7 @@ namespace nesem::mappers
 		}
 	}
 
-	std::optional<U8> NesMapper001::on_ppu_peek(U16 &addr) const noexcept
+	std::optional<U8> NesMapper001::on_ppu_peek(Addr &addr) const noexcept
 	{
 		if (addr < 0x2000)
 			return chr_read(map_ppu_addr(addr));
@@ -227,7 +227,7 @@ namespace nesem::mappers
 		return std::nullopt;
 	}
 
-	bool NesMapper001::on_ppu_write(U16 &addr, U8 value) noexcept
+	bool NesMapper001::on_ppu_write(Addr &addr, U8 value) noexcept
 	{
 		if (addr < 0x2000)
 			return chr_write(map_ppu_addr(addr), value);
@@ -315,11 +315,11 @@ namespace nesem::mappers
 		};
 	}
 
-	size_t NesMapper001::map_prgram_addr(U16 addr) const noexcept
+	size_t NesMapper001::map_prgram_addr(Addr addr) const noexcept
 	{
 		if (addr < 0x6000 || addr >= 0x8000) [[unlikely]]
 		{
-			LOG_CRITICAL("BUG, this should only be called with prg ram addresses, but was called with {:04X}", addr);
+			LOG_CRITICAL("BUG, this should only be called with prg ram addresses, but was called with {}", addr);
 			return 0;
 		}
 
@@ -333,14 +333,14 @@ namespace nesem::mappers
 		else if (size == bank_32k)
 			bank = (chr_bank_0 >> 2) & 3;
 
-		return bank * bank_8k + (addr & (bank_8k - 1));
+		return to_rom_addr(bank, bank_8k, addr);
 	}
 
-	size_t NesMapper001::map_prgrom_addr(U16 addr) const noexcept
+	size_t NesMapper001::map_prgrom_addr(Addr addr) const noexcept
 	{
 		if (addr < 0x8000) [[unlikely]]
 		{
-			LOG_CRITICAL("BUG, this should only be called with prg rom addresses, but was called with {:04X}", addr);
+			LOG_CRITICAL("BUG, this should only be called with prg rom addresses, but was called with {}", addr);
 			return 0;
 		}
 
@@ -358,14 +358,14 @@ namespace nesem::mappers
 		case 1:
 			//	32k at $8000
 			bank >>= 1;
-			return bank * bank_32k + (addr & (bank_32k - 1));
+			return to_rom_addr(bank, bank_32k, addr);
 
 			//  2: fix first bank at $8000 and switch 16 KB bank at $C000;
 		case 2:
 			if (addr < 0xC000)
 				bank = first_bank;
 
-			return bank * bank_16k + (addr & (bank_16k - 1));
+			return to_rom_addr(bank, bank_16k, addr);
 
 			//  3: fix last bank at $C000 and switch 16 KB bank at $8000)
 		case 3:
@@ -373,15 +373,15 @@ namespace nesem::mappers
 			if (addr >= 0xC000)
 				bank = last_bank;
 
-			return bank * bank_16k + (addr & (bank_16k - 1));
+			return to_rom_addr(bank, bank_16k, addr);
 		}
 	}
 
-	size_t NesMapper001::map_ppu_addr(U16 addr) const noexcept
+	size_t NesMapper001::map_ppu_addr(Addr addr) const noexcept
 	{
 		if (addr >= 0x2000) [[unlikely]]
 		{
-			LOG_CRITICAL("BUG, this should only be called with chr rom/ram addresses, but was called with {:04X}", addr);
+			LOG_CRITICAL("BUG, this should only be called with chr rom/ram addresses, but was called with {}", addr);
 			return 0;
 		}
 
@@ -390,14 +390,14 @@ namespace nesem::mappers
 		if (bank_mode == 0)
 		{
 			auto bank = (chr_bank_0 & chr_bank_mask) >> 1;
-			return bank * bank_8k + (addr & (bank_8k - 1));
+			return to_rom_addr(bank, bank_8k, addr);
 		}
 		else
 		{
 			auto bank = addr >= 0x1000 ? chr_bank_1 : chr_bank_0;
 			bank &= chr_bank_mask;
 
-			return bank * bank_4k + (addr & (bank_4k - 1));
+			return to_rom_addr(bank, bank_4k, addr);
 		}
 	}
 }
