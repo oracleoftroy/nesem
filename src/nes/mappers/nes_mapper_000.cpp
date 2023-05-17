@@ -22,8 +22,10 @@ namespace nesem::mappers
 		{
 			return Banks{
 				.size = 2,
-				.banks{Bank{.addr = 0x8000, .bank = 0, .size = bank_16k},
-					   Bank{.addr = 0xC000, .bank = 0, .size = bank_16k}},
+				.banks{
+					Bank{.addr = 0x8000, .bank = 0, .size = bank_16k},
+					Bank{.addr = 0xC000, .bank = 0, .size = bank_16k},
+				},
 			};
 		}
 		else if (prgrom_size == bank_32k)

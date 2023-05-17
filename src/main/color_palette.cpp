@@ -8,6 +8,7 @@
 namespace app
 {
 	std::array<cm::Color, 512> default_colors{
+		// clang-format off
 		cm::Color{77,  77,  77 },
 		cm::Color{0,   25,  108},
 		cm::Color{10,  9,   142},
@@ -520,6 +521,7 @@ namespace app
 		cm::Color{88,  88,  88 },
 		cm::Color{0,   0,   0  },
 		cm::Color{0,   0,   0  },
+		// clang-format on
 	};
 
 	ColorPalette ColorPalette::default_palette() noexcept

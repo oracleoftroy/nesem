@@ -168,7 +168,6 @@ namespace nesem::op
 		value >>= 1;
 
 		flags.set(value == 0, Z);
-
 		flags.clear(N);
 
 		return {

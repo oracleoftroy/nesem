@@ -79,8 +79,9 @@ namespace nesem::mappers
 			return Banks{
 				.size = 2,
 				.banks{
-					   Bank{.addr = 0x8000, .bank = first_bank, .size = bank_16k},
-					   Bank{.addr = 0xC000, .bank = bank, .size = bank_16k}},
+					Bank{.addr = 0x8000, .bank = first_bank, .size = bank_16k},
+					Bank{.addr = 0xC000, .bank = bank, .size = bank_16k},
+				},
 			};
 
 			//  3: fix last bank at $C000 and switch 16 KB bank at $8000)
@@ -88,8 +89,9 @@ namespace nesem::mappers
 			return Banks{
 				.size = 2,
 				.banks{
-					   Bank{.addr = 0x8000, .bank = bank, .size = bank_16k},
-					   Bank{.addr = 0xC000, .bank = last_bank, .size = bank_16k}},
+					Bank{.addr = 0x8000, .bank = bank, .size = bank_16k},
+					Bank{.addr = 0xC000, .bank = last_bank, .size = bank_16k},
+				},
 			};
 		}
 	}
@@ -104,15 +106,18 @@ namespace nesem::mappers
 
 			return Banks{
 				.size = 1,
-				.banks{Bank{.addr = 0x0000, .bank = bank, .size = bank_8k}}};
+				.banks{Bank{.addr = 0x0000, .bank = bank, .size = bank_8k}},
+			};
 		}
 		else
 		{
 			return Banks{
 				.size = 2,
-				.banks{Bank{.addr = 0x0000, .bank = U16(chr_bank_0 & chr_bank_mask), .size = bank_4k},
-					   Bank{.addr = 0x1000, .bank = U16(chr_bank_1 & chr_bank_mask), .size = bank_4k}}
-            };
+				.banks{
+					Bank{.addr = 0x0000, .bank = U16(chr_bank_0 & chr_bank_mask), .size = bank_4k},
+					Bank{.addr = 0x1000, .bank = U16(chr_bank_1 & chr_bank_mask), .size = bank_4k},
+				},
+			};
 		}
 	}
 

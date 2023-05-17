@@ -29,7 +29,6 @@ namespace
 
 namespace ui
 {
-
 	Renderer::Renderer(void *renderer) noexcept
 		: renderer(renderer)
 	{

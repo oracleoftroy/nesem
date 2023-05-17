@@ -21,7 +21,8 @@ namespace nesem::mappers
 		// always has a single active 32k bank
 		return {
 			.size = 1,
-			.banks{Bank{.addr = 0x8000, .bank = prg_bank_select, .size = bank_32k}}};
+			.banks{Bank{.addr = 0x8000, .bank = prg_bank_select, .size = bank_32k}},
+		};
 	}
 
 	Banks NesMapper066::report_ppu_mapping() const noexcept

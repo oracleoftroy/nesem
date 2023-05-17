@@ -20,9 +20,11 @@ namespace nesem::mappers
 		auto last_bank = U16(rom_prgrom_banks(rom(), bank_16k) - 1);
 		return {
 			.size = 2,
-			.banks{Bank{.addr = 0x8000, .bank = bank_select, .size = bank_16k},
-				   Bank{.addr = 0xC000, .bank = last_bank, .size = bank_16k}}
-        };
+			.banks{
+				Bank{.addr = 0x8000, .bank = bank_select, .size = bank_16k},
+				Bank{.addr = 0xC000, .bank = last_bank, .size = bank_16k},
+			},
+		};
 	}
 
 	Banks NesMapper002::report_ppu_mapping() const noexcept

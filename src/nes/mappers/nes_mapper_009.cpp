@@ -25,11 +25,13 @@ namespace nesem::mappers
 
 		return {
 			.size = 4,
-			.banks{Bank{.addr = 0x8000, .bank = prgrom_bank, .size = bank_8k},
-				   Bank{.addr = 0xA000, .bank = U16(num_banks - 3), .size = bank_8k},
-				   Bank{.addr = 0xC000, .bank = U16(num_banks - 2), .size = bank_8k},
-				   Bank{.addr = 0xE000, .bank = U16(num_banks - 1), .size = bank_8k}}
-        };
+			.banks{
+				Bank{.addr = 0x8000, .bank = prgrom_bank, .size = bank_8k},
+				Bank{.addr = 0xA000, .bank = U16(num_banks - 3), .size = bank_8k},
+				Bank{.addr = 0xC000, .bank = U16(num_banks - 2), .size = bank_8k},
+				Bank{.addr = 0xE000, .bank = U16(num_banks - 1), .size = bank_8k},
+			},
+		};
 	}
 
 	Banks NesMapper009::report_ppu_mapping() const noexcept
@@ -39,9 +41,11 @@ namespace nesem::mappers
 
 		return {
 			.size = 2,
-			.banks{Bank{.addr = 0x0000, .bank = bank_0, .size = bank_4k},
-				   Bank{.addr = 0x1000, .bank = bank_1, .size = bank_4k}}
-        };
+			.banks{
+				Bank{.addr = 0x0000, .bank = bank_0, .size = bank_4k},
+				Bank{.addr = 0x1000, .bank = bank_1, .size = bank_4k},
+			},
+		};
 	}
 
 	MirroringMode NesMapper009::mirroring() const noexcept

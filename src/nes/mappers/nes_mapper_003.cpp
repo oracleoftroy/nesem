@@ -21,20 +21,24 @@ namespace nesem::mappers
 		{
 			return {
 				.size = 2,
-				.banks{Bank{.addr = 0x8000, .bank = 0, .size = bank_16k},
-					   Bank{.addr = 0xC000, .bank = 0, .size = bank_16k}}
-            };
+				.banks{
+					Bank{.addr = 0x8000, .bank = 0, .size = bank_16k},
+					Bank{.addr = 0xC000, .bank = 0, .size = bank_16k},
+				},
+			};
 		}
 		return {
 			.size = 1,
-			.banks{Bank{.addr = 0x8000, .bank = 0, .size = bank_32k}}};
+			.banks{Bank{.addr = 0x8000, .bank = 0, .size = bank_32k}},
+		};
 	}
 
 	Banks NesMapper003::report_ppu_mapping() const noexcept
 	{
 		return {
 			.size = 1,
-			.banks{Bank{.addr = 0x0000, .bank = bank_select, .size = bank_8k}}};
+			.banks{Bank{.addr = 0x0000, .bank = bank_select, .size = bank_8k}},
+		};
 	}
 
 	U8 NesMapper003::on_cpu_peek(Addr addr) const noexcept

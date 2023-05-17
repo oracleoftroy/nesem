@@ -79,17 +79,17 @@ namespace app
 		table.insert("controller-1"sv,
 			toml::table{
 				{key_turbo_speed, config.controller_1.turbo_speed},
-				{key_turbo_a,     config.controller_1.turbo_a    },
-				{key_turbo_b,     config.controller_1.turbo_b    },
-				{key_a,           config.controller_1.a          },
-				{key_b,           config.controller_1.b          },
-				{key_select,      config.controller_1.select     },
-				{key_start,       config.controller_1.start      },
-				{key_up,          config.controller_1.up         },
-				{key_down,        config.controller_1.down       },
-				{key_left,        config.controller_1.left       },
-				{key_right,       config.controller_1.right      },
-        });
+				{key_turbo_a, config.controller_1.turbo_a},
+				{key_turbo_b, config.controller_1.turbo_b},
+				{key_a, config.controller_1.a},
+				{key_b, config.controller_1.b},
+				{key_select, config.controller_1.select},
+				{key_start, config.controller_1.start},
+				{key_up, config.controller_1.up},
+				{key_down, config.controller_1.down},
+				{key_left, config.controller_1.left},
+				{key_right, config.controller_1.right},
+			});
 
 		auto file = std::ofstream(path, std::ios::trunc);
 		if (!file)
