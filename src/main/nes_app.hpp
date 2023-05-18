@@ -38,7 +38,7 @@ namespace app
 	public:
 		explicit NesApp(ui::App &app, const Config &config);
 
-		Config get_config(const ui::App &app) const noexcept;
+		Config get_config() const noexcept;
 
 	private:
 		void on_file_drop(ui::App &app, std::string_view filename);
@@ -59,8 +59,8 @@ namespace app
 
 		void draw_screen();
 
-		nesem::U8 read_controller(ui::App &app);
-		nesem::U8 read_zapper(ui::App &app);
+		nesem::U8 read_controller(const ui::App &app);
+		nesem::U8 read_zapper(const ui::App &app);
 		bool sense_light(cm::Point2i pos) noexcept;
 
 		std::filesystem::path data_path;

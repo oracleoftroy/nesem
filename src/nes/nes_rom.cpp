@@ -287,10 +287,7 @@ namespace nesem::mappers
 
 				[[fallthrough]];
 			case 7:
-				if (rom.v2->pcb.submapper == 2)
-					return true;
-
-				return false;
+				return rom.v2->pcb.submapper == 2;
 
 			case 34:
 				// iNES 2 submapper distinguishes the NINA-001 (no conflicts) and BNROM (conflicts), so use that if we have it

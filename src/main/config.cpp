@@ -11,22 +11,22 @@ using namespace std::string_view_literals;
 
 namespace app
 {
-	constinit auto key_version = "version"sv;
-	constinit auto key_last_rom = "last-rom"sv;
-	constinit auto key_palette = "palette"sv;
+	constinit const auto key_version = "version"sv;
+	constinit const auto key_last_rom = "last-rom"sv;
+	constinit const auto key_palette = "palette"sv;
 
-	constinit auto key_controller_1 = "controller-1"sv;
-	constinit auto key_turbo_speed = "turbo-speed"sv;
-	constinit auto key_turbo_a = "turbo-A"sv;
-	constinit auto key_turbo_b = "turbo-B"sv;
-	constinit auto key_a = "A"sv;
-	constinit auto key_b = "B"sv;
-	constinit auto key_select = "Select"sv;
-	constinit auto key_start = "Start"sv;
-	constinit auto key_up = "Up"sv;
-	constinit auto key_down = "Down"sv;
-	constinit auto key_left = "Left"sv;
-	constinit auto key_right = "Right"sv;
+	constinit const auto key_controller_1 = "controller-1"sv;
+	constinit const auto key_turbo_speed = "turbo-speed"sv;
+	constinit const auto key_turbo_a = "turbo-A"sv;
+	constinit const auto key_turbo_b = "turbo-B"sv;
+	constinit const auto key_a = "A"sv;
+	constinit const auto key_b = "B"sv;
+	constinit const auto key_select = "Select"sv;
+	constinit const auto key_start = "Start"sv;
+	constinit const auto key_up = "Up"sv;
+	constinit const auto key_down = "Down"sv;
+	constinit const auto key_left = "Left"sv;
+	constinit const auto key_right = "Right"sv;
 
 	Config load_config_file(const std::filesystem::path &path) noexcept
 	{

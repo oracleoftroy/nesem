@@ -40,7 +40,7 @@ int application_main(int argc, char *argv[])
 
 	app.run();
 
-	app::save_config_file(config_path, core.get_config(app));
+	app::save_config_file(config_path, core.get_config());
 
 	LOG_INFO("Exiting...");
 	return 0;

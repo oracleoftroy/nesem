@@ -22,7 +22,7 @@ namespace
 
 		while (!fs::exists(dir / relative))
 		{
-			LOG_INFO("Trying {}", (dir / relative).string());
+			LOG_DEBUG("Trying {}", (dir / relative).string());
 
 			auto previous = std::exchange(dir, dir.parent_path());
 
@@ -31,12 +31,11 @@ namespace
 				break;
 		}
 
-		auto p = dir / relative;
-
-		// we found a path, return it
-		if (fs::exists(p))
+		if (auto p = dir / relative;
+			fs::exists(p))
 		{
-			LOG_INFO("Found {}", p.string());
+			// we found a path, return it
+			LOG_DEBUG("Found {}", p.string());
 			return p;
 		}
 
@@ -69,7 +68,7 @@ namespace app
 			  .player1 = std::make_unique<nesem::NesController>(std::bind_front(&NesApp::read_controller, this, std::ref(app))),
 			  .player2 = std::make_unique<nesem::NesInputDevice>(std::bind_front(&NesApp::read_zapper, this, std::ref(app))),
 			  .nes20db_filename = find_file(R"(data/nes20db.xml)"),
-			  .user_data_dir = app.get_user_data_path("nesem"),
+			  .user_data_dir = ui::App::get_user_data_path("nesem"),
 		  })
 	{
 		{ // setup callbacks
@@ -78,38 +77,38 @@ namespace app
 		}
 
 		{ // setup keys
-			button_a = app.key_from_name(config.controller_1.a.c_str());
-			button_b = app.key_from_name(config.controller_1.b.c_str());
-			button_turbo_a = app.key_from_name(config.controller_1.turbo_a.c_str());
-			button_turbo_b = app.key_from_name(config.controller_1.turbo_b.c_str());
+			button_a = ui::App::key_from_name(config.controller_1.a.c_str());
+			button_b = ui::App::key_from_name(config.controller_1.b.c_str());
+			button_turbo_a = ui::App::key_from_name(config.controller_1.turbo_a.c_str());
+			button_turbo_b = ui::App::key_from_name(config.controller_1.turbo_b.c_str());
 
-			button_select = app.key_from_name(config.controller_1.select.c_str());
-			button_start = app.key_from_name(config.controller_1.start.c_str());
-			button_up = app.key_from_name(config.controller_1.up.c_str());
-			button_down = app.key_from_name(config.controller_1.down.c_str());
-			button_left = app.key_from_name(config.controller_1.left.c_str());
-			button_right = app.key_from_name(config.controller_1.right.c_str());
+			button_select = ui::App::key_from_name(config.controller_1.select.c_str());
+			button_start = ui::App::key_from_name(config.controller_1.start.c_str());
+			button_up = ui::App::key_from_name(config.controller_1.up.c_str());
+			button_down = ui::App::key_from_name(config.controller_1.down.c_str());
+			button_left = ui::App::key_from_name(config.controller_1.left.c_str());
+			button_right = ui::App::key_from_name(config.controller_1.right.c_str());
 
-			escape_key = app.key_from_name("Escape");
+			escape_key = ui::App::key_from_name("Escape");
 
-			toggle_fullscreen_key = app.key_from_name("Return");
-			palette_next_key = app.key_from_name("]");
-			palette_prev_key = app.key_from_name("[");
+			toggle_fullscreen_key = ui::App::key_from_name("Return");
+			palette_next_key = ui::App::key_from_name("]");
+			palette_prev_key = ui::App::key_from_name("[");
 
-			debug_mode_none = app.key_from_name("0");
-			debug_mode_bg = app.key_from_name("1");
-			debug_mode_fg = app.key_from_name("2");
-			debug_mode_cpu = app.key_from_name("3");
+			debug_mode_none = ui::App::key_from_name("0");
+			debug_mode_bg = ui::App::key_from_name("1");
+			debug_mode_fg = ui::App::key_from_name("2");
+			debug_mode_cpu = ui::App::key_from_name("3");
 
-			break_key = app.key_from_name("Pause");
-			run_key = app.key_from_name("F5");
+			break_key = ui::App::key_from_name("Pause");
+			run_key = ui::App::key_from_name("F5");
 
-			step_cpu_instruction_key = app.key_from_name("F8");
-			step_ppu_cycle_key = app.key_from_name("F9");
-			step_ppu_scanline_key = app.key_from_name("F10");
-			step_ppu_frame_key = app.key_from_name("F11");
+			step_cpu_instruction_key = ui::App::key_from_name("F8");
+			step_ppu_cycle_key = ui::App::key_from_name("F9");
+			step_ppu_scanline_key = ui::App::key_from_name("F10");
+			step_ppu_frame_key = ui::App::key_from_name("F11");
 
-			reset_key = app.key_from_name("R");
+			reset_key = ui::App::key_from_name("R");
 		}
 
 		{ // setup screen areas
@@ -146,23 +145,23 @@ namespace app
 			load_pal(data_path / "nes_colors.pal");
 	}
 
-	Config NesApp::get_config(const ui::App &app) const noexcept
+	Config NesApp::get_config() const noexcept
 	{
 		Config config;
 
 		config.last_played_rom = rom_name;
 
 		config.controller_1.turbo_speed = turbo_frame_cycle;
-		config.controller_1.turbo_a = app.name_from_key(button_turbo_a);
-		config.controller_1.turbo_b = app.name_from_key(button_turbo_b);
-		config.controller_1.a = app.name_from_key(button_a);
-		config.controller_1.b = app.name_from_key(button_b);
-		config.controller_1.select = app.name_from_key(button_select);
-		config.controller_1.start = app.name_from_key(button_start);
-		config.controller_1.up = app.name_from_key(button_up);
-		config.controller_1.down = app.name_from_key(button_down);
-		config.controller_1.left = app.name_from_key(button_left);
-		config.controller_1.right = app.name_from_key(button_right);
+		config.controller_1.turbo_a = ui::App::name_from_key(button_turbo_a);
+		config.controller_1.turbo_b = ui::App::name_from_key(button_turbo_b);
+		config.controller_1.a = ui::App::name_from_key(button_a);
+		config.controller_1.b = ui::App::name_from_key(button_b);
+		config.controller_1.select = ui::App::name_from_key(button_select);
+		config.controller_1.start = ui::App::name_from_key(button_start);
+		config.controller_1.up = ui::App::name_from_key(button_up);
+		config.controller_1.down = ui::App::name_from_key(button_down);
+		config.controller_1.left = ui::App::name_from_key(button_left);
+		config.controller_1.right = ui::App::name_from_key(button_right);
 
 		return config;
 	}
@@ -381,7 +380,6 @@ namespace app
 
 	void NesApp::render(ui::Renderer &renderer)
 	{
-		// renderer.fill({});
 		renderer.fill({22, 22, 22});
 		renderer.blit({0, 0}, nes_screen_texture, std::nullopt, {nes_scale, nes_scale});
 
@@ -418,7 +416,7 @@ namespace app
 		});
 	}
 
-	nesem::U8 NesApp::read_controller(ui::App &app)
+	nesem::U8 NesApp::read_controller(const ui::App &app)
 	{
 		using enum nesem::Buttons;
 		util::Flags<nesem::Buttons> result = None;
@@ -460,7 +458,7 @@ namespace app
 		return result.raw_value();
 	}
 
-	nesem::U8 NesApp::read_zapper(ui::App &app)
+	nesem::U8 NesApp::read_zapper(const ui::App &app)
 	{
 		// output
 		// bits xxx43xxx
@@ -487,10 +485,9 @@ namespace app
 		if (triggered_frame_counter > 0)
 			result |= (1 << 4);
 
-		auto pos = app.mouse_position() / nes_scale;
-
 		// bit goes low if we detect light as the ppu is rendering around our mouse position
-		if (!sense_light(pos))
+		if (auto pos = app.mouse_position() / nes_scale;
+			!sense_light(pos))
 			result |= (1 << 3);
 
 		return result;

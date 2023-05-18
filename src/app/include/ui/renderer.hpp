@@ -21,7 +21,7 @@ namespace ui
 
 		void fill_rect(cm::Color color, cm::Recti rect) noexcept;
 
-		void blit(cm::Point2i dst, const Texture &src, const std::optional<cm::Recti> &src_rect = std::nullopt, cm::Sizei scale = {1, 1}) noexcept;
+		void blit(cm::Point2i dst, const Texture &texture, const std::optional<cm::Recti> &src_rect = std::nullopt, cm::Sizei scale = {1, 1}) noexcept;
 
 		// this class is just used as an interface. Users shouldn't try to store it
 		Renderer(const Renderer &) = delete;

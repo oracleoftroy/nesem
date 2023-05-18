@@ -15,11 +15,11 @@ namespace ui
 		explicit Texture(void *texture) noexcept;
 		~Texture();
 
-		Texture(Texture &&texture) noexcept;
-		Texture &operator=(Texture &&texture) noexcept;
+		Texture(Texture &&other) noexcept;
+		Texture &operator=(Texture &&other) noexcept;
 
-		Texture(const Texture &texture) noexcept = delete;
-		Texture &operator=(const Texture &texture) noexcept = delete;
+		Texture(const Texture &other) noexcept = delete;
+		Texture &operator=(const Texture &other) noexcept = delete;
 
 		void enable_blending(bool enable) noexcept;
 

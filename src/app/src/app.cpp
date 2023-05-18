@@ -373,7 +373,7 @@ namespace ui
 
 		return App{std::make_unique<Core>(
 			std::move(sdl),
-			std::move(window_title),
+			window_title,
 			window_size,
 			logical_size,
 			renderer_viewport,
@@ -475,7 +475,7 @@ namespace ui
 		return !!core;
 	}
 
-	Key App::key_from_name(const char *name) const noexcept
+	Key App::key_from_name(const char *name) noexcept
 	{
 		auto key = SDL_GetKeyFromName(name);
 
@@ -485,7 +485,7 @@ namespace ui
 		return Key{key};
 	}
 
-	Scancode App::scancode_from_name(const char *name) const noexcept
+	Scancode App::scancode_from_name(const char *name) noexcept
 	{
 		auto scancode = SDL_GetScancodeFromName(name);
 		if (scancode == SDL_SCANCODE_UNKNOWN)
@@ -494,13 +494,13 @@ namespace ui
 		return Scancode{scancode};
 	}
 
-	std::string_view App::name_from_key(Key key) const noexcept
+	std::string_view App::name_from_key(Key key) noexcept
 	{
 		auto value = static_cast<int>(key);
 		return SDL_GetKeyName(static_cast<SDL_Keycode>(value));
 	}
 
-	std::string_view App::name_from_scancode(Scancode scancode) const noexcept
+	std::string_view App::name_from_scancode(Scancode scancode) noexcept
 	{
 		auto value = static_cast<int>(scancode);
 		return SDL_GetScancodeName(static_cast<SDL_Scancode>(value));
@@ -708,7 +708,7 @@ namespace ui
 		current_keys.resize(static_cast<size_t>(num_keys));
 	}
 
-	void InputState::update(const App::Core &app) noexcept
+	void InputState::update(const App::Core &core) noexcept
 	{
 		int num_keys;
 		auto keys = SDL_GetKeyboardState(&num_keys);
@@ -723,7 +723,7 @@ namespace ui
 		last_mouse_buttons = std::exchange(current_mouse_buttons, SDL_GetMouseState(&mouse_pos.x, &mouse_pos.y));
 
 		float fx, fy;
-		SDL_RenderWindowToLogical(app.renderer.get(), mouse_pos.x, mouse_pos.y, &fx, &fy);
+		SDL_RenderWindowToLogical(core.renderer.get(), mouse_pos.x, mouse_pos.y, &fx, &fy);
 
 		mouse_pos.x = static_cast<int>(fx);
 		mouse_pos.y = static_cast<int>(fy);

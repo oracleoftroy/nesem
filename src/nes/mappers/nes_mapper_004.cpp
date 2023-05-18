@@ -33,11 +33,8 @@ namespace nesem::mappers
 				switch (variant)
 				{
 				case MMC3C:
-					return variant;
 				case MMC6:
-					return variant;
 				case MC_ACC:
-					return variant;
 				case MMC3A:
 					return variant;
 				}
