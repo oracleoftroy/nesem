@@ -2,21 +2,45 @@
 # Options affecting listfile parsing
 # ----------------------------------
 with section("parse"):
+  file_set = {
+    "pargs": '*',
+    "kwargs": {
+      "FILE_SET": {
+        "pargs": 1,
+        "kwargs": {
+          "TYPE": {
+            "flags": ["HEADERS", "CXX_MODULES", "CXX_MODULE_HEADER_UNITS"],
+          },
+          "BASE_DIRS": "+",
+          "FILES": "+",
+        },
+      },
+    }
+  }
 
   # Specify structure for custom cmake functions
   additional_commands = {
-     'catch_discover_tests': {
-         'pargs': 1,
-         'kwargs': {
-             'TEST_SPEC': '+',
-             'EXTRA_ARGS': '+',
-             'WORKING_DIRECTORY': 1,
-             'TEST_PREFIX': 1,
-             'TEST_SUFFIX': 1,
-             'PROPERTIES': '2+',
-             'TEST_LIST': 1,
-         }
-     }
+    'catch_discover_tests': {
+        'pargs': 1,
+        'kwargs': {
+            'TEST_SPEC': '+',
+            'EXTRA_ARGS': '+',
+            'WORKING_DIRECTORY': 1,
+            'TEST_PREFIX': 1,
+            'TEST_SUFFIX': 1,
+            'PROPERTIES': '2+',
+            'TEST_LIST': 1,
+        }
+    },
+
+    "target_sources": {
+      "pargs": "1",
+      "kwargs": {
+        "INTERFACE": file_set,
+        "PUBLIC": file_set,
+        "PRIVATE": file_set,
+      }
+    },
   }
 
   # Override configurations per-command where available
