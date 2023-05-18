@@ -927,7 +927,7 @@ namespace cm
 		auto p = c2.pos - c1.pos;
 		auto dist_r = c1.radius + c2.radius;
 
-		// we can skip the square root and just compare the magnitutes
+		// we can skip the square root and just compare the magnitudes
 		return (p.x * p.x + p.y * p.y) < (dist_r * dist_r);
 	}
 
@@ -944,7 +944,7 @@ namespace cm
 
 		float dist_square = dx * dx + dy * dy;
 
-		// we can skip the square root and just compare the magnitutes
+		// we can skip the square root and just compare the magnitudes
 		return dist_square < c.radius * c.radius;
 	}
 

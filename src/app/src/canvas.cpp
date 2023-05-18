@@ -694,7 +694,7 @@ namespace ui
 
 	void Canvas::blit(cm::Point2i dst, const Canvas &src, const std::optional<cm::Recti> &src_rect, cm::Sizei scale) noexcept
 	{
-		// start point is too big to be visable, so we are done
+		// start point is too big to be visible, so we are done
 		if (dst.x >= canvas_size.w || dst.y >= canvas_size.h)
 			return;
 

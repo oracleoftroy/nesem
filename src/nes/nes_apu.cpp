@@ -6,7 +6,7 @@
 
 namespace nesem
 {
-	// the 2 bit duty value indexes this loopup table
+	// the 2 bit duty value indexes this lookup table
 	static constexpr std::array<U8, 4> duty_patterns = {
 		0b01000000,
 		0b01100000,
