@@ -8,7 +8,7 @@
 
 namespace nesem
 {
-	enum class Addr : std::uint_fast16_t
+	enum class Addr : std::uint16_t
 	{
 	};
 

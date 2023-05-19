@@ -11,10 +11,10 @@
 
 namespace nesem
 {
-	using U8 = std::uint_fast8_t;
-	using U16 = std::uint_fast16_t;
-	using U32 = std::uint_fast32_t;
-	using U64 = std::uint_fast64_t;
+	using U8 = std::uint8_t;
+	using U16 = std::uint16_t;
+	using U32 = std::uint32_t;
+	using U64 = std::uint64_t;
 
 	enum BankSize : U32
 	{
