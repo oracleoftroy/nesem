@@ -38,7 +38,7 @@ namespace nesem
 			if ((sprite_row < 8 && flip_y()) || (sprite_row >= 8 && !flip_y()))
 				++cell;
 
-			return Addr{((index & 1) << 12) | (cell << 4) | row};
+			return Addr(((index & 1) << 12) | (cell << 4) | row);
 		}
 		else
 		{
@@ -193,8 +193,8 @@ namespace nesem
 
 				for (U16 row = 0; row < 8; ++row)
 				{
-					U8 tile_lo = peek(Addr{index * to_integer(ppu_pattern_1) + offset + row + 0x0000});
-					U8 tile_hi = peek(Addr{index * to_integer(ppu_pattern_1) + offset + row + 0x0008});
+					U8 tile_lo = peek(Addr(index * to_integer(ppu_pattern_1) + offset + row + 0x0000));
+					U8 tile_hi = peek(Addr(index * to_integer(ppu_pattern_1) + offset + row + 0x0008));
 
 					for (U16 col = 0; col < 8; ++col)
 					{

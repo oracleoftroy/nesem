@@ -678,7 +678,7 @@ namespace nesem
 
 			// do the dma transfer, read on even steps, write on odd steps
 			if ((dma_step & 1) == 0)
-				scratch = nes->bus().read(Addr{U16((dma_page << 8) | (dma_step >> 1))}, NesBusOp::ready);
+				scratch = nes->bus().read((Addr{dma_page} << 8) | (dma_step >> 1), NesBusOp::ready);
 			else
 				nes->ppu().oamdata(scratch);
 
@@ -2208,7 +2208,7 @@ namespace nesem
 			// we need an extra cycle to "fix" the address if it crosses a page boundary
 			// we model this by skipping the next step if we didn't overflow
 			// For some reason, write always takes the extra step regardless
-			if (type != OpType::write && hi == (effective_addr >> 8) & 0xFF)
+			if (type != OpType::write && hi == ((effective_addr >> 8) & 0xFF))
 				++step;
 
 			return AddressStatus::pending;
@@ -2375,7 +2375,7 @@ namespace nesem
 			// if adding the index pushes us to the next page, add a cycle
 			// in this implementation, we will skip cycle 4 if we are still in the same page
 			// this only applies to reads, writes always have the extra cycle
-			if (type == OpType::read && hi == (effective_addr >> 8) & 0xFF)
+			if (type == OpType::read && hi == ((effective_addr >> 8) & 0xFF))
 				++step;
 
 			return AddressStatus::pending;
@@ -2440,7 +2440,7 @@ namespace nesem
 			// if adding the index pushes us to the next page, add a cycle
 			// in this implementation, we will skip cycle 4 if we are still in the same page
 			// this only applies to reads, writes always have the extra cycle
-			if (type == OpType::read && hi == (effective_addr >> 8) & 0xFF)
+			if (type == OpType::read && hi == ((effective_addr >> 8) & 0xFF))
 				++step;
 
 			return AddressStatus::pending;

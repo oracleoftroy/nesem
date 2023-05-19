@@ -307,7 +307,7 @@ namespace nesem::mappers
 		// 512k prg-rom
 		if (size(rom().prg_rom) == 0x80000)
 		{
-			auto bank_ext = (chr_bank_0 & 0b10000);
+			U8 bank_ext = (chr_bank_0 & 0b10000);
 			bank |= bank_ext;
 			first_bank |= bank_ext;
 			last_bank_mask |= bank_ext;

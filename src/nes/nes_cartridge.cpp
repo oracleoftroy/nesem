@@ -229,7 +229,7 @@ namespace nesem
 			return open_bus_read();
 		}
 
-		return static_cast<U8>(prg_nvram[addr]);
+		return prg_nvram[addr];
 	}
 
 	bool NesCartridge::prgnvram_write(size_t addr, U8 value) noexcept

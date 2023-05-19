@@ -78,8 +78,7 @@ namespace util
 		template <std::same_as<T>... Ts>
 		constexpr void clear(Ts... flags) noexcept
 		{
-			auto bits = (... | std::to_underlying(flags));
-			underlying_value &= ~bits;
+			underlying_value &= ~(... | std::to_underlying(flags));
 		}
 
 		constexpr T value() const noexcept
