@@ -347,4 +347,11 @@ namespace nesem::mappers
 		// nesdev wiki indicates that this field was not widely used in ines 1 headers, so just default to JP/US
 		return 0;
 	}
+
+	// map a system address to an address on the rom.
+	size_t to_rom_addr(size_t bank, size_t bank_size, Addr addr) noexcept
+	{
+		CHECK(std::has_single_bit(bank_size), "banks must be a power of two");
+		return bank * bank_size + to_integer(addr & (bank_size - 1));
+	}
 }

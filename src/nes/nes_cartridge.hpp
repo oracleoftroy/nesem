@@ -11,8 +11,6 @@
 #include "nes_rom.hpp"
 #include "nes_types.hpp"
 
-#include <util/logging.hpp>
-
 namespace nesem
 {
 	class Nes;
@@ -56,13 +54,6 @@ namespace nesem
 
 #endif
 	};
-
-	// map a system address to an address on the rom.
-	constexpr size_t to_rom_addr(size_t bank, size_t bank_size, Addr addr) noexcept
-	{
-		CHECK(std::has_single_bit(bank_size), "banks must be a power of two");
-		return bank * bank_size + to_integer(addr & (bank_size - 1));
-	}
 
 	class NesCartridge
 	{

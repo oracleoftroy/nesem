@@ -205,4 +205,7 @@ namespace nesem::mappers
 	bool rom_has_bus_conflicts(const NesRom &rom) noexcept;
 
 	int rom_region(const NesRom &rom) noexcept;
+
+	// map a system address to an address on the rom.
+	size_t to_rom_addr(size_t bank, size_t bank_size, Addr addr) noexcept;
 }

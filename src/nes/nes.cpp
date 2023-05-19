@@ -102,11 +102,7 @@ namespace nesem
 		if (on_error)
 			on_error(message);
 		else
-		{
-			LOG_CRITICAL("Error encountered, but no error handler attached, resetting...");
-			DEBUG_BREAK(); // give us a chance to debug before resetting
-			reset();
-		}
+			LOG_CRITICAL("Error encountered, but no error handler attached...");
 	}
 
 	void Nes::tick(double deltatime) noexcept
