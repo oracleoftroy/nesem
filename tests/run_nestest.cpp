@@ -29,10 +29,8 @@ std::filesystem::path find_path(const std::filesystem::path &path)
 	return path;
 }
 
-TEST_CASE("nestest.nes should run", "[nestest.nes]")
+TEST_CASE("nestest.nes should run", "[.skip][nestest.nes]")
 {
-	SKIP("A bit unreliable right now. Need more robust handling of failure.");
-
 	auto nes = nesem::Nes{nesem::NesSettings{.error = [](const auto &msg) { FAIL(msg); }}};
 
 	if (!nes.load_rom(find_path("data/nestest.nes")))
