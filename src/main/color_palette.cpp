@@ -7,7 +7,7 @@
 
 namespace app
 {
-	std::array<cm::Color, 512> default_colors{
+	constexpr std::array<cm::Color, 512> default_colors{
 		// clang-format off
 		cm::Color{77,  77,  77 },
 		cm::Color{0,   25,  108},
@@ -591,7 +591,7 @@ namespace app
 		}
 	}
 
-	ColorPalette::ColorPalette(std::span<cm::Color> colors) noexcept
+	ColorPalette::ColorPalette(std::span<const cm::Color> colors) noexcept
 		: palette(begin(colors), end(colors))
 	{
 		auto count = size(palette);
