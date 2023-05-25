@@ -4,6 +4,7 @@
 #include <numbers>
 
 #include <fmt/format.h>
+#include <nes_cartridge.hpp>
 
 #include "color_palette.hpp"
 #include "nes_app.hpp"

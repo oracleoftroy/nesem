@@ -1,5 +1,7 @@
 #include "nes_ppu.hpp"
 
+#include <nes_cartridge.hpp>
+
 #include "nes.hpp"
 #include "nes_ppu_register_bits.hpp"
 

@@ -3,7 +3,7 @@
 #include <map>
 #include <utility>
 
-#include "nes_cartridge.hpp"
+#include <nes_cartridge.hpp>
 
 #include <util/logging.hpp>
 

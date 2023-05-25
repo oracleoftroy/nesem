@@ -5,7 +5,7 @@
 #include <string_view>
 #include <vector>
 
-#include "nes_types.hpp"
+#include <nes_types.hpp>
 
 namespace nesem::mappers
 {

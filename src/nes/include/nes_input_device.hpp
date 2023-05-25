@@ -3,7 +3,7 @@
 #include <memory>
 #include <utility>
 
-#include "nes_types.hpp"
+#include <nes_types.hpp>
 
 namespace nesem
 {

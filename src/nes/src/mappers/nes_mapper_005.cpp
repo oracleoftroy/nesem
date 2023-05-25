@@ -1,6 +1,6 @@
 #include "nes_mapper_005.hpp"
 
-#include "nes_ppu_register_bits.hpp"
+#include "../nes_ppu_register_bits.hpp"
 
 namespace nesem::mappers
 {

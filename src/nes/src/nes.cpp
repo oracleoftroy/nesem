@@ -2,7 +2,9 @@
 
 #include <utility>
 
-#include "nes_cartridge.hpp"
+#include <nes_cartridge.hpp>
+
+#include "nes_cartridge_loader.hpp"
 
 #include <util/logging.hpp>
 
@@ -53,6 +55,8 @@ namespace nesem
 		  user_data_dir(std::move(settings.user_data_dir))
 	{
 	}
+
+	Nes::~Nes() = default;
 
 	bool Nes::load_rom(const std::filesystem::path &filename) noexcept
 	{

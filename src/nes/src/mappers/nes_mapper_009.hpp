@@ -1,6 +1,8 @@
 #pragma once
 
-#include "../nes_cartridge.hpp"
+#include <nes_cartridge.hpp>
+
+#include "../nes_cartridge_loader.hpp"
 
 namespace nesem::mappers
 {

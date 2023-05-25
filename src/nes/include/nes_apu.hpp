@@ -2,7 +2,7 @@
 
 #include <array>
 
-#include "nes_types.hpp"
+#include <nes_types.hpp>
 
 namespace nesem
 {

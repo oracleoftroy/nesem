@@ -3,6 +3,7 @@
 #include <utility>
 
 #include "nes.hpp"
+#include "nes_cartridge_loader.hpp"
 
 #include <util/logging.hpp>
 

@@ -3,7 +3,8 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include <fmt/format.h>
-#include <nes_cpu_ops.hpp>
+
+#include "../src/nes/src/nes_cpu_ops.hpp"
 
 constexpr nesem::U16 to16(nesem::U8 hi, nesem::U8 lo) noexcept
 {

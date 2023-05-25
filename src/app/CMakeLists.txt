@@ -22,7 +22,7 @@ add_library(
 )
 target_link_libraries(appui PRIVATE project_options)
 target_link_libraries(appui PUBLIC drawlib util)
-target_link_libraries(appui PRIVATE  $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>)
+target_link_libraries(appui PRIVATE $<IF:$<TARGET_EXISTS:SDL2::SDL2>,SDL2::SDL2,SDL2::SDL2-static>)
 target_include_directories(appui PUBLIC include)
 
 add_library(appui_main OBJECT "src/app-main.cpp")

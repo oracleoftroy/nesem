@@ -3,7 +3,7 @@
 #include <span>
 #include <string>
 
-#include "nes_types.hpp"
+#include <nes_types.hpp>
 
 namespace nesem::util
 {

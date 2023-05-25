@@ -1,14 +1,16 @@
 #pragma once
 
-#include "nes_apu.hpp"
-#include "nes_bus.hpp"
-#include "nes_cartridge.hpp"
-#include "nes_clock.hpp"
-#include "nes_cpu.hpp"
-#include "nes_input_device.hpp"
-#include "nes_nvram.hpp"
-#include "nes_ppu.hpp"
-#include "nes_rom_loader.hpp"
+#include <filesystem>
+#include <memory>
+#include <string_view>
+
+#include <nes_apu.hpp>
+#include <nes_bus.hpp>
+#include <nes_clock.hpp>
+#include <nes_cpu.hpp>
+#include <nes_input_device.hpp>
+#include <nes_ppu.hpp>
+#include <nes_rom_loader.hpp>
 
 namespace nesem
 {
@@ -23,10 +25,14 @@ namespace nesem
 		std::filesystem::path user_data_dir = {};
 	};
 
+	class NesCartridge;
+	class NesNvram;
+
 	class Nes final
 	{
 	public:
-		Nes(NesSettings &&settings);
+		explicit Nes(NesSettings &&settings);
+		~Nes();
 
 		bool load_rom(const std::filesystem::path &filename) noexcept;
 		void unload_rom() noexcept;

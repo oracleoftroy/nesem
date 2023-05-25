@@ -6,10 +6,9 @@
 #include <optional>
 #include <vector>
 
-#include "nes_cartridge_loader.hpp"
-#include "nes_nvram.hpp"
-#include "nes_rom.hpp"
-#include "nes_types.hpp"
+#include <nes_nvram.hpp>
+#include <nes_rom.hpp>
+#include <nes_types.hpp>
 
 namespace nesem
 {

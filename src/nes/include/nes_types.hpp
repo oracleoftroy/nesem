@@ -5,7 +5,7 @@
 #include <string_view>
 #include <version>
 
-#include "nes_addr.hpp"
+#include <nes_addr.hpp>
 
 #include <util/flags.hpp>
 

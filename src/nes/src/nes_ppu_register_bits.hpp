@@ -1,5 +1,7 @@
 #pragma once
 
+#include <nes_types.hpp>
+
 namespace nesem
 {
 	// clang-format off
