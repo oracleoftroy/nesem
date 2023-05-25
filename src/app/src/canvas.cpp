@@ -406,7 +406,13 @@ namespace ui
 
 		// sort points by y to match fill algorithm
 		auto ps = std::array{p1, p2, p3};
-		std::ranges::sort(ps, {}, &cm::Point2i::y);
+
+		if (ps[0].y > ps[1].y)
+			std::swap(ps[0], ps[1]);
+		if (ps[1].y > ps[2].y)
+			std::swap(ps[1], ps[2]);
+		if (ps[0].y > ps[1].y)
+			std::swap(ps[0], ps[1]);
 
 		draw_line(color, ps[0], ps[1], antialias);
 
@@ -437,7 +443,13 @@ namespace ui
 			return;
 
 		auto ps = std::array{p1, p2, p3};
-		std::ranges::sort(ps, {}, &cm::Point2i::y);
+
+		if (ps[0].y > ps[1].y)
+			std::swap(ps[0], ps[1]);
+		if (ps[1].y > ps[2].y)
+			std::swap(ps[1], ps[2]);
+		if (ps[0].y > ps[1].y)
+			std::swap(ps[0], ps[1]);
 
 		auto fill = [this, color](BresenhamState state_1, BresenhamState state_2) {
 			while (!state_1.done && !state_2.done)

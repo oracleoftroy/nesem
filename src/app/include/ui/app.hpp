@@ -48,6 +48,9 @@ namespace ui
 		// run the application. Exits when the window is closed
 		void run();
 
+		// run one tick of the application, returning true if it should keep running, false if quit was requested
+		bool run_once();
+
 		// verify that App is in a valid state
 		explicit operator bool() noexcept;
 

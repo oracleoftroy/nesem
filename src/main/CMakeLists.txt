@@ -25,3 +25,7 @@ find_package(tomlplusplus CONFIG REQUIRED)
 target_link_libraries(nesem PRIVATE project_options)
 target_link_libraries(nesem PRIVATE nesemlib appui appui_main)
 target_link_libraries(nesem PRIVATE tomlplusplus::tomlplusplus)
+
+if (EMSCRIPTEN)
+	target_link_options(nesem PUBLIC -sASSERTIONS -sALLOW_MEMORY_GROWTH -sFORCE_FILESYSTEM --preload-file ${PROJECT_SOURCE_DIR}/data@data)
+endif()

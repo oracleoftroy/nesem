@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <memory>
+#include <version>
 
 #include <util/preprocessor.hpp>
 
@@ -20,7 +21,14 @@ namespace nesem
 	namespace detail
 	{
 		using MakeCartFn = std::function<std::unique_ptr<NesCartridge>(const Nes &nes, mappers::NesRom &&rom)>;
-		bool register_cart(int ines_mapper, std::move_only_function<MakeCartFn()> fn);
+
+#if defined(__cpp_lib_move_only_function)
+		using ConstructFn = std::move_only_function<MakeCartFn()>;
+#else
+		using ConstructFn = std::function<MakeCartFn()>;
+#endif
+
+		bool register_cart(int ines_mapper, ConstructFn fn);
 
 		template <typename T>
 		auto construct_helper()

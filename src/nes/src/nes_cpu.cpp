@@ -583,6 +583,7 @@ namespace nesem
 	// TODO: Keep this? Give it a "better" home? The static logger is a bit hacky...
 	void NesCpu::log_instruction() noexcept
 	{
+#if !defined(__EMSCRIPTEN__)
 		if constexpr (SPDLOG_ACTIVE_LEVEL <= SPDLOG_LEVEL_TRACE)
 		{
 			static std::shared_ptr<spdlog::logger> cpu_log = [] {
@@ -601,6 +602,7 @@ namespace nesem
 			// pc  raw bytes *di
 			cpu_log->trace("{} A:{:02X} X:{:02X} Y:{:02X} P:{:02X} SP:{:02X} PPU: XXX,XXX CYC:{}", format_nestest(U8(instruction), nes->bus(), PC), A, X, Y, P.raw_value(), S, cycles);
 		}
+#endif
 	}
 
 	NesCpu::NesCpu(Nes *nes) noexcept

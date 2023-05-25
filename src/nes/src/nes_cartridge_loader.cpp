@@ -28,7 +28,7 @@ namespace nesem::detail
 		return registry;
 	};
 
-	bool register_cart(int ines_mapper, std::move_only_function<MakeCartFn()> fn)
+	bool register_cart(int ines_mapper, ConstructFn fn)
 	{
 		auto [it, added] = cart_registry().emplace(ines_mapper, fn());
 		return added;

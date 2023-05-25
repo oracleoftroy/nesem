@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <concepts>
 #include <utility>
 
 #include <fmt/format.h>
@@ -24,13 +25,28 @@ namespace nesem
 			LOG_WARN("{} line {}: {}\n", doc.ErrorName(), doc.ErrorLineNum(), doc.ErrorStr());
 		}
 
+		template <std::integral T>
+		T read_int_attribute(const tinyxml2::XMLElement *element, const char *name)
+		{
+			if constexpr (std::same_as<int32_t, T>)
+				return element->IntAttribute(name);
+			if constexpr (std::same_as<int64_t, T>)
+				return element->Int64Attribute(name);
+			if constexpr (std::same_as<uint32_t, T>)
+				return element->UnsignedAttribute(name);
+			if constexpr (std::same_as<uint64_t, T>)
+				return element->Unsigned64Attribute(name);
+
+			std::unreachable();
+		}
+
 		PrgRom read_prgrom(const tinyxml2::XMLElement *element) noexcept
 		{
 			if (!element || element->Name() != "prgrom"sv)
 				return {};
 
 			return {
-				.size = element->Unsigned64Attribute("size"),
+				.size = read_int_attribute<size_t>(element, "size"),
 				.crc32 = element->Attribute("crc32"),
 				.sha1 = element->Attribute("sha1"),
 				.sum16 = element->Attribute("sum16"),
@@ -43,7 +59,7 @@ namespace nesem
 				return {};
 
 			return ChrRom{
-				.size = element->Unsigned64Attribute("size"),
+				.size = read_int_attribute<size_t>(element, "size"),
 				.crc32 = element->Attribute("crc32"),
 				.sha1 = element->Attribute("sha1"),
 				.sum16 = element->Attribute("sum16"),
@@ -56,7 +72,7 @@ namespace nesem
 				return {};
 
 			return {
-				.size = element->Unsigned64Attribute("size"),
+				.size = read_int_attribute<size_t>(element, "size"),
 				.crc32 = element->Attribute("crc32"),
 				.sha1 = element->Attribute("sha1"),
 			};
@@ -83,8 +99,8 @@ namespace nesem
 			};
 
 			return {
-				.mapper = element->IntAttribute("mapper"),
-				.submapper = element->IntAttribute("submapper"),
+				.mapper = read_int_attribute<int>(element, "mapper"),
+				.submapper = read_int_attribute<int>(element, "submapper"),
 				.mirroring = mirroring(element->Attribute("mirroring")),
 				.battery = element->BoolAttribute("battery"),
 			};
@@ -96,8 +112,8 @@ namespace nesem
 				return {};
 
 			return {
-				.type = element->IntAttribute("type"),
-				.region = element->IntAttribute("region"),
+				.type = read_int_attribute<int>(element, "type"),
+				.region = read_int_attribute<int>(element, "region"),
 			};
 		}
 
@@ -107,7 +123,7 @@ namespace nesem
 				return {};
 
 			return {
-				.type = element->IntAttribute("type"),
+				.type = read_int_attribute<int>(element, "type"),
 			};
 		}
 
@@ -117,7 +133,7 @@ namespace nesem
 				return {};
 
 			return ChrRam{
-				.size = element->Unsigned64Attribute("size"),
+				.size = read_int_attribute<size_t>(element, "size"),
 			};
 		}
 
@@ -127,7 +143,7 @@ namespace nesem
 				return {};
 
 			return PrgNvram{
-				.size = element->Unsigned64Attribute("size"),
+				.size = read_int_attribute<size_t>(element, "size"),
 			};
 		}
 
@@ -137,7 +153,7 @@ namespace nesem
 				return {};
 
 			return PrgRam{
-				.size = element->Unsigned64Attribute("size"),
+				.size = read_int_attribute<size_t>(element, "size"),
 			};
 		}
 
@@ -147,10 +163,10 @@ namespace nesem
 				return {};
 
 			return MiscRom{
-				.size = element->Unsigned64Attribute("size"),
+				.size = read_int_attribute<size_t>(element, "size"),
 				.crc32 = element->Attribute("crc32"),
 				.sha1 = element->Attribute("sha1"),
-				.number = element->IntAttribute("number"),
+				.number = read_int_attribute<int>(element, "number"),
 			};
 		}
 
@@ -160,8 +176,8 @@ namespace nesem
 				return {};
 
 			return Vs{
-				.hardware = element->IntAttribute("hardware"),
-				.ppu = element->IntAttribute("ppu"),
+				.hardware = read_int_attribute<int>(element, "hardware"),
+				.ppu = read_int_attribute<int>(element, "ppu"),
 			};
 		}
 
@@ -171,7 +187,7 @@ namespace nesem
 				return {};
 
 			return ChrNvram{
-				.size = element->Unsigned64Attribute("size"),
+				.size = read_int_attribute<size_t>(element, "size"),
 			};
 		}
 
@@ -181,7 +197,7 @@ namespace nesem
 				return {};
 
 			return Trainer{
-				.size = element->Unsigned64Attribute("size"),
+				.size = read_int_attribute<size_t>(element, "size"),
 				.crc32 = std::string(element->Attribute("crc32")),
 				.sha1 = std::string(element->Attribute("sha1")),
 			};
@@ -313,7 +329,9 @@ namespace nesem
 		// iNES rom files start with "NES" followed by the DOS "EOF" character (0x1A, more correctly, the ASCII/ANSI SUB character)
 		constexpr auto magic = std::array<U8, 4>{'N', 'E', 'S', '\x1A'};
 
-		if (!std::ranges::equal(file_data.subspan(0, 4), magic))
+		// if (!std::ranges::equal(file_data.subspan(0, 4), magic))
+		auto start_span = file_data.subspan(0, 4);
+		if (!std::equal(begin(start_span), end(start_span), begin(magic)))
 		{
 			LOG_WARN("Invalid iNES Rom, file: '{}'", filename.string());
 			return std::nullopt;

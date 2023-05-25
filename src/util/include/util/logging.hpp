@@ -6,6 +6,7 @@
 #include <vector>
 
 #include <debugbreak.h>
+#include <spdlog/spdlog.h>
 
 #include <util/preprocessor.hpp>
 
@@ -29,14 +30,15 @@
 #	define SPDLOG_ACTIVE_LEVEL LOG_ACTIVE_LEVEL
 #endif
 
-#include <spdlog/async.h>
-#include <spdlog/sinks/ansicolor_sink.h>
-#include <spdlog/sinks/basic_file_sink.h>
-#if defined(_WIN32)
-#	include <spdlog/sinks/msvc_sink.h>
-#	include <spdlog/sinks/wincolor_sink.h>
+#if !defined(__EMSCRIPTEN__)
+#	include <spdlog/async.h>
+#	include <spdlog/sinks/ansicolor_sink.h>
+#	include <spdlog/sinks/basic_file_sink.h>
+#	if defined(_WIN32)
+#		include <spdlog/sinks/msvc_sink.h>
+#		include <spdlog/sinks/wincolor_sink.h>
+#	endif
 #endif
-#include <spdlog/spdlog.h>
 
 #define LOG(level, ...) SPDLOG_LOGGER_CALL(spdlog::default_logger_raw(), spdlog::level::level_enum(level), __VA_ARGS__)
 
@@ -115,6 +117,11 @@ namespace util::detail
 		// the pattern for files and other longer term sinks, currently using spdlog's default
 		static constexpr char file_pattern[] = "%+";
 
+#if defined(__EMSCRIPTEN__)
+		LoggerInit([[maybe_unused]] const std::filesystem::path &filename = {})
+		{
+		}
+#else
 		LoggerInit(const std::filesystem::path &filename = {})
 		{
 			spdlog::init_thread_pool(8192, 1);
@@ -148,7 +155,7 @@ namespace util::detail
 				return sink;
 			};
 
-#if defined(_WIN32)
+#	if defined(_WIN32)
 			// try to attach to the parent console
 			// If we were run from the commandline, this will allow normal console I/O to work, useful for logging
 			// Failure is fine, assume we don't have a parent to attach to.
@@ -158,9 +165,9 @@ namespace util::detail
 
 			sinks.emplace_back(configure_sink(std::make_shared<spdlog::sinks::msvc_sink_mt>()));
 
-#else
+#	else
 			sinks.emplace_back(configure_sink(std::make_shared<spdlog::sinks::ansicolor_stdout_sink_mt>()));
-#endif
+#	endif
 		}
 
 		void setup_file_sinks(std::vector<spdlog::sink_ptr> &sinks, const std::filesystem::path &filename)
@@ -174,5 +181,6 @@ namespace util::detail
 
 			sinks.push_back(std::move(file_sink));
 		}
+#endif
 	};
 }

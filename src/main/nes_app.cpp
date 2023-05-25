@@ -141,8 +141,6 @@ namespace app
 
 		if (config.palette)
 			load_pal(*config.palette);
-		else
-			load_pal(data_path / "nes_colors.pal");
 	}
 
 	Config NesApp::get_config() const noexcept
@@ -411,9 +409,10 @@ namespace app
 	{
 		auto [canvas, lock] = nes_screen_texture.lock();
 
-		std::ranges::transform(nes_screen, canvas.ptr(), [this, format = canvas.format()](nesem::U16 index) {
-			return to_pixel(format, colors.color_at_index(index));
-		});
+		std::transform(begin(nes_screen), end(nes_screen), canvas.ptr(),
+			[this, format = canvas.format()](nesem::U16 index) {
+				return to_pixel(format, colors.color_at_index(index));
+			});
 	}
 
 	nesem::U8 NesApp::read_controller(const ui::App &app)

@@ -125,7 +125,9 @@ namespace ui
 
 			// not a true median, but good enough. This will favor slightly higher values on an even number of samples
 			auto mid = begin(times) + size_times / 2;
-			std::ranges::nth_element(times, mid);
+
+			// std::ranges::nth_element(times, mid);
+			std::nth_element(begin(times), end(times), mid);
 
 			return *mid * 1000.0;
 		}
@@ -388,6 +390,12 @@ namespace ui
 
 	void App::run()
 	{
+		while (run_once())
+			;
+	}
+
+	bool App::run_once()
+	{
 		auto process_events = [this] {
 			SDL_Event event;
 			while (SDL_PollEvent(&event))
@@ -433,7 +441,8 @@ namespace ui
 		Clock clock;
 		FPS fps;
 
-		while (process_events())
+		auto keep_running = process_events();
+		if (keep_running)
 		{
 			// tick
 			auto real_deltatime = clock.update().count();
@@ -458,6 +467,8 @@ namespace ui
 			// render
 			SDL_RenderPresent(core->renderer.get());
 		}
+
+		return keep_running;
 	}
 
 	void App::fullscreen(bool mode) noexcept
