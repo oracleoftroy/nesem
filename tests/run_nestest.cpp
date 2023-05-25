@@ -49,14 +49,12 @@ TEST_CASE("nestest.nes should run", "[.skip][nestest.nes]")
 		while (nes.cpu().state().PC != nesem::Addr{0xC6A9} && --counter > 0)
 			nes.step(nesem::NesClockStep::OneCpuInstruction);
 
-		CHECK(counter > 0);
+		REQUIRE(counter > 0);
 
 		// address $0002 holds the result with 0 indicating success or an error code indicating which test failed
 		auto result = nes.bus().read(nesem::Addr{0x0002}, nesem::NesBusOp::ready);
-		CHECK(result == 0);
+		REQUIRE(result == 0);
 	}
-
-	CHECK(counter > 0);
 
 	// SECTION("Unofficial OP codes should work")
 	// {
@@ -65,12 +63,10 @@ TEST_CASE("nestest.nes should run", "[.skip][nestest.nes]")
 	// 	while (nes.cpu().state().PC != nesem::Addr{0xC5FF} && --counter > 0)
 	// 		nes.step(nesem::NesClockStep::OneCpuInstruction);
 
-	// 	CHECK(counter > 0);
+	// 	REQUIRE(counter > 0);
 
 	// 	// address $0003 holds the result with 0 indicating success or an error code indicating which test failed
 	// 	auto result = nes.bus().read(nesem::Addr{0x0003}, nesem::NesBusOp::ready);
-	// 	CHECK(result == 0);
+	// 	REQUIRE(result == 0);
 	// }
-
-	CHECK(counter > 0);
 }
