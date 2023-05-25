@@ -226,15 +226,7 @@ struct fmt::formatter<nesem::Addr>
 {
 	constexpr auto parse(format_parse_context &ctx) -> format_parse_context::iterator
 	{
-		auto it = ctx.begin();
-		auto end = ctx.end();
-
-		// Check if reached the end of the range:
-		if (it != end && *it != '}')
-			ctx.on_error("invalid format");
-
-		// Return an iterator past the end of the parsed range:
-		return it;
+		return ctx.begin();
 	}
 
 	auto format(nesem::Addr addr, format_context &ctx) const -> format_context::iterator

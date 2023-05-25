@@ -1,6 +1,9 @@
 #include <filesystem>
 #include <fstream>
 #include <locale>
+#include <ranges>
+#include <span>
+#include <string_view>
 
 #include "config.hpp"
 #include "nes_app.hpp"
@@ -18,9 +21,30 @@ const static auto logger_init = [] {
 	return util::detail::LoggerInit{base_path / log_file_name};
 }();
 
+template <typename Constructor>
+struct ConstructT
+{
+	template <typename... Args>
+	Constructor operator()(Args &&...args)
+	{
+		return Constructor(args...);
+	}
+};
+
+template <typename Constructor>
+inline constexpr auto Construct = ConstructT<Constructor>{};
+
+constexpr auto args(int argc, char *argv[])
+{
+	return std::span(argv, argv + argc) | std::views::transform(Construct<std::string_view>);
+}
+
 int application_main(int argc, char *argv[])
 {
-	LOG_INFO("Starting: {}", fmt::join(argv, argv + argc, " "));
+	// fmt regression? This no longer works in fmt v10
+	// LOG_INFO("Starting: {}", fmt::join(argv, argv + argc, " "));
+
+	LOG_INFO("Starting: {}", fmt::join(args(argc, argv), " "));
 	LOG_INFO("Working directory: {}", std::filesystem::current_path().string());
 
 	constexpr auto window_size = cm::Size{1024, 768};

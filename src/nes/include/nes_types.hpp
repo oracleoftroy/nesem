@@ -26,6 +26,11 @@ namespace nesem
 		bank_32k = 0x8000,
 	};
 
+	constexpr auto format_as(BankSize size) noexcept
+	{
+		return std::to_underlying(size);
+	}
+
 	// processor status flags
 	enum class ProcessorStatus : U8
 	{
