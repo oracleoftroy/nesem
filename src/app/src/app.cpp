@@ -317,6 +317,9 @@ namespace ui
 		SdlRenderer renderer;
 
 		InputState input;
+
+		Clock clock;
+		FPS fps;
 	};
 
 	App App::create(const std::string &window_title, cm::Sizei window_size, cm::Sizei pixel_size) noexcept
@@ -438,8 +441,8 @@ namespace ui
 			return true;
 		};
 
-		Clock clock;
-		FPS fps;
+		auto &clock = core->clock;
+		auto &fps = core->fps;
 
 		auto keep_running = process_events();
 		if (keep_running)
