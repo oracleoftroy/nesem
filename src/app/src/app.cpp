@@ -1,8 +1,6 @@
 #include "ui/app.hpp"
 
 #include <algorithm>
-#include <chrono>
-#include <locale>
 #include <numeric>
 #include <type_traits>
 #include <utility>
@@ -11,6 +9,7 @@
 #include <SDL2/SDL.h>
 
 #include <ui/audio_device.hpp>
+#include <ui/clock.hpp>
 #include <ui/renderer.hpp>
 #include <ui/texture.hpp>
 #include <util/logging.hpp>
@@ -37,18 +36,6 @@ namespace ui
 	using SdlWindow = util::custom_unique_ptr<SDL_Window, &SDL_DestroyWindow>;
 	using SdlSurface = util::custom_unique_ptr<SDL_Surface, &SDL_FreeSurface>;
 	using SdlRenderer = util::custom_unique_ptr<SDL_Renderer, &SDL_DestroyRenderer>;
-
-	struct Clock
-	{
-		using clock = std::chrono::steady_clock;
-		clock::time_point current_time = clock::now();
-
-		std::chrono::duration<double> update() noexcept
-		{
-			auto last_time = std::exchange(current_time, clock::now());
-			return current_time - last_time;
-		}
-	};
 
 	class InputState final
 	{
@@ -357,7 +344,13 @@ namespace ui
 			}
 		}
 
-		auto renderer = SdlRenderer(SDL_CreateRenderer(window.get(), -1, SDL_RENDERER_ACCELERATED));
+		Uint32 flags = SDL_RENDERER_ACCELERATED;
+
+#if defined(__EMSCRIPTEN__)
+		flags |= SDL_RENDERER_PRESENTVSYNC;
+#endif
+
+		auto renderer = SdlRenderer(SDL_CreateRenderer(window.get(), -1, flags));
 
 		if (!renderer)
 		{
@@ -391,87 +384,75 @@ namespace ui
 	{
 	}
 
-	void App::run()
+	bool App::process_events() noexcept
 	{
-		while (run_once())
-			;
-	}
-
-	bool App::run_once()
-	{
-		auto process_events = [this] {
-			SDL_Event event;
-			while (SDL_PollEvent(&event))
-			{
-				switch (event.type)
-				{
-				case SDL_QUIT:
-					return false;
-
-				case SDL_WINDOWEVENT:
-					if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
-					{
-						LOG_INFO("Window size changed, now {}x{}", event.window.data1, event.window.data2);
-
-						// update our window size to reflect the change
-						SDL_GetWindowSize(core->window.get(), &core->window_size.w, &core->window_size.h);
-
-						core->renderer_viewport = viewport(core->renderer.get());
-						LOG_INFO("Renderer viewport is {},{} {}x{}", core->renderer_viewport.x, core->renderer_viewport.y, core->renderer_viewport.w, core->renderer_viewport.h);
-					}
-					break;
-
-				case SDL_DROPFILE:
-					if (on_file_drop)
-						on_file_drop(*this, event.drop.file);
-
-					// these events conveniently allocate memory for your app and leave it up to you to free. And they
-					// are enabled by default. Yay! Free memory leak unless you explicitly handle or disable them! :(
-					SDL_free(event.drop.file);
-					break;
-
-				case SDL_DROPTEXT:
-					// these events conveniently allocate memory for your app and leave it up to you to free. And they
-					// are enabled by default. Yay! Free memory leak unless you explicitly handle or disable them! :(
-					SDL_free(event.drop.file);
-					break;
-				}
-			}
-
-			return true;
-		};
-
-		auto &clock = core->clock;
-		auto &fps = core->fps;
-
-		auto keep_running = process_events();
-		if (keep_running)
+		SDL_Event event;
+		while (SDL_PollEvent(&event))
 		{
-			// tick
-			auto real_deltatime = clock.update().count();
-			fps.update(real_deltatime);
-
-			// if we have a large frameskip, cap it
-			auto deltatime = std::min(real_deltatime, 0.25);
-
-			if (fps.accumulated_time() >= 1.0)
+			switch (event.type)
 			{
-				SDL_SetWindowTitle(core->window.get(), fmt::format("{0} - FPS: {1:.2f}     Best: {2:.2f}ms  Worst: {3:.2f}ms  Median: {4:.2f}ms  Average: {5:.2f}ms", core->window_title, fps.fps(), fps.best(), fps.worst(), fps.median(), fps.average()).c_str());
-				fps.reset();
-			}
+			case SDL_QUIT:
+				return false;
 
-			core->input.update(*core);
-			if (on_update)
-			{
-				auto r = Renderer(core->renderer.get());
-				on_update(*this, r, deltatime);
-			}
+			case SDL_WINDOWEVENT:
+				if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+				{
+					LOG_INFO("Window size changed, now {}x{}", event.window.data1, event.window.data2);
 
-			// render
-			SDL_RenderPresent(core->renderer.get());
+					// update our window size to reflect the change
+					SDL_GetWindowSize(core->window.get(), &core->window_size.w, &core->window_size.h);
+
+					core->renderer_viewport = viewport(core->renderer.get());
+					LOG_INFO("Renderer viewport is {},{} {}x{}", core->renderer_viewport.x, core->renderer_viewport.y, core->renderer_viewport.w, core->renderer_viewport.h);
+				}
+				break;
+
+			case SDL_DROPFILE:
+				if (on_file_drop)
+					on_file_drop(event.drop.file);
+
+				// these events conveniently allocate memory for your app and leave it up to you to free. And they
+				// are enabled by default. Yay! Free memory leak unless you explicitly handle or disable them! :(
+				SDL_free(event.drop.file);
+				break;
+
+			case SDL_DROPTEXT:
+				// these events conveniently allocate memory for your app and leave it up to you to free. And they
+				// are enabled by default. Yay! Free memory leak unless you explicitly handle or disable them! :(
+				SDL_free(event.drop.file);
+				break;
+			}
 		}
 
-		return keep_running;
+		core->input.update(*core);
+		return true;
+	}
+
+	Renderer App::renderer() noexcept
+	{
+		return Renderer(core->renderer.get());
+	}
+
+	void App::update_fps(double delta_time) noexcept
+	{
+		auto &fps = core->fps;
+
+		fps.update(delta_time);
+
+		if (fps.accumulated_time() >= 1.0)
+		{
+			auto title = fmt::format("{0} - FPS: {1:.2f}     Best: {2:.2f}ms  Worst: {3:.2f}ms  Median: {4:.2f}ms  Average: {5:.2f}ms",
+				core->window_title,
+				fps.fps(),
+				fps.best(),
+				fps.worst(),
+				fps.median(),
+				fps.average());
+
+			SDL_SetWindowTitle(core->window.get(), title.c_str());
+
+			fps.reset();
+		}
 	}
 
 	void App::fullscreen(bool mode) noexcept

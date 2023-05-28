@@ -16,6 +16,7 @@
 
 #include <cm/math.hpp>
 #include <ui/app.hpp>
+#include <ui/clock.hpp>
 #include <ui/texture.hpp>
 #include <util/rng.hpp>
 
@@ -36,32 +37,34 @@ namespace app
 	class NesApp
 	{
 	public:
-		explicit NesApp(ui::App &app, const Config &config);
+		explicit NesApp(const Config &config);
 
 		Config get_config() const noexcept;
+		bool tick();
 
 	private:
-		void on_file_drop(ui::App &app, std::string_view filename);
-		void load_rom(ui::App &app, const std::filesystem::path &filepath);
+		void on_file_drop(std::string_view filename);
+		void load_rom(const std::filesystem::path &filepath);
 		void load_pal(const std::filesystem::path &filepath);
-		void trigger_break(ui::App &app, bool enable);
+		void trigger_break(bool enableapp);
 
-		void on_error(ui::App &app, std::string_view message);
+		void on_error(std::string_view message);
 		void on_change_debug_mode(DebugMode mode);
 		void on_change_current_palette(nesem::U8 palette);
 		void on_nes_pixel(int x, int y, nesem::U8 color_index, util::Flags<nesem::NesColorEmphasis> emphasis) noexcept;
 		void on_nes_frame_ready() noexcept;
 
-		void tick(ui::App &app, ui::Renderer &canvas, double deltatime);
-		void handle_input(ui::App &app);
-		void update(double deltatime);
-		void render(ui::Renderer &renderer);
+		void handle_input();
+		void update(double delta_time);
+		void render();
 
 		void draw_screen();
 
-		nesem::U8 read_controller(const ui::App &app);
-		nesem::U8 read_zapper(const ui::App &app);
+		nesem::U8 read_controller();
+		nesem::U8 read_zapper();
 		bool sense_light(cm::Point2i pos) noexcept;
+
+		ui::App app;
 
 		std::filesystem::path data_path;
 
@@ -126,5 +129,7 @@ namespace app
 		ControllerOverlay controller_overlay;
 
 		ColorPalette colors = ColorPalette::default_palette();
+
+		ui::Clock clock;
 	};
 }

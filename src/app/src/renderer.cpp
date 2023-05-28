@@ -34,6 +34,11 @@ namespace ui
 	{
 	}
 
+	void Renderer::present() const noexcept
+	{
+		SDL_RenderPresent(r(renderer));
+	}
+
 	cm::Sizei Renderer::size() const noexcept
 	{
 		cm::Sizei result;

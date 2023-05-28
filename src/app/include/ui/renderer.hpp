@@ -11,6 +11,8 @@ namespace ui
 	public:
 		explicit Renderer(void *renderer) noexcept;
 
+		void present() const noexcept;
+
 		cm::Sizei size() const noexcept;
 
 		void enable_blending(bool enable) noexcept;

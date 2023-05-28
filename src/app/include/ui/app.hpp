@@ -30,26 +30,24 @@ namespace ui
 		~App();
 
 #if defined(__cpp_lib_move_only_function)
-		// callback function, called each tick
-		// I don't think reference_wrapper should be needed, but GCC 12 doesn't like incomplete types.
-		// TODO: remove when GCC is fixed or delete these comments if not a library bug
-		std::move_only_function<void(std::reference_wrapper<App> app, std::reference_wrapper<Renderer> renderer, double deltatime)> on_update;
-
-		// callback for handling dropped file
-		std::move_only_function<void(std::reference_wrapper<App> app, std::string_view filename)> on_file_drop;
+		template <typename Fn>
+		using callback_fn = std::move_only_function<Fn>;
 #else
-		// callback function, called each tick
-		std::function<void(App &app, Renderer &renderer, double deltatime)> on_update;
-
-		// callback for handling dropped file
-		std::function<void(App &app, std::string_view filename)> on_file_drop;
+		template <typename Fn>
+		using callback_fn = std::function<Fn>;
 #endif
 
-		// run the application. Exits when the window is closed
-		void run();
+		// callback for handling dropped file
+		callback_fn<void(std::string_view filename)> on_file_drop;
 
-		// run one tick of the application, returning true if it should keep running, false if quit was requested
-		bool run_once();
+		// process system events, returns false if quit was requested, true otherwise
+		bool process_events() noexcept;
+
+		// get a renderer appropriate for simple drawing
+		Renderer renderer() noexcept;
+
+		// update internal frame tracking
+		void update_fps(double delta_time) noexcept;
 
 		// verify that App is in a valid state
 		explicit operator bool() noexcept;

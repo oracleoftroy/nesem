@@ -30,6 +30,11 @@ namespace ui
 		return *this;
 	}
 
+	Texture::operator bool() const noexcept
+	{
+		return texture != nullptr;
+	}
+
 	void Texture::enable_blending(bool enable) noexcept
 	{
 		auto t = static_cast<SDL_Texture *>(texture);

@@ -21,6 +21,8 @@ namespace ui
 		Texture(const Texture &other) noexcept = delete;
 		Texture &operator=(const Texture &other) noexcept = delete;
 
+		explicit operator bool() const noexcept;
+
 		void enable_blending(bool enable) noexcept;
 
 		LockData lock() noexcept;

@@ -60,19 +60,19 @@ namespace
 
 namespace app
 {
-	NesApp::NesApp(ui::App &app, const Config &config)
-		: nes({
-			  .error = std::bind_front(&NesApp::on_error, this, std::ref(app)),
+	NesApp::NesApp(const Config &config)
+		: app{ui::App::create("NES emulator", cm::Size{1024, 768})},
+		  nes({
+			  .error = std::bind_front(&NesApp::on_error, this),
 			  .draw = std::bind_front(&NesApp::on_nes_pixel, this),
 			  .frame_ready = std::bind_front(&NesApp::on_nes_frame_ready, this),
-			  .player1 = std::make_unique<nesem::NesController>(std::bind_front(&NesApp::read_controller, this, std::ref(app))),
-			  .player2 = std::make_unique<nesem::NesInputDevice>(std::bind_front(&NesApp::read_zapper, this, std::ref(app))),
+			  .player1 = std::make_unique<nesem::NesController>(std::bind_front(&NesApp::read_controller, this)),
+			  .player2 = std::make_unique<nesem::NesInputDevice>(std::bind_front(&NesApp::read_zapper, this)),
 			  .nes20db_filename = find_file(R"(data/nes20db.xml)"),
 			  .user_data_dir = ui::App::get_user_data_path("nesem"),
 		  })
 	{
 		{ // setup callbacks
-			app.on_update = std::bind_front(&NesApp::tick, this);
 			app.on_file_drop = std::bind_front(&NesApp::on_file_drop, this);
 		}
 
@@ -135,9 +135,9 @@ namespace app
 		data_path = find_path("data");
 
 		if (config.last_played_rom)
-			load_rom(app, *config.last_played_rom);
+			load_rom(*config.last_played_rom);
 		else
-			load_rom(app, data_path / "nestest.nes");
+			load_rom(data_path / "nestest.nes");
 
 		if (config.palette)
 			load_pal(*config.palette);
@@ -164,22 +164,22 @@ namespace app
 		return config;
 	}
 
-	void NesApp::on_file_drop(ui::App &app, std::string_view filename)
+	void NesApp::on_file_drop(std::string_view filename)
 	{
 		auto path = std::filesystem::path(filename);
 
 		if (path.extension() == ".nes")
-			load_rom(app, path);
+			load_rom(path);
 		else if (path.extension() == ".pal")
 			load_pal(path);
 		else
 		{
 			LOG_WARN("Unknown file type for '{}', trying to load as iNES", path.string());
-			load_rom(app, path);
+			load_rom(path);
 		}
 	}
 
-	void NesApp::load_rom(ui::App &app, const std::filesystem::path &filepath)
+	void NesApp::load_rom(const std::filesystem::path &filepath)
 	{
 		rom_loaded = nes.load_rom(filepath);
 
@@ -191,7 +191,7 @@ namespace app
 		else
 		{
 			rom_name = filepath.string();
-			trigger_break(app, false);
+			trigger_break(false);
 		}
 
 		bottom_bar.update(system_break, rom_name);
@@ -206,7 +206,7 @@ namespace app
 			LOG_WARN("Could not load color palette from '{}', keeping previous", filepath.string());
 	}
 
-	void NesApp::trigger_break(ui::App &app, bool enable)
+	void NesApp::trigger_break(bool enable)
 	{
 		app.enable_screensaver(enable);
 
@@ -219,10 +219,10 @@ namespace app
 		bottom_bar.update(system_break, rom_name);
 	}
 
-	void NesApp::on_error(ui::App &app, std::string_view message)
+	void NesApp::on_error(std::string_view message)
 	{
 		overlay.show({0, 0, 0, 127}, message);
-		trigger_break(app, true);
+		trigger_break(true);
 	}
 
 	void NesApp::on_change_debug_mode(DebugMode mode)
@@ -243,14 +243,25 @@ namespace app
 			side_bar.update(debug_mode, nes, current_palette, colors);
 	}
 
-	void NesApp::tick(ui::App &app, ui::Renderer &canvas, double deltatime)
+	bool NesApp::tick()
 	{
-		handle_input(app);
-		update(deltatime);
-		render(canvas);
+		auto real_deltatime = clock.update().count();
+		app.update_fps(real_deltatime);
+
+		// if we have a large frameskip, cap it
+		auto delta_time = std::min(real_deltatime, 0.25);
+
+		if (!app.process_events())
+			return false;
+
+		handle_input();
+		update(delta_time);
+		render();
+
+		return true;
 	}
 
-	void NesApp::handle_input(ui::App &app)
+	void NesApp::handle_input()
 	{
 		if (app.key_pressed(escape_key))
 		{
@@ -292,13 +303,13 @@ namespace app
 
 		if (app.key_pressed(run_key))
 		{
-			trigger_break(app, false);
+			trigger_break(false);
 			LOG_INFO("System break now: {}", system_break);
 		}
 
 		if (app.key_pressed(break_key))
 		{
-			trigger_break(app, !system_break);
+			trigger_break(!system_break);
 
 			if (system_break)
 				overlay.show({0, 0, 0, 127}, "Paused");
@@ -354,7 +365,7 @@ namespace app
 		}
 	}
 
-	void NesApp::update([[maybe_unused]] double deltatime)
+	void NesApp::update(double delta_time)
 	{
 		if (rom_loaded)
 		{
@@ -362,7 +373,7 @@ namespace app
 
 			if (!system_break)
 			{
-				nes.tick(deltatime);
+				nes.tick(delta_time);
 				side_bar.update(debug_mode, nes, current_palette, colors);
 			}
 			else if (step != None)
@@ -376,8 +387,10 @@ namespace app
 		}
 	}
 
-	void NesApp::render(ui::Renderer &renderer)
+	void NesApp::render()
 	{
+		auto renderer = app.renderer();
+
 		renderer.fill({22, 22, 22});
 		renderer.blit({0, 0}, nes_screen_texture, std::nullopt, {nes_scale, nes_scale});
 
@@ -385,6 +398,8 @@ namespace app
 		bottom_bar.render(renderer);
 		overlay.render(renderer);
 		controller_overlay.render(renderer);
+
+		renderer.present();
 	}
 
 	void NesApp::on_nes_pixel(int x, int y, nesem::U8 color_index, util::Flags<nesem::NesColorEmphasis> emphasis) noexcept
@@ -415,7 +430,7 @@ namespace app
 			});
 	}
 
-	nesem::U8 NesApp::read_controller(const ui::App &app)
+	nesem::U8 NesApp::read_controller()
 	{
 		using enum nesem::Buttons;
 		util::Flags<nesem::Buttons> result = None;
@@ -457,7 +472,7 @@ namespace app
 		return result.raw_value();
 	}
 
-	nesem::U8 NesApp::read_zapper(const ui::App &app)
+	nesem::U8 NesApp::read_zapper()
 	{
 		// output
 		// bits xxx43xxx
