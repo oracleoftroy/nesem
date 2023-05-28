@@ -94,32 +94,32 @@ namespace app
 				draw_string(canvas, {255, 255, 255}, fmt::format("Mapper: {:03}  Submapper: {}", v2.pcb.mapper, v2.pcb.submapper), pos);
 
 				pos.y += 12;
-				draw_string(canvas, {255, 255, 255}, fmt::format("PRG ROM size: {0}K ({1:L})", v2.prgrom.size / 1024, v2.prgrom.size), pos);
+				draw_string(canvas, {255, 255, 255}, fmt::format("PRG ROM size: {0}K ({1})", v2.prgrom.size / 1024, v2.prgrom.size), pos);
 
 				if (v2.prgram)
 				{
 					pos.y += 12;
-					draw_string(canvas, {255, 255, 255}, fmt::format("PRG RAM size: {0}K ({1:L})", v2.prgram->size / 1024, v2.prgram->size), pos);
+					draw_string(canvas, {255, 255, 255}, fmt::format("PRG RAM size: {0}K ({1})", v2.prgram->size / 1024, v2.prgram->size), pos);
 				}
 				if (v2.prgnvram)
 				{
 					pos.y += 12;
-					draw_string(canvas, {255, 255, 255}, fmt::format("PRG NVRAM size: {0}K ({1:L})", v2.prgnvram->size / 1024, v2.prgnvram->size), pos);
+					draw_string(canvas, {255, 255, 255}, fmt::format("PRG NVRAM size: {0}K ({1})", v2.prgnvram->size / 1024, v2.prgnvram->size), pos);
 				}
 				if (v2.chrrom)
 				{
 					pos.y += 12;
-					draw_string(canvas, {255, 255, 255}, fmt::format("CHR ROM size: {0}K ({1:L})", v2.chrrom->size / 1024, v2.chrrom->size), pos);
+					draw_string(canvas, {255, 255, 255}, fmt::format("CHR ROM size: {0}K ({1})", v2.chrrom->size / 1024, v2.chrrom->size), pos);
 				}
 				if (v2.chrram)
 				{
 					pos.y += 12;
-					draw_string(canvas, {255, 255, 255}, fmt::format("CHR RAM size: {0}K ({1:L})", v2.chrram->size / 1024, v2.chrram->size), pos);
+					draw_string(canvas, {255, 255, 255}, fmt::format("CHR RAM size: {0}K ({1})", v2.chrram->size / 1024, v2.chrram->size), pos);
 				}
 				if (v2.chrnvram)
 				{
 					pos.y += 12;
-					draw_string(canvas, {255, 255, 255}, fmt::format("CHR NVRAM size: {0}K ({1:L})", v2.chrnvram->size / 1024, v2.chrnvram->size), pos);
+					draw_string(canvas, {255, 255, 255}, fmt::format("CHR NVRAM size: {0}K ({1})", v2.chrnvram->size / 1024, v2.chrnvram->size), pos);
 				}
 			}
 			else
@@ -130,17 +130,17 @@ namespace app
 				draw_string(canvas, {255, 255, 255}, fmt::format("Mapper: {:03}", v1.mapper), pos);
 
 				pos.y += 12;
-				draw_string(canvas, {255, 255, 255}, fmt::format("PRG ROM size: {0}K ({1:L})", v1.prg_rom_size * 16, v1.prg_rom_size * nesem::bank_16k), pos);
+				draw_string(canvas, {255, 255, 255}, fmt::format("PRG ROM size: {0}K ({1})", v1.prg_rom_size * 16, v1.prg_rom_size * nesem::bank_16k), pos);
 
 				if (v1.chr_rom_size == 0)
 				{
 					pos.y += 12;
-					draw_string(canvas, {255, 255, 255}, fmt::format("CHR RAM size: 8K ({:L})", nesem::bank_8k), pos);
+					draw_string(canvas, {255, 255, 255}, fmt::format("CHR RAM size: 8K ({})", nesem::bank_8k), pos);
 				}
 				else
 				{
 					pos.y += 12;
-					draw_string(canvas, {255, 255, 255}, fmt::format("CHR ROM size: {0}K ({1:L})", v1.chr_rom_size * 8, v1.chr_rom_size * nesem::bank_8k), pos);
+					draw_string(canvas, {255, 255, 255}, fmt::format("CHR ROM size: {0}K ({1})", v1.chr_rom_size * 8, v1.chr_rom_size * nesem::bank_8k), pos);
 				}
 			}
 
