@@ -30,13 +30,76 @@
 #	define SPDLOG_ACTIVE_LEVEL LOG_ACTIVE_LEVEL
 #endif
 
-#if !defined(__EMSCRIPTEN__)
-#	include <spdlog/async.h>
-#	include <spdlog/sinks/ansicolor_sink.h>
+#include <spdlog/async.h>
+
+#if defined(__EMSCRIPTEN__)
+#	include <emscripten.h>
+
+#	include <spdlog/details/null_mutex.h>
+#	include <spdlog/sinks/base_sink.h>
+
+namespace util::detail::sinks
+{
+	template <typename Mutex>
+	class emscripten_sink final : public spdlog::sinks::base_sink<Mutex>
+	{
+		int flags;
+
+	public:
+		explicit emscripten_sink(int flags = EM_LOG_CONSOLE)
+			: flags(flags)
+		{
+		}
+
+	private:
+		int get_flags(const spdlog::details::log_msg &msg)
+		{
+			switch (msg.level)
+			{
+			case spdlog::level::trace:
+			case spdlog::level::debug:
+				return flags | EM_LOG_DEBUG;
+
+			case spdlog::level::info:
+				return flags | EM_LOG_INFO;
+
+			case spdlog::level::warn:
+				return flags | EM_LOG_WARN;
+
+			case spdlog::level::err:
+			case spdlog::level::off:
+				return flags | EM_LOG_ERROR;
+
+			case spdlog::level::critical:
+				return flags | EM_LOG_ERROR | EM_LOG_C_STACK | EM_LOG_JS_STACK;
+
+			default:
+				return flags | EM_LOG_INFO;
+			}
+		}
+
+		void sink_it_(const spdlog::details::log_msg &msg) override
+		{
+			spdlog::memory_buf_t formatted;
+			spdlog::sinks::base_sink<Mutex>::formatter_->format(msg, formatted);
+
+			emscripten_log(get_flags(msg), "%.*s", formatted.size(), formatted.data());
+		}
+
+		void flush_() override
+		{
+		}
+	};
+
+	using emscripten_sink_mt = emscripten_sink<std::mutex>;
+	using emscripten_sink_st = emscripten_sink<spdlog::details::null_mutex>;
+}
+
+#else
+#	include <spdlog/sinks/stdout_color_sinks.h>
 #	include <spdlog/sinks/basic_file_sink.h>
 #	if defined(_WIN32)
 #		include <spdlog/sinks/msvc_sink.h>
-#		include <spdlog/sinks/wincolor_sink.h>
 #	endif
 #endif
 
@@ -117,21 +180,20 @@ namespace util::detail
 		// the pattern for files and other longer term sinks, currently using spdlog's default
 		static constexpr char file_pattern[] = "%+";
 
-#if defined(__EMSCRIPTEN__)
-		LoggerInit([[maybe_unused]] const std::filesystem::path &filename = {})
-		{
-		}
-#else
 		LoggerInit(const std::filesystem::path &filename = {})
 		{
-			spdlog::init_thread_pool(8192, 1);
 			std::vector<spdlog::sink_ptr> sinks;
 
 			setup_console_sinks(sinks);
 			setup_file_sinks(sinks, filename);
 
+#if defined(__EMSCRIPTEN__)
+			auto logger = std::make_shared<spdlog::logger>("", begin(sinks), end(sinks));
+#else
+			spdlog::init_thread_pool(8192, 1);
 			auto logger = std::make_shared<spdlog::async_logger>("", begin(sinks), end(sinks), spdlog::thread_pool());
-			// auto logger = std::make_shared<spdlog::logger>("", begin(sinks), end(sinks));
+#endif
+
 			spdlog::set_default_logger(std::move(logger));
 
 			spdlog::set_level(spdlog::level::level_enum(SPDLOG_ACTIVE_LEVEL));
@@ -155,23 +217,25 @@ namespace util::detail
 				return sink;
 			};
 
+#if defined(__EMSCRIPTEN__)
+			sinks.emplace_back(configure_sink(std::make_shared<sinks::emscripten_sink_mt>()));
+#else
+			sinks.emplace_back(configure_sink(std::make_shared<spdlog::sinks::stdout_color_sink_mt>()));
+
 #	if defined(_WIN32)
 			// try to attach to the parent console
 			// If we were run from the commandline, this will allow normal console I/O to work, useful for logging
 			// Failure is fine, assume we don't have a parent to attach to.
 			// -1 == ATTACH_PARENT_PROCESS
-			if (AttachConsole(ATTACH_PARENT_PROCESS))
-				sinks.emplace_back(configure_sink(std::make_shared<spdlog::sinks::wincolor_stdout_sink_mt>()));
-
+			AttachConsole(ATTACH_PARENT_PROCESS);
 			sinks.emplace_back(configure_sink(std::make_shared<spdlog::sinks::msvc_sink_mt>()));
-
-#	else
-			sinks.emplace_back(configure_sink(std::make_shared<spdlog::sinks::ansicolor_stdout_sink_mt>()));
 #	endif
+#endif
 		}
 
-		void setup_file_sinks(std::vector<spdlog::sink_ptr> &sinks, const std::filesystem::path &filename)
+		void setup_file_sinks([[maybe_unused]] std::vector<spdlog::sink_ptr> &sinks, [[maybe_unused]] const std::filesystem::path &filename)
 		{
+#if !defined(__EMSCRIPTEN__)
 			if (filename.empty())
 				return;
 
@@ -180,7 +244,7 @@ namespace util::detail
 			file_sink->set_level(spdlog::level::debug);
 
 			sinks.push_back(std::move(file_sink));
-		}
 #endif
+		}
 	};
 }
