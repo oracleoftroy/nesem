@@ -220,8 +220,6 @@ namespace util::detail
 #if defined(__EMSCRIPTEN__)
 			sinks.emplace_back(configure_sink(std::make_shared<sinks::emscripten_sink_mt>()));
 #else
-			sinks.emplace_back(configure_sink(std::make_shared<spdlog::sinks::stdout_color_sink_mt>()));
-
 #	if defined(_WIN32)
 			// try to attach to the parent console
 			// If we were run from the commandline, this will allow normal console I/O to work, useful for logging
@@ -230,6 +228,7 @@ namespace util::detail
 			AttachConsole(ATTACH_PARENT_PROCESS);
 			sinks.emplace_back(configure_sink(std::make_shared<spdlog::sinks::msvc_sink_mt>()));
 #	endif
+			sinks.emplace_back(configure_sink(std::make_shared<spdlog::sinks::stdout_color_sink_mt>()));
 #endif
 		}
 
