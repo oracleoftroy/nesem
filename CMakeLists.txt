@@ -5,10 +5,12 @@ include(cmake/vcpkg.cmake)
 include(cmake/PreventInSourceBuilds.cmake)
 include(cmake/StandardProjectSettings.cmake)
 include(cmake/CompilerWarnings.cmake)
+include(cmake/Sanitizers.cmake)
 
 add_library(project_options INTERFACE)
 target_compile_features(project_options INTERFACE cxx_std_23)
 set_project_warnings(project_options)
+enable_sanitizers(project_options)
 target_compile_definitions(project_options INTERFACE "$<$<CONFIG:Debug,RelWithDebInfo>:DEBUG>")
 
 add_subdirectory(src)
