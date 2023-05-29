@@ -144,15 +144,22 @@ namespace util::detail::sinks
 			DEBUG_BREAK();                                             \
 		}
 
-#	define VERIFY(condition, reason)                                    \
-		[&](bool debug_check_condition) {                                \
-			if (!debug_check_condition) [[unlikely]]                     \
-			{                                                            \
-				LOG_ERROR("Verify '{}' failed: {}", #condition, reason); \
-				DEBUG_BREAK();                                           \
-			}                                                            \
-			return debug_check_condition;                                \
-		}(condition)
+#	if defined(SPDLOG_NO_SOURCE_LOC)
+#		define LOGGING_HPP_SOURCE_LOC spdlog::source_loc()
+#	else
+#		define LOGGING_HPP_SOURCE_LOC spdlog::source_loc(__FILE__, __LINE__, SPDLOG_FUNCTION)
+#	endif
+
+#	define VERIFY(condition, reason)                                                     \
+		[](bool debug_check_condition, spdlog::source_loc &&src_loc) {                    \
+			if (!debug_check_condition) [[unlikely]]                                      \
+			{                                                                             \
+				spdlog::default_logger_raw()->log(std::move(src_loc), spdlog::level::err, \
+					"Verify '{}' failed: {}", #condition, reason);                        \
+				DEBUG_BREAK();                                                            \
+			}                                                                             \
+			return debug_check_condition;                                                 \
+		}(condition, LOGGING_HPP_SOURCE_LOC)
 
 #endif
 
