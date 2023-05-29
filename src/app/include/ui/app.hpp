@@ -62,7 +62,7 @@ namespace ui
 
 		// SDL by default disables the screensaver, allow apps to modify this (for example, while paused)
 		// if the screensaver is disabled, it will be re-enabled when the app exits
-		void enable_screensaver(bool enable) noexcept;
+		static void enable_screensaver(bool enable) noexcept;
 
 		// Input handling
 
@@ -114,7 +114,7 @@ namespace ui
 		[[nodiscard]] cm::Point2i mouse_position() const noexcept;
 
 		// Audio
-		[[nodiscard]] AudioDevice create_audio_device(int frequency = 44100, int channels = 1, int sample_size = 512) const noexcept;
+		[[nodiscard]] static AudioDevice create_audio_device(int frequency = 44100, int channels = 1, int sample_size = 512) noexcept;
 
 		// Texturing
 		[[nodiscard]] Texture create_texture(cm::Sizei size) noexcept;

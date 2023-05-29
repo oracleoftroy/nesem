@@ -598,7 +598,7 @@ namespace ui
 		}
 	}
 
-	AudioDevice App::create_audio_device(int frequency, int channels, int sample_size) const noexcept
+	AudioDevice App::create_audio_device(int frequency, int channels, int sample_size) noexcept
 	{
 		SDL_AudioSpec device_spec;
 
@@ -696,7 +696,7 @@ namespace ui
 		static_assert(std::to_underlying(KeyMods::gui) == KMOD_GUI);
 
 		// the number of keys on a keyboard shouldn't change, so size our vectors now while we aren't on a hot path
-		int num_keys;
+		int num_keys{};
 		SDL_GetKeyboardState(&num_keys);
 
 		last_keys.resize(static_cast<size_t>(num_keys));
@@ -705,7 +705,7 @@ namespace ui
 
 	void InputState::update(const App::Core &core) noexcept
 	{
-		int num_keys;
+		int num_keys{};
 		auto keys = SDL_GetKeyboardState(&num_keys);
 
 		// swap and assign should avoid having to reallocate every frame and encourage memory reuse
@@ -717,7 +717,7 @@ namespace ui
 		// update mouse position and buttons
 		last_mouse_buttons = std::exchange(current_mouse_buttons, SDL_GetMouseState(&mouse_pos.x, &mouse_pos.y));
 
-		float fx, fy;
+		float fx{}, fy{};
 		SDL_RenderWindowToLogical(core.renderer.get(), mouse_pos.x, mouse_pos.y, &fx, &fy);
 
 		mouse_pos.x = static_cast<int>(fx);

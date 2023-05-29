@@ -37,12 +37,12 @@ namespace ui
 															: "unsigned int");
 		}
 
-		void pause(bool value) noexcept
+		void pause(bool value) const noexcept
 		{
 			SDL_PauseAudioDevice(device, value);
 		}
 
-		void queue_audio(std::span<float> samples) noexcept
+		void queue_audio(std::span<float> samples) const noexcept
 		{
 			auto sample_size = size(samples) * sizeof(samples[0]);
 			CHECK(std::in_range<Uint32>(sample_size), "too many samples in buffer, truncating");
@@ -53,8 +53,8 @@ namespace ui
 		}
 
 	private:
-		SDL_AudioSpec spec;
-		SDL_AudioDeviceID device;
+		SDL_AudioSpec spec{};
+		SDL_AudioDeviceID device{};
 	};
 
 	AudioDevice AudioDevice::create(int frequency, int channels, int sample_size) noexcept

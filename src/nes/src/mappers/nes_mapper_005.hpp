@@ -43,27 +43,27 @@ namespace nesem::mappers
 
 	private:
 		util::Flags<PpuStateMirror> ppu_state;
-		U8 prg_mode;
-		U8 chr_mode;
-		U8 prg_ram_protect;
-		U8 internal_ram_mode;
-		U8 nametable_mapping;
-		U8 fill_mode_tile;
-		U8 fill_mode_color;
-		U8 nametable_fill;
+		U8 prg_mode = 0xFF;
+		U8 chr_mode = 0xFF;
+		U8 prg_ram_protect = 0xFF;
+		U8 internal_ram_mode = 0xFF;
+		U8 nametable_mapping = 0xFF;
+		U8 fill_mode_tile = 0xFF;
+		U8 fill_mode_color = 0xFF;
+		U8 nametable_fill = 0xFF;
 
-		std::array<U8, 5> prg_banks;
-		std::array<U8, 12> chr_banks;
+		std::array<U8, 5> prg_banks{0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+		std::array<U8, 12> chr_banks{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 
-		U8 vertical_split_mode;
-		U8 vertical_split_scroll;
-		U8 vertical_split_bank;
+		U8 vertical_split_mode{};
+		U8 vertical_split_scroll{};
+		U8 vertical_split_bank{};
 
-		U8 scanline_irq_compare;
-		bool scanline_irq_enabled;
-		int current_scanline;
-		U8 mul_a;
-		U8 mul_b;
-		U16 mul_ans;
+		U8 scanline_irq_compare{};
+		bool scanline_irq_enabled{};
+		int current_scanline{};
+		U8 mul_a{};
+		U8 mul_b{};
+		U16 mul_ans{};
 	};
 }

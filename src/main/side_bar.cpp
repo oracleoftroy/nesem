@@ -214,7 +214,7 @@ namespace app
 				return to_color(to_rgb(cm::ColorHSL{.h = start_hue + bank * golden_angle, .s = 0.65f, .l = l}));
 			};
 
-			constexpr auto draw_string_centered_shaded = [](auto &canvas, auto &&txt, auto &&rect) {
+			constexpr auto draw_string_centered_shaded = [](ui::Canvas &canvas, std::string_view txt, const cm::Recti &rect) {
 				outline_string_centered(canvas, {0, 0, 0}, txt, rect);
 				draw_string_centered(canvas, {255, 255, 255}, txt, rect);
 			};
@@ -224,7 +224,7 @@ namespace app
 				constexpr auto sys_prg_size = nesem::bank_32k;
 				auto prgsize = size(cartridge->rom().prg_rom);
 
-				for (auto bank : cpu_map)
+				for (auto &&bank : cpu_map)
 				{
 					auto mem_multiplier = sys_prg_size / bank.size;
 					auto mem_bank_rect = cpu_rom_area;
@@ -256,7 +256,7 @@ namespace app
 				constexpr auto ppu_chr_size = nesem::bank_8k;
 				auto chrsize = cartridge->chr_size();
 
-				for (auto bank : ppu_map)
+				for (auto &&bank : ppu_map)
 				{
 					auto mem_multiplier = ppu_chr_size / bank.size;
 					auto mem_bank_rect = ppu_chr_area;

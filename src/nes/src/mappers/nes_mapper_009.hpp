@@ -30,14 +30,14 @@ namespace nesem::mappers
 
 	private:
 		// registers
-		U8 prgrom_bank; // $A000-$AFFF
-		U8 chr_0_fd; // $B000-$BFFF
-		U8 chr_0_fe; // $C000-$CFFF
-		U8 chr_1_fd; // $D000-$DFFF
-		U8 chr_1_fe; // $E000-$EFFF
-		U8 mirror; // $F000-$FFFF
+		U8 prgrom_bank{}; // $A000-$AFFF
+		U8 chr_0_fd{}; // $B000-$BFFF
+		U8 chr_0_fe{}; // $C000-$CFFF
+		U8 chr_1_fd{}; // $D000-$DFFF
+		U8 chr_1_fe{}; // $E000-$EFFF
+		U8 mirror{}; // $F000-$FFFF
 
-		bool chr_0; // current latch value for chr $0000-0FFF, false means use fd, true use fe
-		bool chr_1; // current latch value for chr $1000-1FFF, false means use fd, true use fe
+		bool chr_0{}; // current latch value for chr $0000-0FFF, false means use fd, true use fe
+		bool chr_1{}; // current latch value for chr $1000-1FFF, false means use fd, true use fe
 	};
 }

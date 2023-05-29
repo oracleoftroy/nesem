@@ -22,12 +22,12 @@ namespace
 		// INTERNAL VARIABLES
 		cm::Point2i goal;
 
-		int x_inc;
-		int y_inc;
+		int x_inc{};
+		int y_inc{};
 
-		int dx;
-		int dy;
-		int err;
+		int dx{};
+		int dy{};
+		int err{};
 	};
 
 	// Bresenham's line algorithm

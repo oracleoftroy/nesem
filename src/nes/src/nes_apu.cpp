@@ -163,7 +163,7 @@ namespace nesem
 		++frame_counter;
 	}
 
-	bool NesApu::irq() noexcept
+	bool NesApu::irq() const noexcept
 	{
 		return frame_interrupt_requested || dmc_interrupt_requested;
 	}

@@ -87,7 +87,7 @@ namespace app
 		int nes_scale = 3;
 		int turbo_frame_cycle = 16;
 
-		std::array<nesem::U16, nes_resolution.w * nes_resolution.h> nes_screen;
+		std::array<nesem::U16, nes_resolution.w * nes_resolution.h> nes_screen{};
 		ui::Texture nes_screen_texture;
 
 		DebugMode debug_mode = DebugMode::none;

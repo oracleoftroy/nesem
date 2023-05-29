@@ -65,22 +65,22 @@ namespace nesem
 			hi = reverse_bits(hi);
 	}
 
-	bool NesPpu::OAMSprite::flip_x() noexcept
+	bool NesPpu::OAMSprite::flip_x() const noexcept
 	{
 		return (attrib & 0b0100'0000) != 0;
 	}
 
-	bool NesPpu::OAMSprite::flip_y() noexcept
+	bool NesPpu::OAMSprite::flip_y() const noexcept
 	{
 		return (attrib & 0b1000'0000) != 0;
 	}
 
-	bool NesPpu::OAMSprite::bg_priority() noexcept
+	bool NesPpu::OAMSprite::bg_priority() const noexcept
 	{
 		return (attrib & 0b0010'0000) != 0;
 	}
 
-	U8 NesPpu::OAMSprite::palette_index() noexcept
+	U8 NesPpu::OAMSprite::palette_index() const noexcept
 	{
 		U8 bit_lo = (lo & 0x80) > 0;
 		U8 bit_hi = (hi & 0x80) > 0;
@@ -359,22 +359,22 @@ namespace nesem
 		}
 	}
 
-	bool NesPpu::rendering_enabled() noexcept
+	bool NesPpu::rendering_enabled() const noexcept
 	{
 		return (reg.ppumask & (mask_show_background | mask_show_sprites)) != 0;
 	}
 
-	bool NesPpu::background_rendering_enabled() noexcept
+	bool NesPpu::background_rendering_enabled() const noexcept
 	{
 		return (reg.ppumask & mask_show_background) == mask_show_background;
 	}
 
-	bool NesPpu::sprite_rendering_enabled() noexcept
+	bool NesPpu::sprite_rendering_enabled() const noexcept
 	{
 		return (reg.ppumask & mask_show_sprites) == mask_show_sprites;
 	}
 
-	Addr NesPpu::make_chrrom_addr() noexcept
+	Addr NesPpu::make_chrrom_addr() const noexcept
 	{
 		auto pattern_start = (reg.ppuctrl & ctrl_pattern_addr) != 0 ? ppu_pattern_1 : ppu_pattern_0;
 		return pattern_start | (next_tile_id << 4) | ((reg.vram_addr & vram_fine_y_mask) >> vram_fine_y_shift);
@@ -1162,7 +1162,7 @@ namespace nesem
 		read(reg.vram_addr);
 	}
 
-	int NesPpu::sprite_size() noexcept
+	int NesPpu::sprite_size() const noexcept
 	{
 		return reg.ppuctrl & ctrl_sprite_8x16 ? 16 : 8;
 	}

@@ -17,7 +17,7 @@ namespace nesem::util
 {
 	std::string sha1_impl(std::ranges::contiguous_range auto... bytes) noexcept
 	{
-		std::array<CryptoPP::byte, CryptoPP::SHA1::DIGESTSIZE> digest;
+		std::array<CryptoPP::byte, CryptoPP::SHA1::DIGESTSIZE> digest{};
 
 		CryptoPP::SHA1 sha;
 		(sha.Update(data(bytes), size(bytes)), ...);

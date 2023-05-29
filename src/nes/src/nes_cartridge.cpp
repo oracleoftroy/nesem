@@ -107,7 +107,7 @@ namespace nesem
 		return nes_rom;
 	}
 
-	bool NesCartridge::irq() noexcept
+	bool NesCartridge::irq() const noexcept
 	{
 		return irq_signaled;
 	}

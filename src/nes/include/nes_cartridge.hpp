@@ -77,7 +77,7 @@ namespace nesem
 		bool ppu_write(Addr &addr, U8 value) noexcept;
 
 		const mappers::NesRom &rom() const noexcept;
-		bool irq() noexcept;
+		bool irq() const noexcept;
 
 		size_t chr_size() const noexcept;
 

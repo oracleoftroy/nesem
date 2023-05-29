@@ -97,10 +97,10 @@ namespace nesem
 			Addr pattern_addr(U8 ppuctrl, int scanline) noexcept;
 			void read_lo(NesPpu &ppu, U8 ppuctrl, int scanline) noexcept;
 			void read_hi(NesPpu &ppu, U8 ppuctrl, int scanline) noexcept;
-			bool flip_x() noexcept;
-			bool flip_y() noexcept;
-			bool bg_priority() noexcept;
-			U8 palette_index() noexcept;
+			bool flip_x() const noexcept;
+			bool flip_y() const noexcept;
+			bool bg_priority() const noexcept;
+			U8 palette_index() const noexcept;
 		};
 
 	private:
@@ -110,20 +110,20 @@ namespace nesem
 		// pattern data on cart
 
 		// 0x2000-0x2FFF, then mirrored from 0x3000-0x3EFF
-		std::array<U8, 0x0400> nametable[2];
+		std::array<U8, 0x0400> nametable[2]{};
 
 		// 0x3F00-0x3FFF
 		std::array<U8, 32> palettes{};
-		std::array<U8, 256> oam;
+		std::array<U8, 256> oam{};
 
 		// working buffer for evaluating sprites for the next scanline
-		std::array<U8, 8 * 4> evaluated_sprites;
+		std::array<U8, 8 * 4> evaluated_sprites{};
 
 		// the address sprite evaluation started at, usually 0
 		Addr sprite_0_addr{0xFFFF};
 
 		// the oamaddr this sprite started at
-		std::array<U8, 8> evaluated_sprite_addr;
+		std::array<U8, 8> evaluated_sprite_addr{};
 
 		// the count of sprites that have passed evaluation so far
 		size_t evaluated_sprite_count = 0;
@@ -131,7 +131,7 @@ namespace nesem
 		// the sprites that are active for the current scanline
 		std::array<OAMSprite, 8> active_sprites;
 
-		int sprite_size() noexcept;
+		int sprite_size() const noexcept;
 
 		enum class SpriteEvaluationSteps
 		{
@@ -193,15 +193,15 @@ namespace nesem
 		void reload() noexcept;
 		void shift_bg() noexcept;
 		void shift_fg() noexcept;
-		Addr make_chrrom_addr() noexcept;
+		Addr make_chrrom_addr() const noexcept;
 		void increment_x() noexcept;
 		void increment_y() noexcept;
 		void transfer_x() noexcept;
 		void transfer_y() noexcept;
 
-		bool rendering_enabled() noexcept;
-		bool background_rendering_enabled() noexcept;
-		bool sprite_rendering_enabled() noexcept;
+		bool rendering_enabled() const noexcept;
+		bool background_rendering_enabled() const noexcept;
+		bool sprite_rendering_enabled() const noexcept;
 
 		void prepare_background() noexcept;
 		void prepare_foreground() noexcept;

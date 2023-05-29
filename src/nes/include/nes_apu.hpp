@@ -85,7 +85,7 @@ namespace nesem
 
 		void reset() noexcept;
 		void clock() noexcept;
-		bool irq() noexcept;
+		bool irq() const noexcept;
 
 		U8 read(Addr addr) noexcept;
 		void write(Addr addr, U8 value) noexcept;

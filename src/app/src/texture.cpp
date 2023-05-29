@@ -55,18 +55,17 @@ namespace ui
 	Canvas Texture::unsafe_lock() noexcept
 	{
 		auto t = static_cast<SDL_Texture *>(texture);
-		Uint32 texture_format;
-		int access;
+		Uint32 texture_format{};
 		cm::Sizei size;
 
-		if (SDL_QueryTexture(t, &texture_format, &access, &size.w, &size.h) != 0)
+		if (SDL_QueryTexture(t, &texture_format, nullptr, &size.w, &size.h) != 0)
 		{
 			LOG_WARN("Could not query texture: {}", SDL_GetError());
 			return {};
 		}
 
-		int bpp;
-		Uint32 mask_r, mask_g, mask_b, mask_a;
+		int bpp{};
+		Uint32 mask_r{}, mask_g{}, mask_b{}, mask_a{};
 		if (!SDL_PixelFormatEnumToMasks(texture_format, &bpp, &mask_r, &mask_g, &mask_b, &mask_a))
 		{
 			LOG_WARN("Could not get texture masks: {}", SDL_GetError());

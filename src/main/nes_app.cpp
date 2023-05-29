@@ -208,7 +208,7 @@ namespace app
 
 	void NesApp::trigger_break(bool enable)
 	{
-		app.enable_screensaver(enable);
+		ui::App::enable_screensaver(enable);
 
 		system_break = enable;
 		step = nesem::NesClockStep::None;
