@@ -74,25 +74,67 @@ namespace nesem::mappers
 			int region;
 		};
 
-		struct Expansion
+		enum class Expansion
 		{
-			int type;
+			unspecified = 0x00,
+			standard_controller = 0x01,
+			four_score = 0x02,
+			famicom_four_player = 0x03,
+			vs_system = 0x04,
+			vs_system_reversed_inputs = 0x05,
+			vs_pinball = 0x06,
+			vs_zapper = 0x07,
+			zapper = 0x08,
+			two_zappers = 0x09,
+			bandai_hyper_shot = 0x0A,
+			power_pad_side_a = 0x0B,
+			power_pad_side_b = 0x0C,
+			family_trainer_side_a = 0x0D,
+			family_trainer_side_b = 0x0E,
+			arkanoid_vaus_nes = 0x0F,
+			arkanoid_vaus_famicom = 0x10,
+			two_vaus = 0x11,
+			konami_hyper_shot = 0x12,
+			coconuts_pachinko = 0x13,
+			punching_bag = 0x14,
+			jissen_mahjong = 0x15,
+			party_tap = 0x16,
+			oeka_kids_tablet = 0x17,
+			sunsoft_barcode_battler = 0x18,
+			miracle_piano = 0x19,
+			pokkun_moguraa = 0x1A,
+			top_rider = 0x1B,
+			double_fisted = 0x1C,
+			famicom_3d = 0x1D,
+			doremikko_keyboard = 0x1E,
+			rob_gyro_set = 0x1F,
+			famicom_data_recorder = 0x20,
+			ascii_turbo_file = 0x21,
+			igs_storage_battle_box = 0x22,
+			family_basic_keyboard = 0x23,
+			dongda_pec_586 = 0x24,
+			bit_79 = 0x25,
+			subor_keyboard = 0x26,
+			subor_keyboard_3x8_bit = 0x27,
+			subor_keyboard_24_bit = 0x28,
+			snes_mouse = 0x29,
+			multicart = 0x2A,
+			two_snes_controllers = 0x2B,
+			racermate_bicycle = 0x2C,
+			u_force = 0x2D,
+			rob_stack_up = 0x2E,
+			city_patrolman_lightgun = 0x2F,
+			sharp_c1_cassette = 0x30,
+			standard_controller_swapped = 0x31,
+			excalibor_sudoku_pad = 0x32,
+			abl_pinball = 0x33,
+			golden_nugget_casino = 0x34,
 		};
 
-		struct ChrRam
-		{
-			size_t size;
-		};
-
-		struct PrgNvram
-		{
-			size_t size;
-		};
-
-		struct PrgRam
-		{
-			size_t size;
-		};
+		using ChrRam = size_t;
+		using PrgNvram = size_t;
+		using PrgRam = size_t;
+		using ChrNvram = size_t;
 
 		struct MiscRom
 		{
@@ -106,11 +148,6 @@ namespace nesem::mappers
 		{
 			int hardware;
 			int ppu;
-		};
-
-		struct ChrNvram
-		{
-			size_t size;
 		};
 
 		struct Trainer

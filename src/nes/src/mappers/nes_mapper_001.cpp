@@ -35,8 +35,9 @@ namespace nesem::mappers
 		}
 
 		// SZROM has 8K of PRG RAM, 8K of PRG NV RAM, and 16K or more of CHR.
-		if (rom().v2 && rom().v2->prgram && rom().v2->prgnvram &&
-			rom().v2->prgram->size == bank_8k && rom().v2->prgnvram->size == bank_8k &&
+		if (rom().v2 &&
+			rom().v2->prgram.value_or(0) == bank_8k &&
+			rom().v2->prgnvram.value_or(0) == bank_8k &&
 			size(rom().chr_rom) >= bank_16k)
 			prg_ram_mode = PrgRamMode::SZROM;
 

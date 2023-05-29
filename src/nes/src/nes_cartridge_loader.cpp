@@ -51,19 +51,19 @@ namespace nesem
 			LOG_INFO("PRG ROM size: {0}K ({1:L})", rom.v2->prgrom.size / 1024, rom.v2->prgrom.size);
 
 			if (rom.v2->prgram)
-				LOG_INFO("PRG RAM size: {0}K ({1:L})", rom.v2->prgram->size / 1024, rom.v2->prgram->size);
+				LOG_INFO("PRG RAM size: {0}K ({1:L})", rom.v2->prgram.value() / 1024, rom.v2->prgram.value());
 
 			if (rom.v2->prgnvram)
-				LOG_INFO("PRG NVRAM size: {0}K ({1:L})", rom.v2->prgnvram->size / 1024, rom.v2->prgnvram->size);
+				LOG_INFO("PRG NVRAM size: {0}K ({1:L})", rom.v2->prgnvram.value() / 1024, rom.v2->prgnvram.value());
 
 			if (rom.v2->chrrom)
 				LOG_INFO("CHR ROM size: {0}K ({1:L})", rom.v2->chrrom->size / 1024, rom.v2->chrrom->size);
 
 			if (rom.v2->chrram)
-				LOG_INFO("CHR RAM size: {0}K ({1:L})", rom.v2->chrram->size / 1024, rom.v2->chrram->size);
+				LOG_INFO("CHR RAM size: {0}K ({1:L})", rom.v2->chrram.value() / 1024, rom.v2->chrram.value());
 
 			if (rom.v2->chrnvram)
-				LOG_INFO("CHR NVRAM size: {0}K ({1:L})", rom.v2->chrnvram->size / 1024, rom.v2->chrnvram->size);
+				LOG_INFO("CHR NVRAM size: {0}K ({1:L})", rom.v2->chrnvram.value() / 1024, rom.v2->chrnvram.value());
 		}
 		else
 		{

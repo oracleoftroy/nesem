@@ -122,9 +122,7 @@ namespace nesem
 			if (!element || element->Name() != "expansion"sv)
 				return {};
 
-			return {
-				.type = read_int_attribute<int>(element, "type"),
-			};
+			return Expansion{read_int_attribute<int>(element, "type")};
 		}
 
 		std::optional<ChrRam> read_chrram(const tinyxml2::XMLElement *element) noexcept
@@ -132,9 +130,7 @@ namespace nesem
 			if (!element || element->Name() != "chrram"sv)
 				return {};
 
-			return ChrRam{
-				.size = read_int_attribute<size_t>(element, "size"),
-			};
+			return ChrRam{read_int_attribute<size_t>(element, "size")};
 		}
 
 		std::optional<PrgNvram> read_prgnvram(const tinyxml2::XMLElement *element) noexcept
@@ -142,9 +138,7 @@ namespace nesem
 			if (!element || element->Name() != "prgnvram"sv)
 				return {};
 
-			return PrgNvram{
-				.size = read_int_attribute<size_t>(element, "size"),
-			};
+			return PrgNvram{read_int_attribute<size_t>(element, "size")};
 		}
 
 		std::optional<PrgRam> read_prgram(const tinyxml2::XMLElement *element) noexcept
@@ -152,9 +146,7 @@ namespace nesem
 			if (!element || element->Name() != "prgram"sv)
 				return {};
 
-			return PrgRam{
-				.size = read_int_attribute<size_t>(element, "size"),
-			};
+			return PrgRam{read_int_attribute<size_t>(element, "size")};
 		}
 
 		std::optional<MiscRom> read_miscrom(const tinyxml2::XMLElement *element) noexcept
@@ -186,9 +178,7 @@ namespace nesem
 			if (!element || element->Name() != "chrnvram"sv)
 				return {};
 
-			return ChrNvram{
-				.size = read_int_attribute<size_t>(element, "size"),
-			};
+			return ChrNvram{read_int_attribute<size_t>(element, "size")};
 		}
 
 		std::optional<Trainer> read_trainer(const tinyxml2::XMLElement *element) noexcept

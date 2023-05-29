@@ -7,116 +7,118 @@ namespace nesem::mappers::ines_2
 	std::string_view expansion_device_name(Expansion expansion) noexcept
 	{
 		using namespace std::string_view_literals;
+		using enum Expansion;
+
 		// names from https://www.nesdev.org/wiki/NES_2.0#Default_Expansion_Device
-		switch (expansion.type)
+		switch (expansion)
 		{
 		default:
 			return "Unknown device"sv;
-		case 0x00:
+		case unspecified:
 			return "Unspecified"sv;
-		case 0x01:
+		case standard_controller:
 			return "Standard NES/Famicom controllers"sv;
-		case 0x02:
+		case four_score:
 			return "NES Four Score/Satellite with two additional standard controllers"sv;
-		case 0x03:
+		case famicom_four_player:
 			return "Famicom Four Players Adapter with two additional standard controllers"sv;
-		case 0x04:
+		case vs_system:
 			return "Vs. System"sv;
-		case 0x05:
+		case vs_system_reversed_inputs:
 			return "Vs. System with reversed inputs"sv;
-		case 0x06:
+		case vs_pinball:
 			return "Vs. Pinball (Japan)"sv;
-		case 0x07:
+		case vs_zapper:
 			return "Vs. Zapper"sv;
-		case 0x08:
+		case zapper:
 			return "Zapper ($4017)"sv;
-		case 0x09:
+		case two_zappers:
 			return "Two Zappers"sv;
-		case 0x0A:
+		case bandai_hyper_shot:
 			return "Bandai Hyper Shot Lightgun"sv;
-		case 0x0B:
+		case power_pad_side_a:
 			return "Power Pad Side A"sv;
-		case 0x0C:
+		case power_pad_side_b:
 			return "Power Pad Side B"sv;
-		case 0x0D:
+		case family_trainer_side_a:
 			return "Family Trainer Side A"sv;
-		case 0x0E:
+		case family_trainer_side_b:
 			return "Family Trainer Side B"sv;
-		case 0x0F:
+		case arkanoid_vaus_nes:
 			return "Arkanoid Vaus Controller (NES)"sv;
-		case 0x10:
+		case arkanoid_vaus_famicom:
 			return "Arkanoid Vaus Controller (Famicom)"sv;
-		case 0x11:
+		case two_vaus:
 			return "Two Vaus Controllers plus Famicom Data Recorder"sv;
-		case 0x12:
+		case konami_hyper_shot:
 			return "Konami Hyper Shot Controller"sv;
-		case 0x13:
+		case coconuts_pachinko:
 			return "Coconuts Pachinko Controller"sv;
-		case 0x14:
+		case punching_bag:
 			return "Exciting Boxing Punching Bag (Blowup Doll)"sv;
-		case 0x15:
+		case jissen_mahjong:
 			return "Jissen Mahjong Controller"sv;
-		case 0x16:
-			return "Party Tap "sv;
-		case 0x17:
+		case party_tap:
+			return "Party Tap"sv;
+		case oeka_kids_tablet:
 			return "Oeka Kids Tablet"sv;
-		case 0x18:
+		case sunsoft_barcode_battler:
 			return "Sunsoft Barcode Battler"sv;
-		case 0x19:
+		case miracle_piano:
 			return "Miracle Piano Keyboard"sv;
-		case 0x1A:
+		case pokkun_moguraa:
 			return "Pokkun Moguraa (Whack-a-Mole Mat and Mallet)"sv;
-		case 0x1B:
+		case top_rider:
 			return "Top Rider (Inflatable Bicycle)"sv;
-		case 0x1C:
+		case double_fisted:
 			return "Double-Fisted (Requires or allows use of two controllers by one player)"sv;
-		case 0x1D:
+		case famicom_3d:
 			return "Famicom 3D System"sv;
-		case 0x1E:
+		case doremikko_keyboard:
 			return "Doremikko Keyboard"sv;
-		case 0x1F:
+		case rob_gyro_set:
 			return "R.O.B. Gyro Set"sv;
-		case 0x20:
+		case famicom_data_recorder:
 			return "Famicom Data Recorder (don't emulate keyboard)"sv;
-		case 0x21:
+		case ascii_turbo_file:
 			return "ASCII Turbo File"sv;
-		case 0x22:
+		case igs_storage_battle_box:
 			return "IGS Storage Battle Box"sv;
-		case 0x23:
+		case family_basic_keyboard:
 			return "Family BASIC Keyboard plus Famicom Data Recorder"sv;
-		case 0x24:
+		case dongda_pec_586:
 			return "Dongda PEC-586 Keyboard"sv;
-		case 0x25:
+		case bit_79:
 			return "Bit Corp. Bit-79 Keyboard"sv;
-		case 0x26:
+		case subor_keyboard:
 			return "Subor Keyboard"sv;
-		case 0x27:
+		case subor_keyboard_3x8_bit:
 			return "Subor Keyboard plus mouse (3x8-bit protocol)"sv;
-		case 0x28:
+		case subor_keyboard_24_bit:
 			return "Subor Keyboard plus mouse (24-bit protocol)"sv;
-		case 0x29:
+		case snes_mouse:
 			return "SNES Mouse (case 0x40:17.d0)"sv;
-		case 0x2A:
+		case multicart:
 			return "Multicart"sv;
-		case 0x2B:
+		case two_snes_controllers:
 			return "Two SNES controllers replacing the two standard NES controllers"sv;
-		case 0x2C:
+		case racermate_bicycle:
 			return "RacerMate Bicycle"sv;
-		case 0x2D:
+		case u_force:
 			return "U-Force"sv;
-		case 0x2E:
+		case rob_stack_up:
 			return "R.O.B. Stack-Up"sv;
-		case 0x2F:
+		case city_patrolman_lightgun:
 			return "City Patrolman Lightgun"sv;
-		case 0x30:
+		case sharp_c1_cassette:
 			return "Sharp C1 Cassette Interface"sv;
-		case 0x31:
+		case standard_controller_swapped:
 			return "Standard Controller with swapped Left-Right/Up-Down/B-A"sv;
-		case 0x32:
+		case excalibor_sudoku_pad:
 			return "Excalibor Sudoku Pad"sv;
-		case 0x33:
+		case abl_pinball:
 			return "ABL Pinball"sv;
-		case 0x34:
+		case golden_nugget_casino:
 			return "Golden Nugget Casino extra buttons"sv;
 		}
 	}
@@ -214,7 +216,7 @@ namespace nesem::mappers
 	size_t rom_chrram_size(const NesRom &rom) noexcept
 	{
 		if (rom.v2)
-			return rom.v2->chrram.has_value() ? rom.v2->chrram->size : 0;
+			return rom.v2->chrram.value_or(0);
 
 		return rom.v1.chr_rom_size == 0 ? bank_8k : 0;
 	}
@@ -244,8 +246,8 @@ namespace nesem::mappers
 
 		if (rom.v2)
 		{
-			size += rom.v2->prgram.has_value() ? rom.v2->prgram->size : 0;
-			size += rom.v2->prgnvram.has_value() ? rom.v2->prgnvram->size : 0;
+			size += rom.v2->prgram.value_or(0);
+			size += rom.v2->prgnvram.value_or(0);
 		}
 		else if (rom.v1.has_battery)
 			size = bank_8k;

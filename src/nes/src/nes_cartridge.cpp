@@ -23,10 +23,10 @@ namespace nesem
 		if (rom().v2)
 		{
 			if (rom().v2->prgram)
-				prg_ram.resize(rom().v2->prgram->size);
+				prg_ram.resize(rom().v2->prgram.value());
 
 			if (rom().v2->prgnvram)
-				prg_nvram = nes.open_prgnvram(rom().v2->rom.sha1, rom().v2->prgnvram->size);
+				prg_nvram = nes.open_prgnvram(rom().v2->rom.sha1, rom().v2->prgnvram.value());
 		}
 		else if (auto size = rom().v1.prg_ram_size * bank_8k;
 				 size > 0)

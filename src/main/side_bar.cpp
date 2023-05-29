@@ -99,12 +99,12 @@ namespace app
 				if (v2.prgram)
 				{
 					pos.y += 12;
-					draw_string(canvas, {255, 255, 255}, fmt::format("PRG RAM size: {0}K ({1})", v2.prgram->size / 1024, v2.prgram->size), pos);
+					draw_string(canvas, {255, 255, 255}, fmt::format("PRG RAM size: {0}K ({1})", v2.prgram.value() / 1024, v2.prgram.value()), pos);
 				}
 				if (v2.prgnvram)
 				{
 					pos.y += 12;
-					draw_string(canvas, {255, 255, 255}, fmt::format("PRG NVRAM size: {0}K ({1})", v2.prgnvram->size / 1024, v2.prgnvram->size), pos);
+					draw_string(canvas, {255, 255, 255}, fmt::format("PRG NVRAM size: {0}K ({1})", v2.prgnvram.value() / 1024, v2.prgnvram.value()), pos);
 				}
 				if (v2.chrrom)
 				{
@@ -114,12 +114,12 @@ namespace app
 				if (v2.chrram)
 				{
 					pos.y += 12;
-					draw_string(canvas, {255, 255, 255}, fmt::format("CHR RAM size: {0}K ({1})", v2.chrram->size / 1024, v2.chrram->size), pos);
+					draw_string(canvas, {255, 255, 255}, fmt::format("CHR RAM size: {0}K ({1})", v2.chrram.value() / 1024, v2.chrram.value()), pos);
 				}
 				if (v2.chrnvram)
 				{
 					pos.y += 12;
-					draw_string(canvas, {255, 255, 255}, fmt::format("CHR NVRAM size: {0}K ({1})", v2.chrnvram->size / 1024, v2.chrnvram->size), pos);
+					draw_string(canvas, {255, 255, 255}, fmt::format("CHR NVRAM size: {0}K ({1})", v2.chrnvram.value() / 1024, v2.chrnvram.value()), pos);
 				}
 			}
 			else
