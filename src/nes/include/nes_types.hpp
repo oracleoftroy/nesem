@@ -91,14 +91,15 @@ namespace nesem
 	};
 
 #if defined(__cpp_lib_move_only_function)
-	using DrawFn = std::move_only_function<void(int x, int y, U8 color_index, util::Flags<NesColorEmphasis> emphasis)>;
-	using FrameReadyFn = std::move_only_function<void()>;
-	using PollInputFn = std::move_only_function<U8()>;
-	using ErrorFn = std::move_only_function<void(std::string_view message)>;
+	template <typename Fn>
+	using CallbackFn = std::move_only_function<Fn>;
 #else
-	using DrawFn = std::function<void(int x, int y, U8 color_index, util::Flags<NesColorEmphasis> emphasis)>;
-	using FrameReadyFn = std::function<void()>;
-	using PollInputFn = std::function<U8()>;
-	using ErrorFn = std::function<void(std::string_view message)>;
+	template <typename Fn>
+	using CallbackFn = std::function<Fn>;
 #endif
+
+	using DrawFn = CallbackFn<void(int x, int y, U8 color_index, util::Flags<NesColorEmphasis> emphasis)>;
+	using FrameReadyFn = CallbackFn<void()>;
+	using PollInputFn = CallbackFn<U8()>;
+	using ErrorFn = CallbackFn<void(std::string_view message)>;
 }
