@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <bit>
 #include <concepts>
 #include <utility>
 
@@ -9,6 +10,7 @@
 #include <mio/mmap.hpp>
 #include <tinyxml2.h>
 
+#include "nes_20db_xml.hpp"
 #include "nes_sha1.hpp"
 
 #include <util/logging.hpp>
@@ -195,7 +197,16 @@ namespace nesem
 
 		std::vector<RomData> load_nes20db_xml(tinyxml2::XMLDocument &doc)
 		{
-			auto game = doc.FirstChildElement("nes20db")->FirstChildElement("game");
+			auto root = doc.FirstChildElement("nes20db");
+			if (doc.Error() || !root)
+			{
+				log_error(doc);
+				return {};
+			}
+
+			LOG_INFO("Loading nes20db.xml version {}", root->Attribute("date"));
+
+			auto game = root->FirstChildElement("game");
 			std::vector<RomData> roms;
 
 			while (!doc.Error() && game)
@@ -230,7 +241,26 @@ namespace nesem
 		std::vector<mappers::ines_2::RomData> load_nes20db_xml(const std::filesystem::path &db_file)
 		{
 			tinyxml2::XMLDocument doc;
-			auto err = doc.LoadFile(db_file.string().c_str());
+
+			// initialize error to something other than success so if we skip loading a file, we can detect that we haven't succeeded in loading the file
+			// using the count of errors as it isn't a real error condition so we should never get it naturally
+			auto err = tinyxml2::XML_ERROR_COUNT;
+
+			if (!db_file.empty())
+			{
+				LOG_INFO("Trying to load nes20db from '{}'", db_file.string());
+				err = doc.LoadFile(db_file.string().c_str());
+				if (err != tinyxml2::XML_SUCCESS)
+					log_error(doc);
+			}
+
+			// fallback to embedded version
+			if (err != tinyxml2::XML_SUCCESS)
+			{
+				LOG_INFO("Trying to load embedded nes20db");
+				auto data = nes20db_xml();
+				err = doc.Parse(std::bit_cast<char *>(data.data()), data.size());
+			}
 
 			if (err != tinyxml2::XML_SUCCESS)
 			{
@@ -283,12 +313,14 @@ namespace nesem
 		: roms(std::move(roms))
 	{
 		build_indexes();
+		LOG_INFO("iNES20 DB ready");
 	}
 
 	void NesRomLoader::build_indexes()
 	{
+		LOG_INFO("Building iNES20 DB indexes");
 		for (size_t index = 0; index < size(roms); ++index)
-			rom_sha1_to_index.emplace(roms[index].rom.sha1, index);
+			rom_sha1_to_index.try_emplace(roms[index].rom.sha1, index);
 	}
 
 	std::optional<mappers::NesRom> NesRomLoader::load_rom(const std::filesystem::path &filename) noexcept

@@ -10,54 +10,6 @@
 #include <ui/texture.hpp>
 #include <util/logging.hpp>
 
-namespace
-{
-	std::filesystem::path find_path(const std::filesystem::path &path)
-	{
-		namespace fs = std::filesystem;
-
-		// remember the bit that varies from our current working directory
-		const auto relative = fs::proximate(path);
-		auto dir = fs::current_path();
-
-		while (!fs::exists(dir / relative))
-		{
-			LOG_DEBUG("Trying {}", (dir / relative).string());
-
-			auto previous = std::exchange(dir, dir.parent_path());
-
-			// we are at the root directory and can't go up anymore, so bail
-			if (dir == previous)
-				break;
-		}
-
-		if (auto p = dir / relative;
-			fs::exists(p))
-		{
-			// we found a path, return it
-			LOG_DEBUG("Found {}", p.string());
-			return p;
-		}
-
-		// could not find path, return original path
-		LOG_INFO("Could not find file {}", path.string());
-		return path;
-	}
-
-	std::filesystem::path find_file(const std::filesystem::path &path)
-	{
-		namespace fs = std::filesystem;
-
-		if (!path.has_filename())
-		{
-			LOG_WARN("Path does not name a file: '{}'", path.string());
-			return path;
-		}
-
-		return (find_path(path));
-	}
-}
-
 namespace app
 {
 	NesApp::NesApp(const Config &config)
@@ -68,7 +20,7 @@ namespace app
 			  .frame_ready = std::bind_front(&NesApp::on_nes_frame_ready, this),
 			  .player1 = std::make_unique<nesem::NesController>(std::bind_front(&NesApp::read_controller, this)),
 			  .player2 = std::make_unique<nesem::NesInputDevice>(std::bind_front(&NesApp::read_zapper, this)),
-			  .nes20db_filename = find_file(R"(data/nes20db.xml)"),
+			  .nes20db_filename = config.nes20db_filename.value_or(std::filesystem::path{}),
 			  .user_data_dir = ui::App::get_user_data_path("nesem"),
 		  })
 	{
@@ -132,12 +84,8 @@ namespace app
 
 		nes_screen_texture = app.create_texture({256, 240});
 
-		data_path = find_path("data");
-
 		if (config.last_played_rom)
 			load_rom(*config.last_played_rom);
-		else
-			load_rom(data_path / "nestest.nes");
 
 		if (config.palette)
 			load_pal(*config.palette);

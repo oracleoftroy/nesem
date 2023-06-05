@@ -3,6 +3,7 @@
 
 #include <fstream>
 
+#include <fmt/std.h>
 #include <toml++/toml.h>
 
 #include <util/logging.hpp>
@@ -14,6 +15,7 @@ namespace app
 	constinit const auto key_version = "version"sv;
 	constinit const auto key_last_rom = "last-rom"sv;
 	constinit const auto key_palette = "palette"sv;
+	constinit const auto nes20db_filename = "iNES2-DB-path"sv;
 
 	constinit const auto key_controller_1 = "controller-1"sv;
 	constinit const auto key_turbo_speed = "turbo-speed"sv;
@@ -43,8 +45,9 @@ namespace app
 			auto version = table[key_version].value_or(0);
 			if (version == 0)
 			{
-				config.last_played_rom = table[key_last_rom].value<std::string>();
-				config.palette = table[key_palette].value<std::string>();
+				config.last_played_rom = table[key_last_rom].value<std::u8string>();
+				config.palette = table[key_palette].value<std::u8string>();
+				config.nes20db_filename = table[nes20db_filename].value<std::u8string>();
 
 				auto controller_1 = table[key_controller_1];
 				config.controller_1.turbo_speed = controller_1[key_turbo_speed].value_or(16);
@@ -71,10 +74,13 @@ namespace app
 		auto table = toml::table{};
 
 		if (config.last_played_rom)
-			table.insert(key_last_rom, *config.last_played_rom);
+			table.insert(key_last_rom, config.last_played_rom->u8string());
 
 		if (config.palette)
-			table.insert(key_palette, *config.palette);
+			table.insert(key_palette, config.palette->u8string());
+
+		if (config.nes20db_filename)
+			table.insert(nes20db_filename, config.nes20db_filename->u8string());
 
 		table.insert("controller-1"sv,
 			toml::table{
@@ -96,5 +102,48 @@ namespace app
 			LOG_WARN("Could not open file for saving: {}", path.string());
 
 		file << table;
+	}
+
+	void parse_command_line(Config &config, std::span<char *> args) noexcept
+	{
+		auto it = args.begin();
+		auto end = args.end();
+		std::error_code ec;
+
+		while (++it != end)
+		{
+			const auto arg = std::string_view{*it};
+
+			if (!arg.starts_with('-'))
+			{
+				if (auto rom_path = std::filesystem::path{arg}; exists(rom_path, ec))
+				{
+					if (auto path = canonical(rom_path, ec); ec)
+						LOG_ERROR("Error converting path to canonical: {}", rom_path, ec.message());
+					else
+						config.last_played_rom = path;
+				}
+				else if (ec)
+					LOG_ERROR("Error checking existence of ROM {}: {}", rom_path, ec.message());
+				else
+					LOG_WARN("ROM not found at {}, ignoring", rom_path);
+			}
+			else if (arg == "--db")
+			{
+				if (++it == end)
+					LOG_WARN("Ignoring argument --db, no argument given");
+				else if (auto db_path = std::filesystem::path{*it}; exists(db_path, ec))
+				{
+					if (auto path = canonical(db_path, ec); ec)
+						LOG_ERROR("Error converting path to canonical: {}", db_path, ec.message());
+					else
+						config.nes20db_filename = path;
+				}
+				else if (ec)
+					LOG_ERROR("Error checking existence of iNES 2 db {}: {}", db_path, ec.message());
+				else
+					LOG_WARN("iNES2 db not found at {}, ignoring", db_path);
+			}
+		}
 	}
 }

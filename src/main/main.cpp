@@ -92,6 +92,7 @@ int application_main(int argc, char *argv[])
 	auto config_file_path = config_path / "nesem.toml";
 
 	auto config = app::load_config_file(config_file_path);
+	parse_command_line(config, {argv, argv + argc});
 	auto app = std::make_unique<app::NesApp>(config);
 
 #if defined(__EMSCRIPTEN__)

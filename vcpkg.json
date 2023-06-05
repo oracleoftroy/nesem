@@ -4,6 +4,7 @@
 	"dependencies": [
 		"catch2",
 		"cryptopp",
+		"fmt",
 		"mio",
 		"scottt-debugbreak",
 		{

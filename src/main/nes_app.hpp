@@ -66,8 +66,6 @@ namespace app
 
 		ui::App app;
 
-		std::filesystem::path data_path;
-
 		ui::Key button_a;
 		ui::Key button_b;
 		ui::Key button_turbo_a;

@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <optional>
+#include <span>
 #include <string>
 
 namespace app
@@ -23,11 +24,14 @@ namespace app
 
 	struct Config
 	{
-		std::optional<std::string> last_played_rom;
-		std::optional<std::string> palette;
+		std::optional<std::filesystem::path> last_played_rom;
+		std::optional<std::filesystem::path> palette;
+		std::optional<std::filesystem::path> nes20db_filename;
 		ControllerConfig controller_1;
 	};
 
 	Config load_config_file(const std::filesystem::path &path) noexcept;
 	void save_config_file(const std::filesystem::path &path, const Config &config) noexcept;
+
+	void parse_command_line(Config &config, std::span<char *> args) noexcept;
 }
