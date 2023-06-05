@@ -16,6 +16,11 @@ namespace app
 	{
 		using enum nesem::Buttons;
 
+		if (buttons == last_buttons)
+			return;
+
+		last_buttons = buttons;
+
 		static constexpr uint8_t alpha = 128 + 64;
 		static constexpr auto outline_color = cm::Color{250, 253, 243, alpha};
 		static constexpr auto bg_color = cm::Color{22, 22, 22, alpha};

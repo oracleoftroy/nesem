@@ -27,5 +27,7 @@ namespace app
 	private:
 		ui::Texture texture;
 		cm::Recti area;
+
+		util::Flags<nesem::Buttons> last_buttons{nesem::Buttons::All};
 	};
 }

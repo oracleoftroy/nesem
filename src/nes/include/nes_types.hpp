@@ -59,6 +59,9 @@ namespace nesem
 		Down = 0x20,
 		Left = 0x40,
 		Right = 0x80,
+
+		// invalid state
+		All = 0xFF
 	};
 
 	enum class ApuStatus : U8
