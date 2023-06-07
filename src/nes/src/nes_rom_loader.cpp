@@ -7,6 +7,7 @@
 #include <utility>
 
 #include <fmt/format.h>
+#include <fmt/std.h>
 #include <mio/mmap.hpp>
 #include <tinyxml2.h>
 
@@ -248,7 +249,7 @@ namespace nesem
 
 			if (!db_file.empty())
 			{
-				LOG_INFO("Trying to load nes20db from '{}'", db_file.string());
+				LOG_INFO("Trying to load nes20db from '{}'", db_file);
 				err = doc.LoadFile(db_file.string().c_str());
 				if (err != tinyxml2::XML_SUCCESS)
 					log_error(doc);
@@ -327,7 +328,7 @@ namespace nesem
 	{
 		using namespace std::string_view_literals;
 
-		LOG_INFO("Loading {}", filename.string());
+		LOG_INFO("Loading {}", filename);
 
 		mio::ummap_source file;
 		std::error_code ec;
@@ -335,7 +336,7 @@ namespace nesem
 
 		if (ec)
 		{
-			LOG_WARN("Could not open file '{}', reason: {}", filename.string(), ec.message());
+			LOG_WARN("Could not open file '{}', reason: {}", filename, ec.message());
 			return std::nullopt;
 		}
 
@@ -355,7 +356,7 @@ namespace nesem
 		auto start_span = file_data.subspan(0, 4);
 		if (!std::equal(begin(start_span), end(start_span), begin(magic)))
 		{
-			LOG_WARN("Invalid iNES Rom, file: '{}'", filename.string());
+			LOG_WARN("Invalid iNES Rom, file: '{}'", filename);
 			return std::nullopt;
 		}
 

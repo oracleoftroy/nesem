@@ -2,6 +2,8 @@
 
 #include <filesystem>
 
+#include <fmt/std.h>
+
 #include "config.hpp"
 #include "text.hpp"
 
@@ -122,7 +124,7 @@ namespace app
 			load_pal(path);
 		else
 		{
-			LOG_WARN("Unknown file type for '{}', trying to load as iNES", path.string());
+			LOG_WARN("Unknown file type for '{}', trying to load as iNES", path);
 			load_rom(path);
 		}
 	}
@@ -151,7 +153,7 @@ namespace app
 		if (new_colors)
 			colors = std::move(*new_colors);
 		else
-			LOG_WARN("Could not load color palette from '{}', keeping previous", filepath.string());
+			LOG_WARN("Could not load color palette from '{}', keeping previous", filepath);
 	}
 
 	void NesApp::trigger_break(bool enable)

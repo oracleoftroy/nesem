@@ -3,6 +3,8 @@
 #include <array>
 #include <fstream>
 
+#include <fmt/std.h>
+
 #include <util/logging.hpp>
 
 namespace app
@@ -566,7 +568,7 @@ namespace app
 			auto file = std::ifstream(path, std::ios::binary);
 			if (!file)
 			{
-				LOG_WARN("could not open file: {}", path.string());
+				LOG_WARN("could not open file: {}", path);
 				return std::nullopt;
 			}
 
@@ -581,12 +583,12 @@ namespace app
 				c.b = static_cast<uint8_t>(file.get());
 			}
 
-			LOG_INFO("Palette loaded: {}", path.string());
+			LOG_INFO("Palette loaded: {}", path);
 			return ColorPalette(new_palette);
 		}
 		catch (const std::exception &e)
 		{
-			LOG_WARN("Error loading palette '{}': {}", path.string(), e.what());
+			LOG_WARN("Error loading palette '{}': {}", path, e.what());
 			return std::nullopt;
 		}
 	}

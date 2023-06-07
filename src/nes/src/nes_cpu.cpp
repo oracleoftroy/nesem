@@ -5,6 +5,7 @@
 #include <string_view>
 
 #include <fmt/format.h>
+#include <fmt/std.h>
 
 #include "nes.hpp"
 #include "nes_cpu_ops.hpp"
@@ -589,7 +590,7 @@ namespace nesem
 			static std::shared_ptr<spdlog::logger> cpu_log = [] {
 				auto log_filename = std::filesystem::temp_directory_path() / "cpu.log";
 
-				LOG_INFO("CPU log created at: {}", log_filename.string());
+				LOG_INFO("CPU log created at: {}", log_filename);
 				auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(log_filename.string(), true);
 
 				// no extra detail, just the log message

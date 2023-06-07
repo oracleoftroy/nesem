@@ -6,6 +6,8 @@
 #include <string_view>
 #include <vector>
 
+#include <fmt/std.h>
+
 #include "config.hpp"
 #include "nes_app.hpp"
 
@@ -82,10 +84,10 @@ int application_main(int argc, char *argv[])
 	// LOG_INFO("Starting: {}", fmt::join(argv, argv + argc, " "));
 
 	LOG_INFO("Starting: {}", fmt::join(args(argc, argv), " "));
-	LOG_INFO("Working directory: {}", std::filesystem::current_path().string());
+	LOG_INFO("Working directory: {}", std::filesystem::current_path());
 
 	auto config_path = ui::App::get_user_data_path("nesem");
-	LOG_INFO("Config directory: {}", config_path.string());
+	LOG_INFO("Config directory: {}", config_path);
 
 	init(config_path);
 

@@ -36,7 +36,7 @@ namespace app
 
 		auto result = toml::parse_file(path.string());
 		if (!result)
-			LOG_WARN("Could not parse config file {}, reason: {}", path.string(), result.error().description());
+			LOG_WARN("Could not parse config file {}, reason: {}", path, result.error().description());
 
 		else
 		{
@@ -99,7 +99,7 @@ namespace app
 
 		auto file = std::ofstream(path, std::ios::trunc);
 		if (!file)
-			LOG_WARN("Could not open file for saving: {}", path.string());
+			LOG_WARN("Could not open file for saving: {}", path);
 
 		file << table;
 	}

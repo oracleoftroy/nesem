@@ -232,7 +232,7 @@ struct Options
 void print_options(const Options &options)
 {
 	io::println("exe: {}", options.exe);
-	io::println("input_filename: {}", options.input_filename.string());
+	io::println("input_filename: {}", options.input_filename);
 	io::println("output_file_name: {}", options.output_file_name);
 	io::println("symbol_name: {}", options.symbol_name);
 	io::println("compression: {}", to_string(options.compression));
@@ -256,7 +256,7 @@ std::expected<Options, std::string> parse_command_line(std::span<char *> args)
 			if (result.input_filename.empty())
 				result.input_filename = arg;
 			else
-				return std::unexpected(io::format("input file '{}', but was already set to '{}'", arg, result.input_filename.string()));
+				return std::unexpected(io::format("input file '{}', but was already set to '{}'", arg, result.input_filename));
 		}
 		else if (arg == "--help" || arg == "-h" || arg == "-?")
 		{

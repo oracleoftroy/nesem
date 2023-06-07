@@ -2,6 +2,7 @@
 
 #include <fstream>
 
+#include <fmt/std.h>
 #include <mio/mmap.hpp>
 
 #include <util/logging.hpp>
@@ -18,18 +19,18 @@ namespace
 		auto created = std::filesystem::create_directories(file_name.parent_path(), ec);
 		if (ec)
 		{
-			LOG_ERROR("Could not create directory: {}", file_name.parent_path().string());
+			LOG_ERROR("Could not create directory: {}", file_name.parent_path());
 			return result;
 		}
 		else if (created)
-			LOG_DEBUG("Path created: {}", file_name.parent_path().string());
+			LOG_DEBUG("Path created: {}", file_name.parent_path());
 		else
-			LOG_DEBUG("Path already existed: {}", file_name.parent_path().string());
+			LOG_DEBUG("Path already existed: {}", file_name.parent_path());
 
 		// mio requires that the file already exist of the proper size, so make a file if we need to
 		if (!exists(file_name, ec))
 		{
-			LOG_INFO("NVRAM file does not exist, creating: {}", file_name.string());
+			LOG_INFO("NVRAM file does not exist, creating: {}", file_name);
 			std::ofstream f(file_name, std::ios::binary);
 		}
 
@@ -40,19 +41,19 @@ namespace
 			resize_file(file_name, size, ec);
 			if (ec)
 			{
-				LOG_ERROR("Could not resize NVRAM file: {}", file_name.string());
+				LOG_ERROR("Could not resize NVRAM file: {}", file_name);
 				return result;
 			}
 		}
 		else if (current_size > size)
 			LOG_WARN("Existing NVRAM file larger? Size is{:L} but only requesting {:L}", current_size, size);
 
-		LOG_INFO("opening {:L}K of NVRAM at {}", size / 1024, file_name.string());
+		LOG_INFO("opening {:L}K of NVRAM at {}", size / 1024, file_name);
 
 		result.map(file_name.string(), 0, size, ec);
 
 		if (ec)
-			LOG_ERROR("Could not open NVRAM at '{}', reason: {}", file_name.string(), ec.message());
+			LOG_ERROR("Could not open NVRAM at '{}', reason: {}", file_name, ec.message());
 
 		return result;
 	}
