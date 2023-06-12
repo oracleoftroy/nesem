@@ -239,6 +239,8 @@ namespace nesem
 		const std::array<U8, 256> &get_oam() const noexcept;
 		const std::array<OAMSprite, 8> &get_active_sprites() const noexcept;
 
+		U8 peek_ppuctrl() const noexcept;
+
 		// get the current pattern table for visualization / debugging
 		NesPatternTable read_pattern_table(int index) const noexcept;
 

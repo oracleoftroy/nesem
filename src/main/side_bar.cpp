@@ -20,6 +20,7 @@ namespace app
 		: texture(app.create_texture(size(area))),
 		  nes_pattern_textures{app.create_texture({128, 128}), app.create_texture({128, 128})},
 		  nes_nametable_textures{app.create_texture({256, 240}), app.create_texture({256, 240})},
+		  nes_sprite_texture{app.create_texture({256, 240})},
 		  area(area)
 	{
 	}
@@ -33,8 +34,11 @@ namespace app
 			break;
 
 		case bg_info:
+			draw_ppu_visualizer(nes, colors);
+			break;
+
 		case fg_info:
-			draw_ppu_info(mode, nes, current_palette, colors);
+			draw_ppu_info(nes, current_palette, colors);
 			break;
 
 		case cpu_info:
@@ -298,11 +302,8 @@ namespace app
 		}
 	}
 
-	void SideBar::draw_ppu_info(DebugMode mode, const nesem::Nes &nes, nesem::U8 current_palette, const ColorPalette &colors)
+	void SideBar::draw_ppu_info(const nesem::Nes &nes, nesem::U8 current_palette, const ColorPalette &colors)
 	{
-		if (mode == DebugMode::none)
-			return;
-
 		auto [canvas, lock] = texture.lock();
 		canvas.fill({22, 22, 22});
 
@@ -376,109 +377,207 @@ namespace app
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-		switch (mode)
+		auto pos = cm::Point2{2, nes_pattern_pos[0].y + 128 + 4};
+		auto offset = cm::Point2{16 * 8, 0};
+
+		draw_string(canvas, {255, 255, 255}, "OEM memory - (x y) index attrib", pos);
+		pos.y += 4;
+
+		const auto &oam = nes.ppu().get_oam();
+		for (size_t i = 0, end = std::size(oam); i < end; i += 4)
 		{
-		case DebugMode::bg_info:
-		{
-			for (auto &&nt : std::array{0, 3})
-			{
-				auto index = nt & 1;
-				auto name_table = nes.ppu().read_name_table(nt, pattern_tables);
+			auto col = int((i / 4) % 2);
+			if (col == 0)
+				pos.y += 10;
 
-				{
-					auto fn = [&](const cm::Point2i pos) {
-						auto color_index = name_table.read_pixel(static_cast<nesem::U16>(pos.x), static_cast<nesem::U16>(pos.y));
-						return colors.color_at_index(color_index);
-					};
-
-					auto [nt_canvas, nt_lock] = nes_nametable_textures[index].lock();
-					nt_canvas.update_points(std::cref(fn));
-				}
-
-				auto pos = cm::Point2{0, area.h - (240 * (2 - index))};
-				nes_nametable_pos[index] = {area.x, pos.y};
-			}
-
-			auto [fine_x, fine_y, coarse_x, coarse_y, nt] = nes.ppu().get_scroll_info();
-
-			auto pos = cm::Point2{2, palette_start_pos.y - 12};
-
-			if (auto cartridge = nes.cartridge();
-				cartridge != nullptr)
-			{
-				auto mirror_mode = cartridge->mirroring();
-				draw_string(canvas, {255, 255, 255}, fmt::format("mirror mode: {}", to_string(mirror_mode)), pos);
-				pos.y -= 10;
-			}
-
-			draw_string(canvas, {255, 255, 255}, fmt::format("nametable: {}", nt), pos);
-			pos.y -= 10;
-			draw_string(canvas, {255, 255, 255}, fmt::format("coarse x,y: {:>2}, {:>2}", coarse_x, coarse_y), pos);
-			pos.y -= 10;
-			draw_string(canvas, {255, 255, 255}, fmt::format("fine x,y: {}, {}", fine_x, fine_y), pos);
+			draw_string(canvas, {255, 255, 255}, fmt::format("({:>3} {:>3}) {:02X} {:02X}", oam[i + 3], oam[i + 0], oam[i + 1], oam[i + 2]), pos + offset * col);
 		}
-		break;
 
-		case DebugMode::fg_info:
+		pos.y += 20;
+
+		draw_string(canvas, {255, 255, 255}, "Active sprites for scanline", pos);
+		pos.y += 4;
+
+		int index = 0;
+		for (const auto &s : nes.ppu().get_active_sprites())
 		{
-			auto pos = cm::Point2{2, nes_pattern_pos[0].y + 128 + 4};
-			auto offset = cm::Point2{16 * 8, 0};
+			auto col = index++ % 2;
+			if (col == 0)
+				pos.y += 10;
 
-			draw_string(canvas, {255, 255, 255}, "OEM memory - (x y) index attrib", pos);
-			pos.y += 4;
+			draw_string(canvas, {255, 255, 255}, fmt::format("({:>3} {:>3}) {:02X} {:02X}", s.x, s.y, s.index, s.attrib), pos + offset * col);
+		}
+	}
+
+	void SideBar::draw_ppu_visualizer(const nesem::Nes &nes, const ColorPalette &colors)
+	{
+		auto [canvas, lock] = texture.lock();
+		canvas.fill({22, 22, 22});
+
+		const auto text_offset = cm::Point2{2, 2};
+		auto pos = cm::Point2{0, 0};
+
+		draw_string(canvas, {255, 255, 255}, "Sprites", pos + text_offset);
+		pos.y += 12;
+
+		auto pattern_tables = std::array{
+			nes.ppu().read_pattern_table(0),
+			nes.ppu().read_pattern_table(1),
+		};
+
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		// Render Sprites
+
+		// need to know
+		// which sprite mode? ppuctrl ctrl_sprite_8x16
+
+		// which pattern table: 0 if not set, 1 if set
+		// if 8x8, ppuctrl ctrl_sprite_addr (bit 3)
+		// if 8x16, low bit of index
+
+		// index of tile in pattern table
+		// if 8x8, index
+		// if 8x16, index >> 1 for upper half, +1 for lower half
+		// converting to to x, y -> (index & 15) *8 + pixel_x, (index >> 4) * 8 + pixel_y
+
+		// read_name_table
+
+		// flip x -> attrib bit 6
+		// flip y -> attrib bit 7
+
+		{
+			auto [sprite_canvas, sprite_lock] = nes_sprite_texture.lock();
+
+			// read the current transparent color
+			// might not be technically correct in some situations, but should be good enough?
+			auto clear_color = colors.color_at_index(nes.ppu().peek(nesem::ppu_palette_base));
+			sprite_canvas.fill(clear_color);
 
 			const auto &oam = nes.ppu().get_oam();
+			const auto ppuctrl = nes.ppu().peek_ppuctrl();
+			size_t pattern_index = (ppuctrl & 0b0000'1000) > 0 ? 1u : 0u;
+			auto is_8x16 = (ppuctrl & 0b0010'0000) > 0;
+
 			for (size_t i = 0, end = std::size(oam); i < end; i += 4)
 			{
-				auto col = int((i / 4) % 2);
-				if (col == 0)
-					pos.y += 10;
+				auto sprite_x = oam[i + 3];
 
-				draw_string(canvas, {255, 255, 255}, fmt::format("({:>3} {:>3}) {:02X} {:02X}", oam[i + 3], oam[i + 0], oam[i + 1], oam[i + 2]), pos + offset * col);
-			}
+				// the OAM value resents the scanline the sprite is prepared on, it is rendered on on the following scanline
+				auto sprite_y = oam[i + 0] + 1;
 
-			pos.y += 20;
+				// skip offscreen sprites
 
-			draw_string(canvas, {255, 255, 255}, "Active sprites for scanline", pos);
-			pos.y += 4;
+				// sprites can't clip off the right edge
+				if (sprite_x > 255 - 8)
+					continue;
 
-			int index = 0;
-			for (const auto &s : nes.ppu().get_active_sprites())
-			{
-				auto col = index++ % 2;
-				if (col == 0)
-					pos.y += 10;
+				// skip offscreen sprites
+				if (sprite_y >= 240)
+					continue;
 
-				draw_string(canvas, {255, 255, 255}, fmt::format("({:>3} {:>3}) {:02X} {:02X}", s.x, s.y, s.index, s.attrib), pos + offset * col);
+				auto index = oam[i + 1];
+				auto attrib = oam[i + 2];
+
+				if (is_8x16)
+				{
+					pattern_index = index & 1;
+					index >>= 1;
+				}
+
+				const bool flip_x = attrib & 0b0100'0000;
+				const bool flip_y = attrib & 0b1000'0000;
+
+				nesem::U16 height = is_8x16 ? 16 : 8;
+
+				if (is_8x16 && flip_y)
+					++index;
+
+				// draw the sprite
+				for (nesem::U16 pixel_y = 0; pixel_y < height; ++pixel_y)
+				{
+					if (pixel_y == 8)
+						index += flip_y ? -1 : 1;
+
+					for (nesem::U16 pixel_x = 0; pixel_x < 8; ++pixel_x)
+					{
+						nesem::U16 pt_offset_x = flip_x ? 7 - pixel_x : pixel_x;
+						nesem::U16 pt_offset_y = flip_y ? 7 - (pixel_y & 7) : (pixel_y & 7);
+
+						auto palette = pattern_tables[pattern_index].read_pixel((index & 0xF) * 8 + pt_offset_x, ((index >> 4) & 0xF) * 8 + pt_offset_y, 4 | (attrib & 3));
+
+						// check for transparent
+						if ((palette & 3) == 0)
+							continue;
+
+						auto color_index = nes.ppu().peek(nesem::ppu_palette_base + palette);
+						auto color = colors.color_at_index(color_index);
+						sprite_canvas.draw_point(color, {sprite_x + pixel_x, sprite_y + pixel_y});
+					}
+				}
 			}
 		}
-		break;
 
-		case DebugMode::cpu_info:
-		case DebugMode::none:
-			// nothing to do, here so that if we add a new mode, we can get a warning for unhandled cases
-			LOG_WARN("draw_ppu_info called for unexpected DebugMode");
-			break;
+		canvas.draw_rect({255, 255, 255}, cm::rect(pos, cm::Size{255, 240}));
+		nes_sprite_pos = pos;
+		pos.y += 240;
+
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+		for (auto &&nt : std::array{0, 3})
+		{
+			auto index = nt & 1;
+
+			draw_string(canvas, {255, 255, 255}, fmt::format("Nametable #{}", index), pos + text_offset);
+			pos.y += 12;
+
+			{
+				auto name_table = nes.ppu().read_name_table(nt, pattern_tables);
+				auto fn = [&](const cm::Point2i point) {
+					auto color_index = name_table.read_pixel(static_cast<nesem::U16>(point.x), static_cast<nesem::U16>(point.y));
+					return colors.color_at_index(color_index);
+				};
+
+				auto [nt_canvas, nt_lock] = nes_nametable_textures[index].lock();
+				nt_canvas.update_points(std::cref(fn));
+			}
+
+			canvas.draw_rect({255, 255, 255}, cm::rect(pos, cm::Size{255, 240}));
+			nes_nametable_pos[index] = pos;
+			pos.y += 240;
 		}
 	}
 
 	void SideBar::render(ui::Renderer &renderer, DebugMode mode)
 	{
-		if (mode != DebugMode::none)
+		if (mode == DebugMode::none)
+			return;
+
+		const auto pos = top_left(area);
+		renderer.blit(pos, texture);
+
+		switch (mode)
 		{
-			renderer.blit(top_left(area), texture);
+		case DebugMode::none:
+			// this is impossible since we bail early if in this mode, but this satisfies warnings about not all cases handled
+			std::unreachable();
+			break;
 
-			if (mode == DebugMode::bg_info || mode == DebugMode::fg_info)
-			{
-				for (size_t i = 0; i < size(nes_pattern_textures); ++i)
-					renderer.blit(nes_pattern_pos[i], nes_pattern_textures[i]);
+		case DebugMode::cpu_info:
+			// no additional work needed
+			break;
 
-				if (mode == DebugMode::bg_info)
-				{
-					for (size_t i = 0; i < size(nes_nametable_textures); ++i)
-						renderer.blit(nes_nametable_pos[i], nes_nametable_textures[i]);
-				}
-			}
+		case DebugMode::fg_info:
+			for (size_t i = 0; i < size(nes_pattern_textures); ++i)
+				renderer.blit(nes_pattern_pos[i], nes_pattern_textures[i]);
+			break;
+
+		case DebugMode::bg_info:
+			renderer.blit(pos + nes_sprite_pos, nes_sprite_texture);
+
+			for (size_t i = 0; i < size(nes_nametable_textures); ++i)
+				renderer.blit(pos + nes_nametable_pos[i], nes_nametable_textures[i]);
+			break;
 		}
 	}
 }

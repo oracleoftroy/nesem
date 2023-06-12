@@ -18,14 +18,13 @@ namespace app
 	{
 		auto [canvas, lock] = texture.lock();
 
-		// canvas.fill({});
 		canvas.fill({22, 22, 22});
 
 		auto pos = cm::Point2{0, area.h - 10};
 		draw_string(canvas, {255, 255, 255}, fmt::format("{}", rom_name.value_or("No rom loaded")), pos);
 
 		pos.y -= 12;
-		draw_string(canvas, {255, 255, 255}, "Debug info:   off: 0    background info: 1    foreground info: 2    CPU and memory info: 3", pos);
+		draw_string(canvas, {255, 255, 255}, "Debug info:     off: 0      PPU visualizer: 1      PPU info: 2      CPU and memory info: 3", pos);
 
 		pos.y -= 12;
 		if (in_break)

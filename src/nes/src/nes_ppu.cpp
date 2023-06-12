@@ -163,6 +163,11 @@ namespace nesem
 		return active_sprites;
 	}
 
+	U8 NesPpu::peek_ppuctrl() const noexcept
+	{
+		return reg.ppuctrl;
+	}
+
 	U8 NesPatternTable::read_pixel(U16 x, U16 y, U8 palette) const noexcept
 	{
 		auto x_shift = (x & 0b11) << 1;
