@@ -246,5 +246,7 @@ namespace nesem
 
 		// get the current name table based on the provided pre-calculated pattern tables
 		NesNameTable read_name_table(int index, const std::array<NesPatternTable, 2> &pattern) const noexcept;
+
+		std::array<U8, 32> read_palettes() const noexcept;
 	};
 }

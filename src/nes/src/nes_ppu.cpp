@@ -1171,4 +1171,9 @@ namespace nesem
 	{
 		return reg.ppuctrl & ctrl_sprite_8x16 ? 16 : 8;
 	}
+
+	std::array<U8, 32> NesPpu::read_palettes() const noexcept
+	{
+		return palettes;
+	}
 }

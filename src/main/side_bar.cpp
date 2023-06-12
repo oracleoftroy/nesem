@@ -314,12 +314,14 @@ namespace app
 			nes.ppu().read_pattern_table(1),
 		};
 
+		auto palettes = nes.ppu().read_palettes();
+
 		for (size_t index = 0; index < size(pattern_tables); ++index)
 		{
 			{
 				auto fn = [&](const cm::Point2i pos) {
 					auto palette_entry = pattern_tables[index].read_pixel(static_cast<nesem::U16>(pos.x), static_cast<nesem::U16>(pos.y), current_palette);
-					auto color_index = nes.ppu().peek(nesem::ppu_palette_base + palette_entry);
+					auto color_index = palettes[palette_entry];
 
 					return colors.color_at_index(color_index);
 				};
@@ -349,7 +351,7 @@ namespace app
 				color_pos.x += (color_size.w) * i;
 				auto color_rect = rect(color_pos, color_size);
 
-				auto color_index = nes.ppu().peek(nesem::ppu_palette_base + (p * 4 + i));
+				auto color_index = palettes[p * 4 + i];
 				auto color = colors.color_at_index(color_index);
 
 				canvas.fill_rect(color, color_rect);
@@ -425,32 +427,16 @@ namespace app
 			nes.ppu().read_pattern_table(1),
 		};
 
+		auto palettes = nes.ppu().read_palettes();
+
 		//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		// Render Sprites
-
-		// need to know
-		// which sprite mode? ppuctrl ctrl_sprite_8x16
-
-		// which pattern table: 0 if not set, 1 if set
-		// if 8x8, ppuctrl ctrl_sprite_addr (bit 3)
-		// if 8x16, low bit of index
-
-		// index of tile in pattern table
-		// if 8x8, index
-		// if 8x16, index >> 1 for upper half, +1 for lower half
-		// converting to to x, y -> (index & 15) *8 + pixel_x, (index >> 4) * 8 + pixel_y
-
-		// read_name_table
-
-		// flip x -> attrib bit 6
-		// flip y -> attrib bit 7
-
 		{
 			auto [sprite_canvas, sprite_lock] = nes_sprite_texture.lock();
 
 			// read the current transparent color
 			// might not be technically correct in some situations, but should be good enough?
-			auto clear_color = colors.color_at_index(nes.ppu().peek(nesem::ppu_palette_base));
+			auto clear_color = colors.color_at_index(palettes[0]);
 			sprite_canvas.fill(clear_color);
 
 			const auto &oam = nes.ppu().get_oam();
@@ -509,7 +495,7 @@ namespace app
 						if ((palette & 3) == 0)
 							continue;
 
-						auto color_index = nes.ppu().peek(nesem::ppu_palette_base + palette);
+						auto color_index = palettes[palette];
 						auto color = colors.color_at_index(color_index);
 						sprite_canvas.draw_point(color, {sprite_x + pixel_x, sprite_y + pixel_y});
 					}
