@@ -14,8 +14,8 @@ namespace nesem
 		// pattern table is a 16x16 table of 8x8 tiles
 		// each entry is 2 bits each, packed 4 per byte
 		// in other words, we need 2 bytes per tile per row
-		// thus, a 16x16 grid of 8x2 bytes
-		std::array<U8, 16 * 16 * 8 * 2> table;
+		// thus, a 16x16 grid of 2x8 bytes
+		std::array<U8, 16 * 16 * 2 * 8> table;
 
 		U8 read_pixel(U16 x, U16 y, U8 palette) const noexcept;
 		void write_pixel(U16 x, U16 y, U8 entry) noexcept;
