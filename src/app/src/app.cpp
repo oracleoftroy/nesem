@@ -114,7 +114,7 @@ namespace ui
 			auto mid = begin(times) + size_times / 2;
 
 			// std::ranges::nth_element(times, mid);
-			std::nth_element(begin(times), end(times), mid);
+			std::nth_element(begin(times), mid, end(times));
 
 			return *mid * 1000.0;
 		}
