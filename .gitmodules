@@ -2,4 +2,3 @@
 	path = ext/vcpkg
 	url = https://github.com/Microsoft/vcpkg.git
 	branch = master
-	shallow = false
