@@ -6,6 +6,7 @@
 #include <string_view>
 #include <vector>
 
+#include <fmt/ranges.h>
 #include <fmt/std.h>
 
 #include "config.hpp"
@@ -47,11 +48,6 @@ const static auto logger_init = [] {
 	return util::detail::LoggerInit{log_file_name};
 }();
 
-constexpr auto args(int argc, char *argv[])
-{
-	return std::vector<std::string_view>(argv, argv + argc);
-}
-
 void init([[maybe_unused]] const std::filesystem::path &config_path)
 {
 #if defined(__EMSCRIPTEN__)
@@ -80,10 +76,7 @@ void init([[maybe_unused]] const std::filesystem::path &config_path)
 
 int application_main(int argc, char *argv[])
 {
-	// fmt regression? This no longer works in fmt v10
-	// LOG_INFO("Starting: {}", fmt::join(argv, argv + argc, " "));
-
-	LOG_INFO("Starting: {}", fmt::join(args(argc, argv), " "));
+	LOG_INFO("Starting: {}", fmt::join(argv, argv + argc, " "));
 	LOG_INFO("Working directory: {}", std::filesystem::current_path());
 
 	auto config_path = ui::App::get_user_data_path("nesem");
