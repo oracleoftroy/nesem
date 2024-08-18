@@ -22,23 +22,13 @@ add_executable(
 
 target_link_libraries(nesem PRIVATE project_options)
 target_link_libraries(nesem PRIVATE nesemlib appui appui_main)
-
-# Previous way
-# find_package(tomlplusplus CONFIG REQUIRED)
-# target_link_libraries(nesem PRIVATE tomlplusplus::tomlplusplus)
-
-# Current way, but pkg-config isn't on windows by default
-# find_package(PkgConfig REQUIRED)
-# pkg_check_modules(tomlplusplus REQUIRED IMPORTED_TARGET tomlplusplus)
-# target_link_libraries(nesem PkgConfig::tomlplusplus)
-
-find_path(TOMLPLUSPLUS_INCLUDE_DIRS "toml++/toml.h")
-target_include_directories(nesem INTERFACE ${TOMLPLUSPLUS_INCLUDE_DIRS})
+target_link_libraries(nesem PRIVATE tomlplusplus::tomlplusplus)
 
 if(EMSCRIPTEN)
 	target_link_options(
 		nesem
 		PUBLIC
+
 		# -O1
 		# -sASSERTIONS
 		# -sERROR_ON_WASM_CHANGES_AFTER_LINK

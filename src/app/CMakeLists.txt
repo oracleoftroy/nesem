@@ -1,5 +1,3 @@
-find_package(SDL2 CONFIG REQUIRED)
-
 add_library(cmlib INTERFACE "include/cm/math.hpp" "include/cm/math3d.hpp")
 target_link_libraries(cmlib INTERFACE project_options)
 target_include_directories(cmlib INTERFACE include)

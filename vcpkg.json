@@ -1,6 +1,5 @@
 {
-	"name": "nes",
-	"version-string": "0.0.1",
+	"name": "nesem",
 	"dependencies": [
 		"catch2",
 		"cryptopp",

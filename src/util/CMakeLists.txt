@@ -1,7 +1,3 @@
-find_package(spdlog CONFIG REQUIRED)
-
-find_path(SCOTTT_DEBUGBREAK_INCLUDE_DIRS "debugbreak.h")
-
 add_library(
 	util
 	INTERFACE
