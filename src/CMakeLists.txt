@@ -20,11 +20,15 @@ if(NOT MSVC)
 
 	# For some reason, newer versions of FMT are adding the /utf-8 option even when building with clang... not sure if vcpkg issue or upstream
 	# For now, remove the option if it exists
-	string(REPLACE "\$<\$<COMPILE_LANGUAGE:CXX>:/utf-8>" "" FMT_OPTS ${FMT_OPTS})
-	string(REPLACE "\$<\$<COMPILE_LANGUAGE:CXX>:/utf-8>" "" FMTHO_OPTS ${FMTHO_OPTS})
+	if(FMT_OPTS)
+		string(REPLACE "\$<\$<COMPILE_LANGUAGE:CXX>:/utf-8>" "" FMT_OPTS ${FMT_OPTS})
+		set_target_properties(fmt::fmt PROPERTIES INTERFACE_COMPILE_OPTIONS "${FMT_OPTS}")
+	endif()
 
-	set_target_properties(fmt::fmt PROPERTIES INTERFACE_COMPILE_OPTIONS "${FMT_OPTS}")
-	set_target_properties(fmt::fmt-header-only PROPERTIES INTERFACE_COMPILE_OPTIONS "${FMTHO_OPTS}")
+	if(FMTHO_OPTS)
+		string(REPLACE "\$<\$<COMPILE_LANGUAGE:CXX>:/utf-8>" "" FMTHO_OPTS ${FMTHO_OPTS})
+		set_target_properties(fmt::fmt-header-only PROPERTIES INTERFACE_COMPILE_OPTIONS "${FMTHO_OPTS}")
+	endif()
 endif()
 
 add_subdirectory(util)
