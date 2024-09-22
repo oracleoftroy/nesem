@@ -21,8 +21,8 @@ namespace nesem
 		FrameReadyFn frame_ready;
 		std::unique_ptr<NesInputDevice> player1 = make_null_input();
 		std::unique_ptr<NesInputDevice> player2 = make_null_input();
-		std::filesystem::path nes20db_filename = {};
-		std::filesystem::path user_data_dir = {};
+		std::filesystem::path nes20db_filename;
+		std::filesystem::path user_data_dir;
 	};
 
 	class NesCartridge;
@@ -31,6 +31,11 @@ namespace nesem
 	class Nes final
 	{
 	public:
+		Nes(Nes &&other) noexcept = default;
+		Nes &operator=(Nes &&other) noexcept = default;
+		Nes(const Nes &other) noexcept = delete;
+		Nes &operator=(const Nes &other) noexcept = delete;
+
 		explicit Nes(NesSettings &&settings);
 		~Nes();
 
@@ -54,9 +59,9 @@ namespace nesem
 		NesInputDevice &player1() noexcept;
 		NesInputDevice &player2() noexcept;
 
-		const NesCartridge *cartridge() const noexcept;
+		[[nodiscard]] const NesCartridge *cartridge() const noexcept;
 
-		NesNvram open_prgnvram(std::string_view rom, size_t size) const noexcept;
+		[[nodiscard]] NesNvram open_prgnvram(std::string_view rom, size_t size) const noexcept;
 
 #if defined(__cpp_explicit_this_parameter)
 		auto &bus(this auto &self) noexcept
@@ -84,7 +89,7 @@ namespace nesem
 			return nes_bus;
 		}
 
-		const auto &bus() const noexcept
+		[[nodiscard]] const auto &bus() const noexcept
 		{
 			return nes_bus;
 		}
@@ -94,7 +99,7 @@ namespace nesem
 			return nes_cpu;
 		}
 
-		const auto &cpu() const noexcept
+		[[nodiscard]] const auto &cpu() const noexcept
 		{
 			return nes_cpu;
 		}
@@ -104,7 +109,7 @@ namespace nesem
 			return nes_ppu;
 		}
 
-		const auto &ppu() const noexcept
+		[[nodiscard]] const auto &ppu() const noexcept
 		{
 			return nes_ppu;
 		}
@@ -114,7 +119,7 @@ namespace nesem
 			return nes_apu;
 		}
 
-		const auto &apu() const noexcept
+		[[nodiscard]] const auto &apu() const noexcept
 		{
 			return nes_apu;
 		}
