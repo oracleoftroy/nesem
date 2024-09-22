@@ -334,7 +334,7 @@ namespace nesem::mappers
 		if (prg_ram_mode == PrgRamMode::SZROM)
 			bank = (chr_bank_0 >> 4) & 1;
 		else if (auto size = prgram_size() + prgnvram_size();
-				 size == bank_16k)
+			size == bank_16k)
 			bank = (chr_bank_0 >> 3) & 1;
 		else if (size == bank_32k)
 			bank = (chr_bank_0 >> 2) & 3;

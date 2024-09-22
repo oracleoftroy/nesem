@@ -603,7 +603,7 @@ namespace ui
 		SDL_AudioSpec device_spec;
 
 		for (int i = 0, num_devices = SDL_GetNumAudioDevices(false);
-			 i < num_devices; ++i)
+			i < num_devices; ++i)
 		{
 			auto name = SDL_GetAudioDeviceName(i, false);
 			SDL_GetAudioDeviceSpec(i, false, &device_spec);
